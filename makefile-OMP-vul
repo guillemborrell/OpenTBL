@@ -1,0 +1,125 @@
+#########################################################################
+#           Makefile for BOUNDARY LAYER CODE
+###################################################################
+#
+########################################################## compiler
+F77 = mpif90
+F90 = mpif90
+##########################################################
+#
+F77FLAGS = -c -O3 -openmp  -axW  -I/usr/local/include #-mcmodel=medium -i-dynamic
+F90FLAGS = -c -O3 -openmp  -axW   -I/usr/local/include #-mcmodel=medium -i-dynamic
+LFLAGS    = -O3 -openmp -axW  -I/usr/local/include  #-mcmodel=medium -i-dynamic
+
+
+########################################################### machine
+#SYSTEM = intel
+##################################################### objects alpha
+INIT = .
+SRCDIR = $(INIT)
+OBJ=$(INIT)
+OBJDIR = $(OBJ)
+CALCDIR =$(INIT)
+
+OBJECTS =$(OBJ)/mod.o\
+	      $(OBJ)/main.o\
+	      $(OBJ)/getstartzy-vul.o\
+	      $(OBJ)/boun.o\
+	      $(OBJ)/rhsp.o\
+	      $(OBJ)/coeft.o\
+	      $(OBJ)/pois.o\
+	      $(OBJ)/change.o\
+	      $(OBJ)/stotf.o\
+	      $(OBJ)/alloa.o\
+	      $(OBJ)/ffts.o\
+	      $(OBJ)/genflu.o\
+	      $(OBJ)/lip.o\
+	      $(OBJ)/escru-vul.o\
+############################################################# aeolos
+##
+#ITPC  : printmsgA $(OBJECTS)
+#	@echo Linking...
+#	@$(F77) $(OBJECTS) $(LFLAGS) -o $@ /usr/local/lib/libfftw3.a
+#	@echo $@ built, congratulations.
+##
+########################################################### MN
+#
+ITPC : printmsgA $(OBJECTS)
+	@echo Linking...
+	$(F77) $(OBJECTS) $(LFLAGS) -o $@ /usr/local/lib/libfftw3.a /usr/local/lib/libfftw3f.a
+
+	@echo $@ built, congratulations.
+
+#################################################### compile
+#
+$(OBJDIR)/mod.o : $(SRCDIR)/mod.f90  
+	@echo compiling mod.f
+	cd $(OBJDIR); $(F90) $(F90FLAGS) -I$(SRCDIR) $(SRCDIR)/mod.f90
+#
+$(OBJDIR)/main.o : $(SRCDIR)/main.f90  
+	@echo compiling main.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/main.f90
+#
+
+$(OBJDIR)/getstartzy-vul.o : $(SRCDIR)/getstartzy-vul.f90  
+	@echo compiling getstartzy-vul.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/getstartzy-vul.f90
+
+$(OBJDIR)/boun.o : $(SRCDIR)/boun.f90  
+	@echo compiling boun.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/boun.f90
+#
+$(OBJDIR)/rhsp.o : $(SRCDIR)/rhsp.f90  
+	@echo compiling rhsp.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/rhsp.f90
+#
+$(OBJDIR)/pois.o : $(SRCDIR)/pois.f90  
+	@echo compiling pois.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/pois.f90
+#
+$(OBJDIR)/escru-vul.o : $(SRCDIR)/escru-vul.f90  
+	@echo compiling escru-vul.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/escru-vul.f90
+#
+$(OBJDIR)/stotf.o : $(SRCDIR)/stotf.f90  
+	@echo compiling stotf.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/stotf.f90
+#
+$(OBJDIR)/coeft.o : $(SRCDIR)/coeft.f90  
+	@echo compiling coeft.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/coeft.f90
+#
+$(OBJDIR)/lip.o : $(SRCDIR)/lip.f90  
+	@echo compiling lip.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/lip.f90
+
+$(OBJDIR)/change.o : $(SRCDIR)/change.f90  
+	@echo compiling change.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/change.f90
+#
+$(OBJDIR)/ffts.o : $(SRCDIR)/ffts.f90  
+	@echo compiling ffts.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/ffts.f90
+#
+$(OBJDIR)/alloa.o : $(SRCDIR)/alloa.f90  
+	@echo compiling alloa.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/alloa.f90
+
+$(OBJDIR)/genflu.o : $(SRCDIR)/genflu.f90  
+	@echo compiling genflu.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/genflu.f90
+#
+########################################################## message
+printmsgA :
+	@echo
+	@echo Building MAIN for $(SYSTEM)
+	@echo Compiler flags : $(F77FLAGS)
+	@echo Linker   flags : $(LFLAGS)
+#
+###################################################### end of file
+#
+#
+clean: 
+	find . \( -name '*.o' \) -exec rm -rf {} \;
+	find . \( -name '*.mod' \) -exec rm -rf {} \;
+
