@@ -33,6 +33,16 @@ module ctesp
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
   parameter ( nplanes = nz/3)
   parameter ( mcycl = 40, npos=6)
+
+#ifdef LINES
+ !%%%%%%%%%%%%%%%%%%Testing LInes%%%%%%%%%%%
+  integer,parameter:: nlineas=500*3
+  real*8:: perfil(1:nx,4,nlineas)    !for bigger testing should be ib:ie
+  !%%%%%%%%%%%%%%%%%%
+#endif
+
+    real*8:: tracking(ny,28,30)
+
   !blocking for OMP
   integer,parameter:: blockl=50
   ! buffers for real Fourier transform !
@@ -59,13 +69,26 @@ module ctesp
   data xcorpoint /200,600,1200/
 #endif
   data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
-  
+
+#ifdef PLANESPECTRA 
+   !for debugging purposes!! 
+   integer  frequency(7)
+!   data frequency /1,2,5,10,20,50,100/  !how often we sample
+   data frequency /1,2,3,4,5,6,7/  !how often we sample
+#endif  
+
+#ifdef PLANESPECTRA2  
+   integer::  ss
+#endif 
+
+ 
 #ifdef CREATEPROFILES  
   integer,parameter:: num_planes=300   !Number of planes to composite U0 & V0
   real*8,dimension(:,:),allocatable:: u0c,v0c,u0c_once,v0c_once,w0c_once  !Here are storaged the profiles    
   real*8:: pdiv(ny,nx)
   integer:: paso
 #endif
+ 
 end module ctesp
 
 !---------------------------------------------------------------------
@@ -153,8 +176,12 @@ module  alloc_dns
   ! clf
   integer cyclx, cycly
   real*8 cfl,idx,idxx
-  logical*4 setstep,dostat   
-
+  logical*4 setstep
+#ifdef PLANESPECTRA       
+  logical*4 dostat(7) 
+#else  
+  logical*4 dostat
+#endif
   ! ------------------------ aux rhsp ----------------------------------------!  
   real*8:: wki1r(nz+2),vm(ny),vmtmp(ny),wki2r(nz+2,0:7) !8=Max num of threads
 end module alloc_dns
@@ -238,8 +265,7 @@ module statistics
 #endif       
   real*8 ener(15)
   real*8,allocatable::i1c(:),i2c(:)
-  real*8:: hy(0:ny)
-  integer totalcal
+  real*8:: hy(0:ny)  
   integer, allocatable::flags(:),jspecy(:,:)!,jspecor(:) ! flags for velocity and vor spectra  
   ! Espectros de Velocidad y vorticidad !
   real*8,dimension(:,:,:),allocatable:: ensu,ensv,ensw,ensuv
@@ -247,12 +273,23 @@ module statistics
   ! Correlaciones (x-x',j,z) 
   real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv
   real*8,dimension(:,:),allocatable::corox,coroy,coroz,corp
+#ifdef PLANESPECTRA
+  real*8,dimension(:,:,:),allocatable::plane_specu,plane_specv,plane_specw
+  integer totalcal(7)
+#else
+  integer totalcal
+#endif
+
+#ifdef PLANESPECTRA2
+  complex*16,dimension(:,:,:),allocatable::planesv 
+#endif
+
 end module statistics
 ! ---------------------------------------------------------------!
 
 module names
   implicit none
-  character*100 stfile,etfile,vetfile,hfile,chfile,chinit,chinfo,chinfoext,corfile,budfile  
+  character*100 stfile,etfile,vetfile,hfile,chfile,chinit,chinfo,chinfoext,corfile,budfile,spectraplane,spectraplane2  
   integer indst,ifile
 end module names
 

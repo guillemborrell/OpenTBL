@@ -164,7 +164,7 @@ subroutine pointers_p2p(rank)
   use ctesp
   use shared_mem
   implicit none
-  integer, intent(in):: rank,i
+  integer:: rank,i
   
   !========Setting Structure Data Types:
   call comm_setup(nx,ny,nz1,rank,nummpi,nodev,domainv,1)  

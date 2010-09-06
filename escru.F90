@@ -25,16 +25,16 @@
     real*4,dimension(:,:,:),allocatable::resu
     integer i,j,k,l,irec
     integer status(MPI_STATUS_SIZE),ierr,t_size,t_size1,t_size2,dot,mpiid,lim1,lim2
-    character(len=MAXCHARLEN),intent(out):: fil1,fil2,fil3,fil4
+    character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
     character:: ext1*3,uchar*1
     real*8    dt,dum(20),jk,t0
-    integer:: nxr3,nyr3,nzr3,commu,tipo,chunkfbs,nfile,sidio,mpiw1,mpiw2,mpiw3,mpiw4
+    integer:: nxr3,nyr3,nzr3,comm,tipo,chunkfbs,nfile,sidio,mpiw1,mpiw2,mpiw3,mpiw4
     integer*8:: chunks1,chunks2,chunksM1,chunksM2
 
     ! ------------------------- Program ----------------------------  
     pi=4d0*atan(1d0)
     dum=0d0
-    commu=MPI_COMM_WORLD
+    comm=MPI_COMM_WORLD
     tipo=MPI_real4
 
     write(ext1,'(i3.3)') ifile     
@@ -43,12 +43,12 @@
     fil3=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'w'
     fil4=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'p'
 
-    
+
 #ifdef WPARALLEL
     !PARALLEL WRITTER ==================================================================
     !First the header and last the field
     if (mpiid.eq.0) t0=MPI_Wtime()
-        
+
     nfile=1			    !Number of files for parallel IO
     chunkfbs=2*1024*1024            !File block system 2Mb
     chunks1 =nz1*(ny+1)*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
@@ -61,22 +61,22 @@
        write(*,'(5F18.3)') 1.0*chunks1/1024/1024,1.0*chunks2/1024/1024,1.0*chunksM1/1024/1024,1.0*chunksM2/1024/1024,1.0*chunkfbs/1024/1024
        write(*,*) '----------------------------------------------------------------------------------'
     endif
-        
+
     if(mpiid.ne.0) then       
        allocate (resu(nz1,ny+1,ie-ib+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
        if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"       
        !Writting u:
        resu=real(u,kind=4)       
-       call blockwrite(fil1,commu,resu,chunks1,nfile,mpiid,sidio)     
+       call blockwrite(fil1,comm,resu,chunks1,nfile,mpiid,sidio)     
        !Writting v:
        resu(:,1:ny,:)=real(v,kind=4)         
-       call blockwrite (fil2,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)     
+       call blockwrite (fil2,comm,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)     
        !Writting w:
        resu=real(w,kind=4)   
-       call blockwrite (fil3,commu,resu,chunks1,nfile,mpiid,sidio)   
+       call blockwrite (fil3,comm,resu,chunks1,nfile,mpiid,sidio)   
        !Writting p:
        resu(:,1:ny,:)=real(p,kind=4)    
-       call blockwrite (fil4,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)      
+       call blockwrite (fil4,comm,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)      
        deallocate (resu)  
        ifile=ifile+1 
     else      
@@ -86,37 +86,37 @@
        write(*,'(a75,f10.4,a3)') 'Size of the allocated buffer in order to write:',size(resu)*4.0/1024/1024,'Mb'              
        !Writting u:
        resu(:,:,2:)=real(u,kind=4)
-       call blockwrite (fil1,commu,resu,chunksM1,nfile,mpiid,sidio)       
+       call blockwrite (fil1,comm,resu,chunksM1,nfile,mpiid,sidio)       
        call writeheader(fil1,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
        !Writting v:
        resu(:,1:ny,2:)=real(v,kind=4)  
-       call blockwrite (fil2,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
+       call blockwrite (fil2,comm,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
        call writeheader(fil2,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
        !Writting w:
        resu(:,:,2:)=real(w,kind=4)           
-       call blockwrite (fil3,commu,resu,chunksM1,nfile,mpiid,sidio)      
+       call blockwrite (fil3,comm,resu,chunksM1,nfile,mpiid,sidio)      
        call writeheader(fil3,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
        !Writting p:
        resu(:,1:ny,2:)=real(p,kind=4)           
-       call blockwrite (fil4,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
+       call blockwrite (fil4,comm,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
        call writeheader(fil4,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
        deallocate (resu)  
        ifile=ifile+1        
     endif
 
-    call MPI_BARRIER(commu,ierr)
- 
+    call MPI_BARRIER(comm,ierr)
+
     if (mpiid.eq.0) then 
-     t0=MPI_Wtime()-t0
-     write(*,*)
-     write(*,*) '=========================================================================='
-     write(*,*) 'Done writting', chfile(1:index(chfile,' ')-1)//'.'//ext1,' fields'
-     write(*,*) '=========================================================================='    
-     write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
-     write(*,*)   '--------------------------------------------------------------------------'
+       t0=MPI_Wtime()-t0
+       write(*,*)
+       write(*,*) '=========================================================================='
+       write(*,*) 'Done writting', chfile(1:index(chfile,' ')-1)//'.'//ext1,' fields'
+       write(*,*) '=========================================================================='    
+       write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
+       write(*,*)   '--------------------------------------------------------------------------'
     endif
 #endif
-   
+
 
 
 #ifdef WSERIAL
@@ -135,13 +135,13 @@
        enddo
 
        open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4)     
+            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')     
        open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4)    
+            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')    
        open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4)    
+            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')    
        open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4)
+            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')
 
        write(*,*) '----- files OPEN ------'
        write(*,*) fil1
@@ -179,13 +179,13 @@
           do i= ibeg(dot),iend(dot)
              if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx         
              irec = irec+1     
-             call MPI_RECV(resu,t_size1,tipo,dot,1,commu,status,ierr)
+             call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(10,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,2,commu,status,ierr)            
+             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
              write(11,rec=irec) resu(:,1:ny,1)
-             call MPI_RECV(resu,t_size1,tipo,dot,3,commu,status,ierr)         
+             call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
              write(12,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,4,commu,status,ierr)  
+             call MPI_RECV(resu,t_size2,tipo,dot,4,comm,status,ierr)  
              write(13,rec=irec) resu(:,1:ny,1)
              call flush(10,11,12,13)
           enddo
@@ -195,10 +195,10 @@
     else
        !operaciones para el resto de los nodos ********************
        do i=ib,ie     
-          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,0,1,commu,ierr)
-          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,0,2,commu,ierr)
-          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,0,3,commu,ierr)
-          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,0,4,commu,ierr)
+          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,0,1,comm,ierr)
+          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,0,2,comm,ierr)
+          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,0,3,comm,ierr)
+          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,0,4,comm,ierr)
        enddo
     endif
     deallocate (resu)  
@@ -220,7 +220,7 @@
     t_size2=nz1*(ny  )
 
     if (mpiid.eq.mpiw1) then
-       
+
        write(*,*) 'before starting to write'
        write(*,*) '              x                   y                  um'
        write(*,*) '--------------------------------------------------------------------'      
@@ -229,7 +229,7 @@
        enddo
 
        open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4) 
+            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian') 
        write(*,*) '----- files OPEN ------'
        write(*,*) fil1
        irec=1
@@ -251,7 +251,7 @@
           do i= ibeg(dot),iend(dot)
              if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE U'         
              irec = irec+1     
-             call MPI_RECV(resu,t_size1,tipo,dot,1,commu,status,ierr)
+             call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(10,rec=irec) resu(:,:,1)         
              call flush(10)
           enddo
@@ -261,14 +261,14 @@
     else
        !operaciones para el resto de los nodos ********************
        do i=ib,ie     
-          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,mpiw1,1,commu,ierr)      
+          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,mpiw1,1,comm,ierr)      
        enddo
     endif
 
-!-----------------------------------------------
+    !-----------------------------------------------
     if (mpiid.eq.mpiw2) then
        open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4)    
+            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')    
        write(*,*) fil2
        irec=1
        write(11,rec=irec) 'v',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
@@ -279,29 +279,29 @@
           call flush(11)
        enddo
        do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-       if(dot.ne.mpiw2) then
-          do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE V'         
-             irec = irec+1             
-             call MPI_RECV(resu,t_size2,tipo,dot,2,commu,status,ierr)            
-             write(11,rec=irec) resu(:,1:ny,1)       
-             call flush(11)
-          enddo
-       endif
+          if(dot.ne.mpiw2) then
+             do i= ibeg(dot),iend(dot)
+                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE V'         
+                irec = irec+1             
+                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+                write(11,rec=irec) resu(:,1:ny,1)       
+                call flush(11)
+             enddo
+          endif
        enddo
        close(11)
        ifile=ifile+1
     else
        !operaciones para el resto de los nodos ********************
        do i=ib,ie        
-          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,mpiw2,2,commu,ierr)      
+          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,mpiw2,2,comm,ierr)      
        enddo
     endif
 
-!-----------------------------------------------
+    !-----------------------------------------------
     if (mpiid.eq.mpiw3) then
        open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4)  
+            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')  
        write(*,*) fil3  
        irec=1
        write(12,rec=irec) 'w',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
@@ -312,29 +312,29 @@
           call flush(12)
        enddo
        do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-       if(dot.ne.mpiw3) then
-          do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE W'         
-             irec = irec+1             
-             call MPI_RECV(resu,t_size1,tipo,dot,3,commu,status,ierr)         
-             write(12,rec=irec) resu(:,:,1)
-             call flush(12)
-          enddo
-       endif
+          if(dot.ne.mpiw3) then
+             do i= ibeg(dot),iend(dot)
+                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE W'         
+                irec = irec+1             
+                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
+                write(12,rec=irec) resu(:,:,1)
+                call flush(12)
+             enddo
+          endif
        enddo
        close(12)
        ifile=ifile+1
     else
        !operaciones para el resto de los nodos ********************
        do i=ib,ie            
-          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,mpiw3,3,commu,ierr)       
+          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,mpiw3,3,comm,ierr)       
        enddo
     endif
 
-!-----------------------------------------------
+    !-----------------------------------------------
     if (mpiid.eq.mpiw4) then
        open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4)
+            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')
        write(*,*) fil4      
        irec=1
        write(13,rec=irec)  'p',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
@@ -345,35 +345,35 @@
           call flush(13)
        enddo
        do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-       if(dot.ne.mpiw4) then
-          do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE P'         
-             irec = irec+1            
-             call MPI_RECV(resu,t_size2,tipo,dot,4,commu,status,ierr)  
-             write(13,rec=irec) resu(:,1:ny,1)
-             call flush(13)
-          enddo
-       endif
+          if(dot.ne.mpiw4) then
+             do i= ibeg(dot),iend(dot)
+                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE P'         
+                irec = irec+1            
+                call MPI_RECV(resu,t_size2,tipo,dot,4,comm,status,ierr)  
+                write(13,rec=irec) resu(:,1:ny,1)
+                call flush(13)
+             enddo
+          endif
        enddo
        close(13)
        ifile=ifile+1
     else
        !operaciones para el resto de los nodos ********************
        do i=ib,ie           
-          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,mpiw4,4,commu,ierr)
+          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,mpiw4,4,comm,ierr)
        enddo
     endif
 
     !-----------------------------------------------
-    call MPI_BARRIER(commu,ierr) 
+    call MPI_BARRIER(comm,ierr) 
     if (mpiid.eq.mpiw1) then 
-     t0=MPI_Wtime()-t0
-     write(*,*)
+       t0=MPI_Wtime()-t0
+       write(*,*)
        write(*,*) '=========================================================================='
        write(*,*) 'Done writing', chfile(1:index(chfile,' ')-1)//'.'//ext1,' fields'
        write(*,*) '=========================================================================='
-     write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
-     write(*,*)   '--------------------------------------------------------------------------'
+       write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
+       write(*,*)   '--------------------------------------------------------------------------'
     endif
     deallocate (resu)  
 #endif
@@ -401,13 +401,17 @@
     include 'mpif.h'
 
     integer status(MPI_STATUS_SIZE),ierr,i,j,k,lim1,lim2,t_size,siz,dot
-    integer mpiid,ical,ii,kk,ind,comm,tipo,elements_spec,nbud
+    integer mpiid,ii,kk,ind,comm,tipo,elements_spec,nbud
     real*8 x(0:nx+1),y(0:ny+1),ax,ay,az,cfl,tiempo,re,xxx    
     character ext1*2,ext*3,corfilv*99, cffile*99
     real*8,allocatable,dimension(:,:)    ::wkn,wknp
     real*8,allocatable,dimension(:,:,:)  ::buf_spe  
     real*8,allocatable,dimension(:,:  )  ::buf_bud,buf_bud2
-
+#ifdef PLANESPECTRA
+    integer:: ical(7) 
+#else
+    integer:: ical
+#endif  
     comm=MPI_COMM_WORLD
     tipo=MPI_real8
     ! ------------------------ codigo ------------------------------------! 
@@ -415,14 +419,15 @@
     if (mpiid.eq.0) then
        write(ext,'(i3.3)') ifile
        write(ext1,'(i2.2)') indst     
-
+      
        stfile =trim(chfile)//'.'//ext1//'.'//ext//'.st'
        etfile =trim(chfile)//'.'//ext1//'.'//ext//'.esp'
        corfile=trim(chfile)//'.'//ext1//'.'//ext//'.cor'
        budfile=trim(chfile)//'.'//ext1//'.'//ext//'.budget'
+       spectraplane=trim(chfile)//'.'//ext1//'.'//ext//'.extraesp'
 
-       open(29,file=stfile,status='unknown',form='unformatted');rewind(29)
-       indst=indst+1 !+1!WE WRITE STATISTICS WHEN RECORD IMAGES ONLY!!
+       open(29,file=stfile,status='unknown',form='unformatted',convert='Big_endian');rewind(29)
+       indst=indst!+1 !WE WRITE STATISTICS WHEN RECORD IMAGES ONLY!!
        write(*,*) 'writing in==============  ',stfile       
        write(*,'(6f12.4,4i10)') tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical
        
@@ -548,7 +553,7 @@
     ! Writing the spectra in Z.  
     allocate(buf_spe(0:nz2,nspec,8))    
     if (mpiid.eq.0) then
-       open(30,file=etfile,status='unknown',form='unformatted');rewind(30)
+       open(30,file=etfile,status='unknown',form='unformatted',convert='Big_endian');rewind(30)
        write(*,*) 'writing in==============  ',etfile
        write(30) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical,nspec,lxp,nxp(1:lxp),xcorpoint(1:lxcorr)            
        write(30) (y(i), i=0,ny+1),((jspecy(i,j),i=1,nspec),j=1,lxp)
@@ -574,7 +579,7 @@
 #ifndef NODISSIPATION
     !=================== BUDGETS =======================
     if (mpiid.eq.0) then
-       open(50,file=budfile,status='unknown',form='unformatted');rewind(50)
+       open(50,file=budfile,status='unknown',form='unformatted',convert='Big_endian');rewind(50)
        write(*,*) 'writing in==============',budfile
        !HEADER
        write(50) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical    
@@ -715,7 +720,7 @@
 #ifndef NOCORR
     !===================CORRELATIONS=======================    
     if (mpiid.eq.0) then
-       open(40,file=corfile,status='unknown',form='unformatted');rewind(40)
+       open(40,file=corfile,status='unknown',form='unformatted',convert='Big_endian');rewind(40)
        write(*,*) 'writing in==============  ',corfile
        !HEADER
        write(40) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical,ncorr,lxcorr,nxp(1:lxcorr),xcorpoint(1:lxcorr)      
@@ -730,6 +735,79 @@
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
     close(40) 
 #endif
+
+#ifdef PLANESPECTRA
+     if (mpiid.eq.0) then
+       open(43,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(43)
+       write(*,*) 'writing in==============  ',spectraplane
+       write(43) ical(1:7)
+     endif
+
+     if (mpiid.eq.0) then
+        do i=ib,ie
+           write(43) plane_specu(0:nz2,1:7,i),plane_specv(0:nz2,1:7,i),plane_specw(0:nz2,1:7,i)
+        enddo
+        
+        do dot = 1,nummpi-1
+          do i=ibeg(dot),iend(dot)    
+             call MPI_RECV(plane_specu,(nz2+1)*7,tipo,dot,0,comm,status,ierr)
+             call MPI_RECV(plane_specv,(nz2+1)*7,tipo,dot,1,comm,status,ierr)
+             call MPI_RECV(plane_specw,(nz2+1)*7,tipo,dot,2,comm,status,ierr)
+             write(43) plane_specu(0:nz2,1:7,1),plane_specv(0:nz2,1:7,1),plane_specw(0:nz2,1:7,1)
+          enddo
+       enddo
+       call flush(43)
+       close(43)
+     else
+       do i=ib,ie
+       call MPI_SEND(plane_specu(0,1,i),(nz2+1)*7,tipo,0,0,comm,ierr)
+       call MPI_SEND(plane_specv(0,1,i),(nz2+1)*7,tipo,0,1,comm,ierr)
+       call MPI_SEND(plane_specw(0,1,i),(nz2+1)*7,tipo,0,2,comm,ierr)
+       enddo          
+     endif
+     plane_specu=0d0;plane_specv=0d0;plane_specw=0d0;
+#endif  
+
+
+
+#ifdef PLANESPECTRA2
+tipo=MPI_DOUBLE_COMPLEX
+
+     if (mpiid.eq.0) then
+       open(44,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(44)
+       write(*,*) 'writing in (PLANESPECTRA2)==============  ',spectraplane
+       write(44) ss
+     endif
+
+     if (mpiid.eq.0) then
+        do i=ib,ie
+           write(44) planesv(0:nz2,1:500,i)
+        enddo
+        
+        do dot = 1,nummpi-1
+          do i=ibeg(dot),iend(dot)    
+             call MPI_RECV(planesv,(nz2+1)*500,tipo,dot,0,comm,status,ierr)            
+             write(44) planesv(0:nz2,1:500,1)
+          enddo
+       enddo
+       call flush(44)
+       close(44)
+     else
+       do i=ib,ie
+          call MPI_SEND(planesv(0,1,i),(nz2+1)*500,tipo,0,0,comm,ierr)    
+       enddo          
+     endif
+     planesv=0d0;
+#endif  
+
+
+
+
+
+
+
+
+
   end subroutine escrst
 
 !-----------------------------------------------------
@@ -793,7 +871,7 @@ allocate(buf_cor(1:nx,8)) !8 Correlations
  deallocate(buf_cor)
 endsubroutine escr_corr
 
-
+#ifdef WPARALLEL
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
@@ -1001,3 +1079,4 @@ endsubroutine escr_corr
     integer:: ierr
     call MPI_BARRIER(comm,ierr)
   end subroutine barrier_after_close
+#endif

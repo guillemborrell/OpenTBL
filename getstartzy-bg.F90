@@ -13,6 +13,13 @@
   !==========================================================================
   
   
+
+#ifdef X86
+#define RECL_MULT 1 !storage units of 4bytes X86 intel architecture
+#else
+#define RECL_MULT 4 !size in bytes BG IBM
+#endif
+
 #define MB *1024*1024
 #define MAXPE 64*1024
 #define MAXCHARLEN 250
@@ -30,14 +37,15 @@
     real(8),dimension(nz1,ny,ib:ie)  :: v,p
     real(8),dimension(nz1,ny+1,ib:ie):: u,w
     real*4, dimension(:,:,:),allocatable:: resu 
+    real*8,dimension(:),allocatable::dummy
+    
     ! -------------------------- Work ----------------------------------------!
     integer status(MPI_STATUS_SIZE),ierr,mpiid,commu,tipo,sidio,nfile,mpiw1,mpiw2,mpiw3,mpiw4
     integer nxr,nyr,nzr,nz1r,nzz,j,i,k,l,dot,lim2,rsize,irec,rsize1,rsize2,ji
     integer*8:: chunks1,chunks2,chunksM1,chunksM2,chunkfbs
     real(8) jk,dt,dum(20)
-    real*8,dimension(:),allocatable::dummy
     character text*99, uchar*1
-    character(len=MAXCHARLEN),intent(out):: fil1,fil2,fil3,fil4
+    character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
 
     ! --------------------------  Programa  ----------------------------------!
     commu=MPI_COMM_WORLD
@@ -99,11 +107,11 @@
        call blockread (fil2,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)             
        v= real(resu(:,1:ny,2:),kind=8)
        v0=real(resu(1,1:ny,2 ),kind=8)
-!                 write(*,*) 'Reading from file V0-Nagib:'
-!                 open (110,file='v0-nagib',form='unformatted',status='old')
-!                 read(110) v0(1:ny)
-!                 close(110) 
-!        v0=v0/v0(ny)*vmagic(1)
+       !          write(*,*) 'Reading from file V0-Nagib:'
+       !          open (110,file='v0-nagib',form='unformatted',status='old')
+       !          read(110) v0(1:ny)
+       !          close(110) 
+
        !Reading w:         
        call blockread (fil3,commu,resu,chunksM1,nfile,mpiid,sidio)      
        w=real(resu(:,:,2:),kind=8)  
@@ -116,29 +124,6 @@
        write(*,*) 'Done Reading', trim(chinit),' fields'
        write(*,*) '=========================================================================='
     endif
-
-      call MPI_BARRIER(commu,ierr)
-      if(mpiid.eq.0) write(*,*) 'cambiando los perfiles:'
-! !   Fixing PROFILES
-!     if(ib.le.500 .and. ie.ge.500) then
-!         write(*,*) 'soy el id...bucle1',mpiid,ib,ie
-!         do j=251,ny+1
-!            u(:,j,500:ie)=u(:,250,500:ie)
-!         enddo  !copying last point
-!     elseif (ib.gt.500 .and. ie.le.700) then
-!     write(*,*) 'soy el id...bucle2',mpiid,ib,ie
-!         do j=251,ny+1
-!            u(:,j,:)=u(:,250,:)
-!         enddo
-!     elseif (ib.le.700 .and. ie.ge.700) then
-!     write(*,*) 'soy el id...bucle3',mpiid,ib,ie
-!         do j=251,ny+1
-!            u(:,j,ib:700)=u(:,j,ib:700)
-!         enddo
-!     endif
-
-
-
 #endif
 
 
@@ -147,8 +132,8 @@
     if (mpiid.eq.0) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*4    
-       open (20,file=fil1,status='old',form='unformatted',access='direct',recl=rsize)
+       rsize=2*nz2*(ny+1)*RECL_MULT    
+       open (20,file=fil1,status='old',form='unformatted',access='direct',recl=rsize,convert='BIG_ENDIAN')
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(20,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
        write(*,*) '==========================================='
@@ -160,6 +145,9 @@
     call MPI_BCAST(nxr,1,mpi_integer,0,commu,ierr)
     call MPI_BCAST(nzr,1,mpi_integer,0,commu,ierr)
     call MPI_BCAST(nyr,1,mpi_integer,0,commu,ierr)
+
+
+    allocate(dummy(0:nxr+1))
 
     if (ny.ne.nyr) then
        if (mpiid==0) write(*,*) 'changing the y grid has to be done separately'
@@ -187,19 +175,9 @@
     if (mpiid.eq.0) then
 
        open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*4)          
-   
-#ifdef OLDHEADER
-!%%%%%%%%%%%%%%%%%%%%% viejas o nuevas cabeceras! %%%%%%%%%%%%%%%%%%%%
-       allocate(dummy(0:nxr+1))
+            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')         
        read(10,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
           & dum, (dummy(i), i=0,nxr+1), (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
-#else
-       read(10,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
-            & (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
-       
-#endif
-!%%%%%%%%%%%%%%%%%%%%% viejas o nuevas cabeceras! %%%%%%%%%%%%%%%%%%%%
 
        write(*,*) 'in file    ', uchar,tiempo,nxr,nyr,nzr
        write(*,*) '              x                   y                  um'
@@ -210,11 +188,11 @@
        !opening rest of the files: 
 
        open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*4)
+            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
        open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*4)
+            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
        open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*4)
+            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
        write(*,*) '----- files OPEN ------'
        write(*,*) fil1
        write(*,*) fil2
@@ -256,6 +234,11 @@
        enddo
        close(10);close(11);close(12);close(13)
        call flush(6)
+        write(*,*) 'VALORES DE U0 Y DE V0 DESPUES DE LEER EL CAMPO'
+        do i=ny-10,ny
+          write(*,'(3f20.6)') u0(i),v0(i)
+       enddo
+
     else  !   --- the other nodes receive the information  
        do i=ib,ie       
           call MPI_RECV(resu,rsize,tipo,0,1,commu,status,ierr)
@@ -274,11 +257,12 @@
     mpiw2=nummpi/4
     mpiw3=nummpi/2
     mpiw4=3*nummpi/4
+
     !       lee el fichero 
     if (mpiid.eq.mpiw1) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*4    
+       rsize=2*nz2*(ny+1)*RECL_MULT    
        open (20,file=fil1,status='old',form='unformatted',access='direct',recl=rsize)
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(20,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
@@ -313,14 +297,14 @@
 
     if (mpiid.eq.mpiw1) then
        open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*4)          
+            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN'         
        read(10,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
             & (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
        write(*,*) 'in file    ', uchar,tiempo,nxr,nyr,nzr
        write(*,*) '              x                   y                  um'
        write(*,*) '--------------------------------------------------------------------'      
        do i=1,10
-          write(*,'(3f20.6)') x(i),y(i),um(i)
+          write(*,'(3f20.6)') x(i),y(i),um(i) 
        enddo
        irec=1
        !!  start reading the flow field  
@@ -352,7 +336,7 @@
     !-----------------------------------
     if (mpiid.eq.mpiw2) then    
        open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*4)
+            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
@@ -384,7 +368,7 @@
     !-----------------------------------
     if (mpiid.eq.mpiw3) then
        open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*4)
+            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
@@ -412,7 +396,7 @@
     !-----------------------------------
     if (mpiid.eq.mpiw4) then
        open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*4)
+            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
        irec=1      
        do i=ib,ie                
           irec = irec+1         
@@ -437,17 +421,13 @@
              p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)                
           enddo
        endif 
-
+       
        call MPI_BARRIER(commu,ierr)
        deallocate(resu)
 #endif
 
 
-       if(mpiid.eq.0) then 
-          !         write(*,*) "Reading Y from file...."
-          !         open (110,file='ybg713',form='unformatted',status='old')
-          !         read(110) (y(i), i=0,ny+1)
-          !         close(110)    
+       if(mpiid.eq.0) then      
           write(*,*) 'Values of Y grid and Um after reading:'
           write(*,*) '      y            um      u0            v0     ' 
           write(*,*) '---------------------------------'    
@@ -459,13 +439,13 @@
              write(*,'(4f12.9)') y(i-1),um(i),u0(i),v0(i)
           enddo
        endif
-
+       if(mpiid.eq.0) write(*,*) 'BROADCASTING TIEMPO,Y,DT'  
        call MPI_BCAST(tiempo,1,mpi_real8,0,commu,ierr)
-       call MPI_BCAST(y,ny+2,mpi_real8,0,commu,ierr)
-       call MPI_BCAST(dt,1,mpi_real8,0,commu,ierr)
-       call mpi_barrier(mpi_comm_world,ierr)
+       call MPI_BCAST(y,ny+2,mpi_real8,0,commu,ierr) !need by coeft!!
+       call MPI_BCAST(dt,1,mpi_real8,0,commu,ierr)       
+       if(mpiid.eq.0) write(*,*) 'DONE BROADCASTING'
+end subroutine getstartzy
 
-     end subroutine getstartzy
 
 
      ! -------------------------------------------------------------------! 
@@ -475,7 +455,7 @@
      ! -------------------------------------------------------------------! 
      ! -------------------------------------------------------------------! 
      ! -------------------------------------------------------------------! 
-
+#ifdef RPARALLEL
      subroutine blockread(filename,comm,localbuffer,chunksize,&
           & nfiles,rank,sid)
 
@@ -590,9 +570,9 @@
           write(*,'(a20,f10.4,a3)') 'File Size:',1.0*sumsize/1024/1024/1024,'Gb'
           write(*,'(a20,f10.4)') 'T.Time Master Node:',greadtime
           write(*,'(a20,f10.4,a7)') 'BandWidth:',1.0*sumsize/1024/1024/1024/greadtime,'Gb/sec'                       
-       end if
+       endif
 #endif
-     end subroutine blockread
+     endsubroutine blockread
 
 
      subroutine readheader(filename)    
@@ -601,14 +581,14 @@
        implicit none
        character(len = MAXCHARLEN), intent(in):: filename
 
-       real(kind = 8), intent(out):: cfl,re,dt
-       real(kind = 8), intent(out):: lx,ly,lz
+       real(kind = 8):: cfl,re,dt
+       real(kind = 8):: lx,ly,lz
        !     integer, intent(out):: lx,ly,lz
-       integer, intent(out):: nx,ny,nz2
-       integer, intent(out):: xout    
-       integer,intent(out):: procs
+       integer:: nx,ny,nz2
+       integer:: xout    
+       integer:: procs
        integer*8:: cursor,i
-       character(len=1),intent(in):: field
+       character(len=1):: field
 
        open(unit = 11,file=trim(filename), status = "old", access="stream")
        cursor = 2*1024*1024+1  
@@ -634,7 +614,8 @@
        write(*,*) '============================================================'
        write(*,*)
        close(11)      
-     end subroutine readheader
+     endsubroutine readheader
+#endif
 
 
 
@@ -642,8 +623,9 @@
 !============================================================
 !============================================================
 !============================================================
-    
+
 #ifdef CREATEPROFILES
+
   subroutine create_profiles(ut,vt,wt,rthin,mpiid)
     use alloc_dns,only: re,pi,ax,y,dy,idy,idx,inyv,cofivy,inby,vmagic
     use point
@@ -652,7 +634,7 @@
     include "mpif.h"
     real*8,dimension(nz1,ny,ib:ie)  :: vt
     real*8,dimension(nz1,ny+1,ib:ie):: ut,wt
-    real*8,dimension(nx)::x,dstar,reth,uep,utau,drota
+    real*8,dimension(nx)::x,dstar,reth,uep,utau,drota,Hmon,redels
     real*8,dimension(:,:),allocatable:: u_composite,v_composite,dudx,buffer,buffer2
     real*8,dimension(:,:),allocatable:: u_inner,u_log,u_outer
     real*8,dimension(ny+1):: eta,yplus,uinnerp,ulogp,Exp1,wouterp,uinfp,uouterp,ucomp,ucompi,bf
@@ -983,9 +965,6 @@ pdiv=0d0
 !=========================================
 endsubroutine check_divergence
 #endif
-
-
-
 
 
 
