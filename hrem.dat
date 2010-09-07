@@ -63,9 +63,11 @@ CC
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC INPUT: ------------------------------------------------------------
-/wamba4/sillero/tbl.zpg.tcl5.225
+CC/wamba4/sillero/tbl.zpg.tcl5.225
+/wamba1/gungor/timetrace2/out.097
 CC OUTPUT: -----------------------------------------------------------
 /wamba4/sillero/imagenes-bl/bl600-2wo
 CC FILE FOR LOCAL INFO: -----------------------------------------------
-/wamba4/sillero/imagenes-bl/bl600-2wo
+CC/wamba4/sillero/imagenes-bl/bl600-2wo
+/infostep
 CC=====================================================================
