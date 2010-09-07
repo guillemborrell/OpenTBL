@@ -90,7 +90,9 @@ module ctesp
 #endif
  
 end module ctesp
-
+module ctesp2
+integer,parameter:: nx=34
+endmodule ctesp2 
 !---------------------------------------------------------------------
 ! Variables for genflu 
 ! --------------------------------------------------------------------!

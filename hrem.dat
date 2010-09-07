@@ -22,32 +22,34 @@ CC-----------------------------------------------------------------------
 CC   Re        longitud x   altitud y   width    velocity U
 CC Reynolds       x  #        y #        z #       b.layer
 CC   dat(1)     dat(2)       dat(3)    dat(4)      dat(4) 
-CC
-CC
 CC 
-CC  
-CC   
-CC       3.5d+03   70D+00     3.9D+00   5.8D+00  1D0
-     3.5d+03      15D+00     3.15D+00   2.86D+00      1d0
+CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
+CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
+CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
+       3.5d+03        15D+00      3.15D+00     2.86D+00  1D0
+CC     3.5d+03     139.4D+00     10.34D+00    14.07D+00  1D0
+CC
 CC
 CC 
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
 CC
-     .6d0        1
+     0.6d0        1
 CC
 CC  #steps      #steps       #steps     #steps            time to   
 CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-           2         2             5         1                  0
-CC        6000       6000         6000          10                 0
+CC         500    505          500           1                 0
+              2     20           30             20    0
+CC            7500     7500          500            50                 0
 CC         501       500          125            5                 0
 CC            
-CC   first  output file  number
-001
+CC First  output file  number=====================================
+001 
+CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
 CC    to write
@@ -57,29 +59,13 @@ CC   idat(8)       idat(9)   idat(10)      idat(11)  idat(12)
 CC
 CC  flaggen       utauout           rthout             dout
 CC
-       0     0.04678313948297         7.169449988241744d02    1.65828380932963d0
+       0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
 CC
-CC-----------------------------------------------------------------------
-CC 2)FILE NAMES used in the code
-CC-----------------------------------------------------------------------
-CC
-CC INPUT
-CC
-CC
-CC
-/home/sillero/images-small/tbl.zpg.tcl5.225
-CC
-CC/intrepid-fs0/users/sillero/scratch/images/cl-debug/cl-64-par
-CC
-CC/intrepid-fs0/users/sillero/scratch/images/cl-debug/cl-debug.001
-CC/intrepid-fs0/users/sillero/scratch/images/cl-debug/cl-1024-new.003 
-CC/intrepid-fs0/users/sillero/scratch/images/cl-debug/cl-debug-nz512-serial.002
-CC
-CC/scratch0/jsillero/tbl.zpg.tcl5.225
-CC/intrepid-fs0/users/nick/scratch/bl-BG/tbl.zpg.tcl5.225
-CC
-CC OUTPUT
-/intrepid-fs0/users/sillero/scratch/images/cl-debug/cl-statistics3
-CC info file:
-/home/sillero/trial-io/genflu-data
+CC 2)FILE NAMES used in the code ====================================
+CC INPUT: ------------------------------------------------------------
+/wamba4/sillero/tbl.zpg.tcl5.225
+CC OUTPUT: -----------------------------------------------------------
+/wamba4/sillero/imagenes-bl/bl600-2wo
+CC FILE FOR LOCAL INFO: -----------------------------------------------
+/wamba4/sillero/imagenes-bl/bl600-2wo
 CC=====================================================================

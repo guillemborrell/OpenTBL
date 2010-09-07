@@ -46,7 +46,7 @@ program capalimite
   use point
   use statistics,only: ener
   use genmod,only: rthin,din,u0
-  use ctesp  
+  use ctesp
   use omp_lib
 
   implicit none
@@ -75,6 +75,14 @@ program capalimite
   call MPI_INIT(ierr)
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid,ierr)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,ierr)
+
+
+
+
+
+
+
+
 
   !$ CALL OMP_SET_DYNAMIC(.FALSE.)
   mpiid2=mpiid
