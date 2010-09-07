@@ -147,7 +147,7 @@
     call MPI_BCAST(nyr,1,mpi_integer,0,commu,ierr)
 
 
-    allocate(dummy(0:nxr+1))
+   
 
     if (ny.ne.nyr) then
        if (mpiid==0) write(*,*) 'changing the y grid has to be done separately'
@@ -175,9 +175,21 @@
     if (mpiid.eq.0) then
 
        open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')         
+            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')       
+
+  
+#ifdef OLDHEADER
+!%%%%%%%%%%%%%%%%%%%%% viejas o nuevas cabeceras! %%%%%%%%%%%%%%%%%%%%
+       allocate(dummy(0:nxr+1))
        read(10,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
           & dum, (dummy(i), i=0,nxr+1), (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
+#else
+       read(10,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
+            & (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
+
+#endif
+!%%%%%%%%%%%%%%%%%%%%% viejas o nuevas cabeceras! %%%%%%%%%%%%%%%%%%%%
+
 
        write(*,*) 'in file    ', uchar,tiempo,nxr,nyr,nzr
        write(*,*) '              x                   y                  um'
