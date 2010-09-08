@@ -6,6 +6,10 @@
 !  idea by Javier Crespo                                            */
 !********************************************************************/
 
+!Number of nodes for each BL (BL1 & BL2)
+module num_nodes
+integer,parameter:: numnodes_1=12,numnodes_2=4
+endmodule num_nodes
 
 module ctesp 
   !       CTES CODE FOR 2D STAGGERED GRID FINITE DIFERENCES
