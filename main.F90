@@ -176,15 +176,15 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   call coef(mpiid)
   call inlet_retheta(u0,rthin,din,mpiid,comm_local) !compute Rth_inlet and d99_inlet
   call magicnumber(mpiid)
-! 
-! #ifdef CREATEPROFILES
-!   paso=-1 !Substeps counter
-!   if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown') !File with the generated composited profiles
-! 
-!   call create_profiles(u,v,w,rthin,mpiid)
-!   call impose_profiles(u,v,w,mpiid) 
-!   close(17)  
-! #endif
+
+#ifdef CREATEPROFILES
+  paso=-1 !Substeps counter
+  if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown',convert='BIG_ENDIAN') !File with the generated composited profiles
+
+  call create_profiles(u,v,w,rthin,mpiid,comm_local)
+  call impose_profiles(u,v,w,mpiid,comm_local) 
+  close(17)  
+#endif
 ! 
 !   call alloabuff(ntotb,ntotv,ntot_corr,mpiid)
 ! 

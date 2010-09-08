@@ -666,7 +666,7 @@ end subroutine getstartzy
     u0c=0d0;v0c=0d0   
     allocate(u0c_once(1:ny+1,ib:ie),w0c_once(1:ny+1,ib:ie),v0c_once(1:ny+1,ib:ie));
     u0c_once=0d0;v0c_once=0d0;w0c_once=0d0
-
+    
     if(mpiid.eq.0) then
        write(*,*) 'VALORES INICIALES: Rtheta_in:',rthin,'Num_planes=',num_planes
        allocate(u_composite(ny+1,nx),v_composite(ny,nx),dudx(ny,nx))       
@@ -682,7 +682,7 @@ end subroutine getstartzy
        ei1=1d0/e1
        kap=0.384d0; ckap=4.17d0!;ckap=4.127d0;   !! uep=log(reth)/kap+ckap 
        cprim=7.135d0              
-       
+       dx=ax*pi/(nx-1)
        !CONSTANTS FOR THE COMPOUNDED PROFILE
        d1=4.17d0;
        eulcns=0.57721566d0;
@@ -715,9 +715,9 @@ end subroutine getstartzy
 
           if(i.eq.30) then
              write(*,*) '=======Composite Profiles: VALUES @ i=30 =================='
-             write(*,*) 'x',x(i)
+             write(*,*) 'x',x(i),'dx',dx
              write(*,*) 'reth(i)',reth(i)
-             write(*,*) 'uep(i)',uep(i)
+             write(*,*) 'uep(i)',uinfp(i)
              write(*,*) 'dstar(i)',dstar(i)
              write(*,*) 'Re_theta_star(i)',redels(i)
              write(*,*) 'drota(i)',drota(i) 
