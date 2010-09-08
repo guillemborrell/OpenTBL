@@ -24,7 +24,7 @@
 #define MAXPE 64*1024
 #define MAXCHARLEN 250
   
-  subroutine getstartzy(u,v,w,p,dt,mpiid)
+  subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
     use alloc_dns
     use statistics
     use names
@@ -33,6 +33,7 @@
     use ctesp
     implicit none
     include "mpif.h"
+    integer,intent(in):: communicator
     ! ---------------------------- I/O -----------------------------------!
     real(8),dimension(nz1,ny,ib:ie)  :: v,p
     real(8),dimension(nz1,ny+1,ib:ie):: u,w
@@ -48,7 +49,7 @@
     character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
 
     ! --------------------------  Programa  ----------------------------------!
-    commu=MPI_COMM_WORLD
+    commu=communicator
     tipo=MPI_real4
 
     fil1=chinit(1:index(chinit,' ')-1)//'.'//'u'
@@ -638,12 +639,13 @@ end subroutine getstartzy
 
 #ifdef CREATEPROFILES
 
-  subroutine create_profiles(ut,vt,wt,rthin,mpiid)
+  subroutine create_profiles(ut,vt,wt,rthin,mpiid,communicator)
     use alloc_dns,only: re,pi,ax,y,dy,idy,idx,inyv,cofivy,inby,vmagic
     use point
     use ctesp
     implicit none
     include "mpif.h"
+    integer,intent(in)::communicator
     real*8,dimension(nz1,ny,ib:ie)  :: vt
     real*8,dimension(nz1,ny+1,ib:ie):: ut,wt
     real*8,dimension(nx)::x,dstar,reth,uep,utau,drota,Hmon,redels
@@ -805,11 +807,11 @@ end subroutine getstartzy
              if(i.le.num_planes) then
                 buffer(1:ny+1,1)=u_composite(1:ny+1,i)
                 buffer(1:ny  ,2)=v_composite(1:ny  ,i)   
-                call MPI_SEND(buffer,size(buffer),MPI_real8,dot,1,MPI_COMM_WORLD,ierr)             
+                call MPI_SEND(buffer,size(buffer),MPI_real8,dot,1,communicator,ierr)             
              endif
              buffer2(1:ny+1,1)=f_blending(i)*u_composite(1:ny+1,i)
              buffer2(1:ny  ,2)=f_blending(i)*v_composite(1:ny  ,i)
-             call MPI_SEND(buffer2,size(buffer2),MPI_real8,dot,2,MPI_COMM_WORLD,ierr) 
+             call MPI_SEND(buffer2,size(buffer2),MPI_real8,dot,2,communicator,ierr) 
           enddo
        enddo
        write(*,*) 'Sending the composite profiles U0 & V0...... DONE';
@@ -821,11 +823,11 @@ end subroutine getstartzy
        !Receiving the U0 & V0 profiles:      
        do i=ib,ie
           if(i.le.num_planes) then
-             call MPI_RECV(buffer,size(buffer),MPI_real8,0,1,MPI_COMM_WORLD,status,ierr)
+             call MPI_RECV(buffer,size(buffer),MPI_real8,0,1,communicator,status,ierr)
              u0c(1:ny+1,i)=buffer(1:ny+1,1)
              v0c(1:ny,i)  =buffer(1:ny  ,2)   
           endif
-          call MPI_RECV(buffer2,size(buffer2),MPI_real8,0,2,MPI_COMM_WORLD,status,ierr)
+          call MPI_RECV(buffer2,size(buffer2),MPI_real8,0,2,communicator,status,ierr)
           u0c_once(1:ny+1,i)=buffer2(1:ny+1,1)+(1d0-f_blending(i))*ut(1,1:ny+1,i)
           v0c_once(1:ny  ,i)=buffer2(1:ny  ,2)+(1d0-f_blending(i))*vt(1,1:ny  ,i)      
           w0c_once(1:ny+1,i)=(1d0-f_blending(i))*wt(1,1:ny+1,i)
@@ -833,7 +835,7 @@ end subroutine getstartzy
     endif
 
     if(mpiid.eq.0) write(*,*) 'Broadcasting New Vmagic.....'
-    call MPI_BCAST(vmagic,nx,MPI_REAL8,0,MPI_COMM_WORLD,ierr) !Broadcasting Vmagic
+    call MPI_BCAST(vmagic,nx,MPI_REAL8,0,communicator,ierr) !Broadcasting Vmagic
     deallocate(buffer,buffer2)
   endsubroutine create_profiles
 
@@ -842,12 +844,12 @@ end subroutine getstartzy
   !===========================================================================================
   !===========================================================================================
 
-  subroutine impose_profiles(ut,vt,wt,mpiid)
+  subroutine impose_profiles(ut,vt,wt,mpiid,communicator)
     use point
     use ctesp
     implicit none
     include "mpif.h"
-
+    integer,intent(in)::communicator
     complex*16,dimension(0:nz2,ny+1,ib:ie)::ut,wt
     complex*16,dimension(0:nz2,ny  ,ib:ie)::vt
     integer:: i,ierr,status(MPI_STATUS_SIZE),mpiid
@@ -858,21 +860,21 @@ end subroutine getstartzy
       do i=ib,ie   
          pdiv(1:ny,i)=real(ut(0,1:ny,i),kind=8) !Each node copy a piece of the array
       enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)      
+      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,communicator,ierr)      
       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)
       pdiv=0d0
 
       do i=ib,ie   
          pdiv(1:ny,i)=real(vt(0,1:ny,i),kind=8) !Each node copy a piece of the array
       enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)
+      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,communicator,ierr)
       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)      
       pdiv=0d0
 
       do i=ib,ie   
          pdiv(1:ny,i)=real(wt(0,1:ny,i),kind=8) !Each node copy a piece of the array
       enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)      
+      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,communicator,ierr)      
       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)
       pdiv=0d0
       if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W before POISON.............DONE'
@@ -900,7 +902,7 @@ end subroutine getstartzy
 
 !===========================================================================
 
-subroutine check_divergence(ut,vt,wt,rest,mpiid)
+subroutine check_divergence(ut,vt,wt,rest,mpiid,communicator)
   use point
   use alloc_dns,only:idx,idy,idxx,idyy,phiy,dy,y,kaz,kaz2,kmod,ayp
   use ctesp
@@ -911,7 +913,7 @@ subroutine check_divergence(ut,vt,wt,rest,mpiid)
 
   ! ---------------------- I/O -------------------------------------!
   integer mpiid
-  
+  integer,intent(in)::communicator
   complex*16, dimension(0:nz2,ny+1,ib:ie):: wt,ut
   complex*16, dimension(0:nz2,ny,ib:ie)  :: pt,vt,rest
   complex*16, dimension(0:nz2,ny+1)  :: rt
@@ -923,7 +925,7 @@ subroutine check_divergence(ut,vt,wt,rest,mpiid)
   ! ----------------------------------------------------------------!
   countu=(nz2+1)*(ny+1)
   countv=(nz2+1)*ny
-  comm = MPI_COMM_WORLD
+  comm = communicator
   tipo=MPI_COMPLEX16
 
   ! --- compute the divergence, we are in (zy) 
@@ -962,7 +964,7 @@ subroutine check_divergence(ut,vt,wt,rest,mpiid)
 do i=ib0,ie   
    pdiv(1:ny-1,i)=real(rest(0,1:ny-1,i),kind=8) !Each node copy a piece of the array
 enddo
-call MPI_ALLREDUCE(pdiv(1:ny-1,1:nx),pdiv(1:ny-1,1:nx),(ny-1)*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)
+call MPI_ALLREDUCE(pdiv(1:ny-1,1:nx),pdiv(1:ny-1,1:nx),(ny-1)*nx,MPI_real8,MPI_SUM,communicator,ierr)
 if(mpiid.eq.0) then
  write(*,*) 'ESCRIBIENDO LA DIVERGENCIA INICIAL DEL CAMPO:'
  write(27) pdiv(1:ny-1,1:nx)

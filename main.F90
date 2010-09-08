@@ -164,15 +164,15 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
 
   if (mpiid .eq. 0) write(*,*) '======== CALLING GETSTART 1 ==============='
   if (mpiid2.eq.0) th2 = MPI_WTIME()                
-!   call getstartzy(u,v,w,p,dt,mpiid)
-!   if (mpiid2 .eq. 0) then  
-!      th1 = MPI_WTIME()      
-!      tmp29 =tmp29+abs(th2-th1)
-!      write(*,*) 
-!      write(*,'(a40,f15.3,a3)') '===== FIELD (u,v,w,p) read in: =======',tmp29,'Sg' 
-!      write(*,*)    
-!   endif
-!    
+  call getstartzy(u,v,w,p,dt,mpiid,comm_local)
+  if (mpiid2 .eq. 0) then  
+     th1 = MPI_WTIME()      
+     tmp29 =tmp29+abs(th2-th1)
+     write(*,*) 
+     write(*,'(a40,f15.3,a3)') '===== FIELD (u,v,w,p) read in: =======',tmp29,'Sg' 
+     write(*,*)    
+  endif
+   
 !   call coef(mpiid)
 !   call inlet_retheta(u0,rthin,din,mpiid) !compute Rth_inlet and d99_inlet
 !   call magicnumber(mpiid)
