@@ -185,99 +185,99 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   call impose_profiles(u,v,w,mpiid,comm_local) 
   close(17)  
 #endif
-! 
-!   call alloabuff(ntotb,ntotv,ntot_corr,mpiid)
-! 
-!   rhsupa = 0d0
-!   rhswpa = 0d0
-!   rhsvpa = 0d0
-! 
-! 
-!   call mpi_barrier(mpi_comm_world,ierr)
-! 
-! 
-! #ifndef NOINFOSTEP
-! !Genflu info:
-! if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown')
-! #endif
-! 
-!   do istep = 1,nsteps
-!      if(mpiid.eq.0) then
-!         tc1 = MPI_WTIME()
-!         write(*,'(a60,i6)') '....................................................istep1=',istep
-!      endif     
-!      do isubstp = 1,3
-!         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-!         call mpi_barrier(mpi_comm_world,ierr)   
+
+  call alloabuff(ntotb,ntotv,ntot_corr,mpiid)
+
+  rhsupa = 0d0
+  rhswpa = 0d0
+  rhsvpa = 0d0
+
+
+  call mpi_barrier(comm_local,ierr)
+
+
+#ifndef NOINFOSTEP
+!Genflu info:
+if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
+#endif
+
+  do istep = 1,nsteps
+     if(mpiid.eq.0) then
+        tc1 = MPI_WTIME()
+        write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
+     endif     
+     do isubstp = 1,3
+        if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
+        call mpi_barrier(comm_local,ierr)   
 !         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
 !              &    res,res,resv,resv,resw,resw,        & 
 !              &    rhsu,rhsv,rhsw,                     &
 !              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
 !              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
-!              &    dt,isubstp,ical,istep,mpiid)
+!              &    dt,isubstp,ical,istep,mpiid,comm_local)
 ! 
-!         call mpi_barrier(mpi_comm_world,ierr)    
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp13 =tmp13+abs(th2-th1)
-!         endif
+        call mpi_barrier(comm_local,ierr)    
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp13 =tmp13+abs(th2-th1)
+        endif
 !         call outflow_correction(u,v,rhsupa)        
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp18 =tmp18+abs(th2-th1)
-!         endif
-!         call mpi_barrier(mpi_comm_world,ierr)   
-!         vardt = 5d-1/dt/rkdv(isubstp)         
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp18 =tmp18+abs(th2-th1)
+        endif
+        call mpi_barrier(comm_local,ierr)   
+        vardt = 5d-1/dt/rkdv(isubstp)         
 !         call pois(u,v,w,p,res,res,resw,vardt,mpiid)
 ! 
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp14 =tmp14+abs(th2-th1)
-!         endif
-!      enddo
-!      !.............................................
-!      call mpi_barrier(mpi_comm_world,ierr)
-!      tiempo = tiempo+dt
-!      if (times .ge. tvcrt) then
-!         times=times-tvcrt
-!      endif
-!      times=times+dt
-! 
-!      ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
-!      if (mod(istep,reav).eq.0) then
-!         if (mpiid2.eq.0) th2 = MPI_WTIME() 
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp14 =tmp14+abs(th2-th1)
+        endif
+     enddo
+     !.............................................
+     call mpi_barrier(comm_local,ierr)
+     tiempo = tiempo+dt
+     if (times .ge. tvcrt) then
+        times=times-tvcrt
+     endif
+     times=times+dt
+
+     ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
+     if (mod(istep,reav).eq.0) then
+        if (mpiid2.eq.0) th2 = MPI_WTIME() 
 !         call escribezy(u,v,w,p,dt,mpiid)   !Vul & BG     
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp28 =tmp28+abs(th2-th1)
-!         endif
-!      endif
-!      if (mpiid .eq. 0) then  ! Tiempos 
-!         tc2 = MPI_WTIME()      
-!         tmp1 = tc2-tc1     
-!         call summary1(istep,dt,vcontrol)             
-!      endif
-! #ifdef CHECKTIME
-!      call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-!      IF(vcontrol) stop
-! #endif
-!   enddo
-! 
-! 
-! 
-! #ifndef NOINFOSTEP
-! close(36)
-! #endif
-! 
-! #ifdef CREATEPROFILES 
-! close(27)
-! close(28)
-! #endif
-! 
-! 
-!   if (mpiid.eq.0) then
-!      call summary2()
-!   end if
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp28 =tmp28+abs(th2-th1)
+        endif
+     endif
+     if (mpiid .eq. 0) then  ! Tiempos 
+        tc2 = MPI_WTIME()      
+        tmp1 = tc2-tc1     
+        call summary1(istep,dt,vcontrol)             
+     endif
+#ifdef CHECKTIME
+     call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+     IF(vcontrol) stop
+#endif
+  enddo
+
+
+
+#ifndef NOINFOSTEP
+close(36)
+#endif
+
+#ifdef CREATEPROFILES 
+close(27)
+close(28)
+#endif
+
+
+  if (mpiid.eq.0) then
+     call summary2()
+  end if
 
 endsubroutine bl_1
  
@@ -560,9 +560,9 @@ endsubroutine inlet_retheta
 ! 
 ! #ifdef CREATEPROFILES
 !   paso=-1 !Substeps counter
-!   if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown')
-!   open(27,file='plano_div.dat',form='unformatted',status='unknown')
-!   open(28,file='zero-mode.dat',form='unformatted',status='unknown')  
+!   if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+!   open(27,file='plano_div.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+!   open(28,file='zero-mode.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')  
 !   call create_profiles(u,v,w,rthin,mpiid)
 !   call impose_profiles(u,v,w,mpiid) 
 !   close(17)  
@@ -579,7 +579,7 @@ endsubroutine inlet_retheta
 !    call check_divergence(u,v,w,rhsupa,mpiid)
 ! #endif
 ! 
-!   call mpi_barrier(mpi_comm_world,ierr)
+!   call mpi_barrier(comm_local,ierr)
 ! 
 ! #ifdef FLOPS
 !   CALL HPM_INIT()
@@ -588,7 +588,7 @@ endsubroutine inlet_retheta
 ! 
 ! #ifndef NOINFOSTEP
 ! !Genflu info:
-! if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown')
+! if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
 ! #endif
 ! 
 !   do istep = 1,nsteps
@@ -603,7 +603,7 @@ endsubroutine inlet_retheta
 !      !.............................................  
 !      do isubstp = 1,3
 !         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-!         call mpi_barrier(mpi_comm_world,ierr)   !************************
+!         call mpi_barrier(comm_local,ierr)   !************************
 ! 
 !         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
 !              &    res,res,resv,resv,resw,resw,        & 
@@ -612,7 +612,7 @@ endsubroutine inlet_retheta
 !              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
 !              &    dt,isubstp,ical,istep,mpiid)
 ! 
-!         call mpi_barrier(mpi_comm_world,ierr)    !********************
+!         call mpi_barrier(comm_local,ierr)    !********************
 !         if (mpiid2 .eq. 0) then  
 !            th2 = MPI_WTIME()      
 !            tmp13 =tmp13+abs(th2-th1)
@@ -624,7 +624,7 @@ endsubroutine inlet_retheta
 !            th1 = MPI_WTIME()      
 !            tmp18 =tmp18+abs(th2-th1)
 !         endif
-!         call mpi_barrier(mpi_comm_world,ierr)   !************************
+!         call mpi_barrier(comm_local,ierr)   !************************
 ! 
 !         vardt = 5d-1/dt/rkdv(isubstp)   
 ! 
@@ -640,7 +640,7 @@ endsubroutine inlet_retheta
 !         endif
 !      enddo
 !      !.............................................
-!      call mpi_barrier(mpi_comm_world,ierr)
+!      call mpi_barrier(comm_local,ierr)
 !      tiempo = tiempo+dt
 !      if (times .ge. tvcrt) then
 !         times=times-tvcrt
@@ -831,7 +831,7 @@ subroutine summary2()
   write(*,'(a30,2f15.4,a2)') 'fft           ', ttotfft, ttotfft/ttotm*100,'%'
   write(*,*) '================================================================='
 
-  !      open(31,file='tiempo.dat',status='unknown')
+  !      open(31,file='tiempo.dat',status='unknown',convert='BIG_ENDIAN')
   !      write(31,*) numprocs,nthreads,blockl,nx,ny,nz,nsteps,real(ttotm),&
   !                  &real(ttotc),real(ttotr),real(ttotinty),real(ttotintx),&
   !                  &real(ttotim),real(ttotdy),real(ttotvy),real(ttotvdx),&
