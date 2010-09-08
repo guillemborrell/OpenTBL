@@ -464,7 +464,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
   ! -----  implicit (y) viscous steps 
   rkk =rex*dt*rkdv(m)
-  do i=ib,ie 
+  do i=ib0,ie 
      call implzy(ut(0,1,i),wki1t(0,1,i),vyui,cofvyu,ny+1,rkk)
      call implzy(vt(0,1,i),wki2t(0,1,i),vyvi,cofvyv,ny  ,rkk)
      call implzy(wt(0,1,i),wki3t(0,1,i),vyui,cofvyu,ny+1,rkk)

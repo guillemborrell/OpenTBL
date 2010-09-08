@@ -41,7 +41,7 @@ program capalimite
   implicit none
   include "mpif.h"
 
-  integer ierr,mpiid,numprocs  
+  integer ierr,mpiid,numprocs,i,j,k,new_mpiid  
   integer,parameter:: numnodes_1=4,numnodes_2=12
   integer:: mpiid_1(numnodes_1),mpiid_2(numnodes_2)
   integer orig_group, new_group, new_comm
@@ -82,7 +82,7 @@ endif
    call MPI_COMM_GROUP(MPI_COMM_WORLD,orig_group, ierr)
 
    !  Divide tasks into two distinct groups based upon mpiid: Extract the cores from the handle orig_group
-   if (mpiid .lt. size(mpiids1)) then
+   if (mpiid .lt. size(mpiid_1)) then
       call MPI_GROUP_INCL(orig_group, size(mpiid_1), mpiid_1,new_group,ierr)
    else 
       call MPI_GROUP_INCL(orig_group,size(mpiid_2), mpiid_2,new_group,ierr)
@@ -92,6 +92,8 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
+write(*,*) 'I am the global node:',mpiid,'and local node rank:',new_mpiid
+! 
 ! 
 ! !Call the 2 BLs:
 ! if (mpiid .lt. size(mpiid_1)) then
@@ -114,170 +116,170 @@ endif
 end program capalimite
 
 
-
-
-!===========================
-subroutine bl_1(mpiid_local,mpiid_global)
-  use alloc_dns
-  use main_val
-  use names
-  use temporal
-  use point
-  use statistics,only: ener
-  use genmod,only: rthin,din,u0
-  use ctesp
-  use omp_lib
-  implicit none
-  include "mpif.h"
-
-  real*8 dt,vardt
-  integer isubstp,istep,ical,ierr,mpiid_local,mpiid_global
-  logical:: vcontrol
-  vcontrol=.false. !just checking correct time step
-  
-  ! Medimos tiempo ! 
-  tiempo=0d0
-  flag = 1
-  iflagr =1
-  zero=0
-  times=0d0
-  pi=4d0*atan(1d0)
-  tvcrt=2d0*pi/(16*160)
-
-  !$ CALL OMP_SET_DYNAMIC(.FALSE.)
-  mpiid2=mpiid_local
-
-  !Then number of processors used when compilling is assigned to th program:
-  nummpi=numprocs; pnodes=numprocs
-
-  if (mpiid_local.eq.0) ical=0   
-  ! reads hrem.dat.
-  ! creates coordinates for parallel pros's.
-  if (mpiid_local.eq.0) write(*,*) '======== PROGRAM 1 BEGINS ==============='
-  call  iniciap(mpiid_local)
-  
-
-  ! reads/generates inlet conditions initiates arrays (just in case)
-  ! warning!! getstart reads y from file !!!
-
-  if (mpiid_local .eq. 0) write(*,*) '======== CALLING GETSTART 1 ==============='
-  if (mpiid_local2.eq.0) th2 = MPI_WTIME()                
-  call getstartzy(u,v,w,p,dt,mpiid_local)
-  if (mpiid2 .eq. 0) then  
-     th1 = MPI_WTIME()      
-     tmp29 =tmp29+abs(th2-th1)
-     write(*,*) 
-     write(*,'(a40,f15.3,a3)') '===== FIELD (u,v,w,p) read in: =======',tmp29,'Sg' 
-     write(*,*)    
-  endif
-   
-  call coef(mpiid_local)
-  call inlet_retheta(u0,rthin,din,mpiid_local) !compute Rth_inlet and d99_inlet
-  call magicnumber(mpiid_local)
-
-#ifdef CREATEPROFILES
-  paso=-1 !Substeps counter
-  if(mpiid_local.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown') !File with the generated composited profiles
-
-  call create_profiles(u,v,w,rthin,mpiid_local)
-  call impose_profiles(u,v,w,mpiid_local) 
-  close(17)  
-#endif
-
-  call alloabuff(ntotb,ntotv,ntot_corr,mpiid_local)
-
-  rhsupa = 0d0
-  rhswpa = 0d0
-  rhsvpa = 0d0
-
-
-  call mpi_barrier(mpi_comm_world,ierr)
-
-
-#ifndef NOINFOSTEP
-!Genflu info:
-if(mpiid_local.eq.0) open(36,file=chinfoext,form='formatted',status='unknown')
-#endif
-
-  do istep = 1,nsteps
-     if(mpiid_local.eq.0) then
-        tc1 = MPI_WTIME()
-        write(*,'(a60,i6)') '....................................................istep1=',istep
-     endif     
-     do isubstp = 1,3
-        if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-        call mpi_barrier(mpi_comm_world,ierr)   
-        call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
-             &    res,res,resv,resv,resw,resw,        & 
-             &    rhsu,rhsv,rhsw,                     &
-             &    wki1,wki1,wki2,wki2,wki3,wki3,      &
-             &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
-             &    dt,isubstp,ical,istep,mpiid_local)
-
-        call mpi_barrier(mpi_comm_world,ierr)    
-        if (mpiid2 .eq. 0) then  
-           th2 = MPI_WTIME()      
-           tmp13 =tmp13+abs(th2-th1)
-        endif
-        call outflow_correction(u,v,rhsupa)        
-        if (mpiid2 .eq. 0) then  
-           th1 = MPI_WTIME()      
-           tmp18 =tmp18+abs(th2-th1)
-        endif
-        call mpi_barrier(mpi_comm_world,ierr)   
-        vardt = 5d-1/dt/rkdv(isubstp)         
-        call pois(u,v,w,p,res,res,resw,vardt,mpiid_local)
-
-        if (mpiid2 .eq. 0) then  
-           th2 = MPI_WTIME()      
-           tmp14 =tmp14+abs(th2-th1)
-        endif
-     enddo
-     !.............................................
-     call mpi_barrier(mpi_comm_world,ierr)
-     tiempo = tiempo+dt
-     if (times .ge. tvcrt) then
-        times=times-tvcrt
-     endif
-     times=times+dt
-
-     ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
-     if (mod(istep,reav).eq.0) then
-        if (mpiid2.eq.0) th2 = MPI_WTIME() 
-        call escribezy(u,v,w,p,dt,mpiid_local)   !Vul & BG     
-        if (mpiid2 .eq. 0) then  
-           th1 = MPI_WTIME()      
-           tmp28 =tmp28+abs(th2-th1)
-        endif
-     endif
-     if (mpiid_local .eq. 0) then  ! Tiempos 
-        tc2 = MPI_WTIME()      
-        tmp1 = tc2-tc1     
-        call summary1(istep,dt,vcontrol)             
-     endif
-#ifdef CHECKTIME
-     call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-     IF(vcontrol) stop
-#endif
-  enddo
-
-
-
-#ifndef NOINFOSTEP
-close(36)
-#endif
-
-#ifdef CREATEPROFILES 
-close(27)
-close(28)
-#endif
-
-
-  if (mpiid_local.eq.0) then
-     call summary2()
-  end if
-
-endsubroutine bl_1
+! 
+! 
+! !===========================
+! subroutine bl_1(mpiid_local,mpiid_global)
+!   use alloc_dns
+!   use main_val
+!   use names
+!   use temporal
+!   use point
+!   use statistics,only: ener
+!   use genmod,only: rthin,din,u0
+!   use ctesp
+!   use omp_lib
+!   implicit none
+!   include "mpif.h"
+! 
+!   real*8 dt,vardt
+!   integer isubstp,istep,ical,ierr,mpiid_local,mpiid_global
+!   logical:: vcontrol
+!   vcontrol=.false. !just checking correct time step
+!   
+!   ! Medimos tiempo ! 
+!   tiempo=0d0
+!   flag = 1
+!   iflagr =1
+!   zero=0
+!   times=0d0
+!   pi=4d0*atan(1d0)
+!   tvcrt=2d0*pi/(16*160)
+! 
+!   !$ CALL OMP_SET_DYNAMIC(.FALSE.)
+!   mpiid2=mpiid_local
+! 
+!   !Then number of processors used when compilling is assigned to th program:
+!   nummpi=numprocs; pnodes=numprocs
+! 
+!   if (mpiid_local.eq.0) ical=0   
+!   ! reads hrem.dat.
+!   ! creates coordinates for parallel pros's.
+!   if (mpiid_local.eq.0) write(*,*) '======== PROGRAM 1 BEGINS ==============='
+!   call  iniciap(mpiid_local)
+!   
+! 
+!   ! reads/generates inlet conditions initiates arrays (just in case)
+!   ! warning!! getstart reads y from file !!!
+! 
+!   if (mpiid_local .eq. 0) write(*,*) '======== CALLING GETSTART 1 ==============='
+!   if (mpiid_local2.eq.0) th2 = MPI_WTIME()                
+!   call getstartzy(u,v,w,p,dt,mpiid_local)
+!   if (mpiid2 .eq. 0) then  
+!      th1 = MPI_WTIME()      
+!      tmp29 =tmp29+abs(th2-th1)
+!      write(*,*) 
+!      write(*,'(a40,f15.3,a3)') '===== FIELD (u,v,w,p) read in: =======',tmp29,'Sg' 
+!      write(*,*)    
+!   endif
+!    
+!   call coef(mpiid_local)
+!   call inlet_retheta(u0,rthin,din,mpiid_local) !compute Rth_inlet and d99_inlet
+!   call magicnumber(mpiid_local)
+! 
+! #ifdef CREATEPROFILES
+!   paso=-1 !Substeps counter
+!   if(mpiid_local.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown') !File with the generated composited profiles
+! 
+!   call create_profiles(u,v,w,rthin,mpiid_local)
+!   call impose_profiles(u,v,w,mpiid_local) 
+!   close(17)  
+! #endif
+! 
+!   call alloabuff(ntotb,ntotv,ntot_corr,mpiid_local)
+! 
+!   rhsupa = 0d0
+!   rhswpa = 0d0
+!   rhsvpa = 0d0
+! 
+! 
+!   call mpi_barrier(mpi_comm_world,ierr)
+! 
+! 
+! #ifndef NOINFOSTEP
+! !Genflu info:
+! if(mpiid_local.eq.0) open(36,file=chinfoext,form='formatted',status='unknown')
+! #endif
+! 
+!   do istep = 1,nsteps
+!      if(mpiid_local.eq.0) then
+!         tc1 = MPI_WTIME()
+!         write(*,'(a60,i6)') '....................................................istep1=',istep
+!      endif     
+!      do isubstp = 1,3
+!         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
+!         call mpi_barrier(mpi_comm_world,ierr)   
+!         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
+!              &    res,res,resv,resv,resw,resw,        & 
+!              &    rhsu,rhsv,rhsw,                     &
+!              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
+!              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
+!              &    dt,isubstp,ical,istep,mpiid_local)
+! 
+!         call mpi_barrier(mpi_comm_world,ierr)    
+!         if (mpiid2 .eq. 0) then  
+!            th2 = MPI_WTIME()      
+!            tmp13 =tmp13+abs(th2-th1)
+!         endif
+!         call outflow_correction(u,v,rhsupa)        
+!         if (mpiid2 .eq. 0) then  
+!            th1 = MPI_WTIME()      
+!            tmp18 =tmp18+abs(th2-th1)
+!         endif
+!         call mpi_barrier(mpi_comm_world,ierr)   
+!         vardt = 5d-1/dt/rkdv(isubstp)         
+!         call pois(u,v,w,p,res,res,resw,vardt,mpiid_local)
+! 
+!         if (mpiid2 .eq. 0) then  
+!            th2 = MPI_WTIME()      
+!            tmp14 =tmp14+abs(th2-th1)
+!         endif
+!      enddo
+!      !.............................................
+!      call mpi_barrier(mpi_comm_world,ierr)
+!      tiempo = tiempo+dt
+!      if (times .ge. tvcrt) then
+!         times=times-tvcrt
+!      endif
+!      times=times+dt
+! 
+!      ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
+!      if (mod(istep,reav).eq.0) then
+!         if (mpiid2.eq.0) th2 = MPI_WTIME() 
+!         call escribezy(u,v,w,p,dt,mpiid_local)   !Vul & BG     
+!         if (mpiid2 .eq. 0) then  
+!            th1 = MPI_WTIME()      
+!            tmp28 =tmp28+abs(th2-th1)
+!         endif
+!      endif
+!      if (mpiid_local .eq. 0) then  ! Tiempos 
+!         tc2 = MPI_WTIME()      
+!         tmp1 = tc2-tc1     
+!         call summary1(istep,dt,vcontrol)             
+!      endif
+! #ifdef CHECKTIME
+!      call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+!      IF(vcontrol) stop
+! #endif
+!   enddo
+! 
+! 
+! 
+! #ifndef NOINFOSTEP
+! close(36)
+! #endif
+! 
+! #ifdef CREATEPROFILES 
+! close(27)
+! close(28)
+! #endif
+! 
+! 
+!   if (mpiid_local.eq.0) then
+!      call summary2()
+!   end if
+! 
+! endsubroutine bl_1
  
 ! 
 ! subroutine bl_2(mpiid_local,mpiid_global)
