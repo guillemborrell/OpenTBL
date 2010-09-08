@@ -173,9 +173,9 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
      write(*,*)    
   endif
    
-!   call coef(mpiid)
-!   call inlet_retheta(u0,rthin,din,mpiid) !compute Rth_inlet and d99_inlet
-!   call magicnumber(mpiid)
+  call coef(mpiid)
+  call inlet_retheta(u0,rthin,din,mpiid,comm_local) !compute Rth_inlet and d99_inlet
+  call magicnumber(mpiid)
 ! 
 ! #ifdef CREATEPROFILES
 !   paso=-1 !Substeps counter
