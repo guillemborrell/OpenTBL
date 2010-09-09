@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-integer,parameter:: numnodes_1=12,numnodes_2=4
+integer,parameter:: numnodes_1=10,numnodes_2=1
 endmodule num_nodes
 
 module ctesp 

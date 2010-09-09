@@ -1,6 +1,6 @@
 #ifdef NEWGENFLU
 
-subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
+subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   !------------------------------------------------------------------------*
   !     fluctuating velocity profile from a BL
   !------------------------------------------------------------------------*
@@ -13,7 +13,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
   use omp_lib
   implicit none
   include "mpif.h"
-
+  integer,intent(in)::communicator
   !------------------------------- I/O -------------------------------!
   real*8  y(0:ny+1)
   real*8  tiempo,re,dt
@@ -33,7 +33,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
 
   countu=2*(nz2+1)*(ny+1)
   countv=2*(nz2+1)*ny
-  comm=MPI_COMM_WORLD
+  comm=communicator
   tipo=MPI_REAL8
   tloc=tiempo-timeinit
 
@@ -219,7 +219,7 @@ end subroutine profile
 !------------------------------------------------------
 !-------------TIME PER SUBSTEP INFO---------------------
 !------------------------------------------------------
-subroutine info_per_step(ut,y,tiempo,dt,re,ntop,jtop1,mpiid) 
+subroutine info_per_step(ut,y,tiempo,dt,re,ntop,jtop1,mpiid,communicator) 
   use genmod
   use point
   use ctesp
@@ -227,6 +227,7 @@ subroutine info_per_step(ut,y,tiempo,dt,re,ntop,jtop1,mpiid)
   use alloc_dns,only:dy
   implicit none
   include "mpif.h"
+  integer,intent(in)::communicator
   real*8, dimension(0:2*nz2+1,ny+1,ib:ie):: ut
   real*8::  y(0:ny+1)
   integer:: mpiid,nodo,i,j,k,jtop,jtop1,ntop(2)
@@ -252,14 +253,14 @@ do i=1,8
      rthout = sum((uinf-um(2:jtop+3))*um(2:jtop+3)*dy(1:jtop+2))*re/uinf
      !Composing the data buffer to send: R*8     
      buffer(1)=uinf;buffer(2)=utau;buffer(3)=dout;buffer(4)=rthout;buffer(5)=ib*1d0
-     call MPI_SEND(buffer,5,MPI_REAL8,0,i,MPI_COMM_WORLD,istat,ierr) 
+     call MPI_SEND(buffer,5,MPI_REAL8,0,i,communicator,istat,ierr) 
    endif
 enddo
 
 if(mpiid.eq.0) then
         do i=1,8
            nodo=((nummpi-1)*i)/8
-           call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,MPI_COMM_WORLD,istat,ierr) 
+           call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,communicator,istat,ierr) 
            u_inf(i)=buffer(1);u_tau(i)=buffer(2);d_out(i)=buffer(3);r_thout(i)=buffer(4);x_plane(i)=buffer(5)                             
         enddo                                
         write(36,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     

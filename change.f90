@@ -165,7 +165,8 @@ subroutine pointers_p2p(rank)
   use shared_mem
   implicit none
   integer:: rank,i
-  
+  write(*,*) '						NUMMPI',nummpi,'rank',rank
+  if(mpiid2.eq.0) write(*,*) 'nx,ny,nz1',nx,ny,nz1
   !========Setting Structure Data Types:
   call comm_setup(nx,ny,nz1,rank,nummpi,nodev,domainv,1)  
   call comm_setup(nx,ny+1,nz1,rank,nummpi,nodeu,domainu,1)
@@ -220,7 +221,7 @@ subroutine pointers_p2p(rank)
   
 end subroutine pointers_p2p
 
-subroutine chp2x(pen,plan,buf,rank,jee,control)
+subroutine chp2x(pen,plan,buf,rank,jee,control,communicator)
   ! Driver routine to keep the changes to bl minimal. Look at
   ! the chp2xu and chp2xv routines to understand the whole thing.
 
@@ -238,35 +239,38 @@ subroutine chp2x(pen,plan,buf,rank,jee,control)
   use shared_mem
   use point
   use ctesp
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodeu%size), intent(in):: plan
   real(kind = 8), dimension(nodeu%size), intent(out):: pen
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
   integer, intent(in):: rank,jee,control
   
   if (jee == domainv%NY) then
-     call chp2xv(pen,plan,buf,nummpi) !here does not matter the value of control
+     call chp2xv(pen,plan,buf,nummpi,communicator) !here does not matter the value of control
   elseif (jee == domainu%NY) then
-     call chp2xu(pen,plan,buf,nummpi)
+     if(mpiid.eq.2) write(*,*) 'LLAMANDO A CHP2XU**************'
+     call chp2xu(pen,plan,buf,nummpi,communicator)
   elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
-     call chp2xc(pen,plan,buf,nummpi)    
+     call chp2xc(pen,plan,buf,nummpi,communicator)    
   end if
 end subroutine chp2x
 
-subroutine chx2p(pen,plan,buf,rank,jee)
+subroutine chx2p(pen,plan,buf,rank,jee,communicator)
   use shared_mem
   use point
   use ctesp
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodeu%size), intent(in):: plan
   real(kind = 8), dimension(nodeu%size), intent(out):: pen
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
   integer, intent(in):: rank,jee
 
   if (jee == domainv%NY) then
-     call chx2pv(pen,plan,buf,nummpi)
+     call chx2pv(pen,plan,buf,nummpi,communicator)
   elseif (jee == domainu%NY) then
-     call chx2pu(pen,plan,buf,nummpi)
+     call chx2pu(pen,plan,buf,nummpi,communicator)
   elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
-     call chx2pc(pen,plan,buf,nummpi) 
+     call chx2pc(pen,plan,buf,nummpi,communicator) 
   end if
 
 end subroutine chx2p
@@ -274,7 +278,7 @@ end subroutine chx2p
 
 
 !!========= change subroutines for V kind structures:
-subroutine chp2xv(pen,plan,buf,size)
+subroutine chp2xv(pen,plan,buf,size,communicator)
   ! It is a good idea to write this routine to understand how this transpose
   ! works.
 
@@ -289,7 +293,7 @@ subroutine chp2xv(pen,plan,buf,size)
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodev%size), intent(in):: plan
   real(kind = 8), dimension(nodev%size), intent(out):: pen
   real(kind = 8), dimension(nodev%size), intent(inout):: buf
@@ -307,7 +311,7 @@ subroutine chp2xv(pen,plan,buf,size)
 
   call MPI_ALLTOALLV(buf, nodev%scount, nodev%sdisp, MPI_REAL4,&
        &buf, nodev%rcount, nodev%rdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
+       &communicator, ierr)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -323,13 +327,13 @@ subroutine chp2xv(pen,plan,buf,size)
 
 end subroutine chp2xv
 
-subroutine chx2pv(plan,pen,buf,size)
+subroutine chx2pv(plan,pen,buf,size,communicator)
   use shared_mem
   use point
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodev%size), intent(in):: pen
   real(kind = 8), dimension(nodev%size), intent(out):: plan
   real(kind = 8), dimension(nodev%size), intent(inout):: buf
@@ -348,7 +352,7 @@ subroutine chx2pv(plan,pen,buf,size)
 
   call MPI_ALLTOALLV(buf, nodev%rcount, nodev%rdisp, MPI_REAL4,&
        &buf, nodev%scount, nodev%sdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
+       &communicator, ierr)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -364,13 +368,13 @@ subroutine chx2pv(plan,pen,buf,size)
 end subroutine chx2pv
 
 !!========= change subroutines for U kind structures:
-subroutine chp2xu(pen,plan,buf,size)
+subroutine chp2xu(pen,plan,buf,size,communicator)
   use shared_mem
   use point
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodeu%size), intent(in):: plan
   real(kind = 8), dimension(nodeu%size), intent(out):: pen
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
@@ -379,26 +383,29 @@ subroutine chp2xu(pen,plan,buf,size)
 
   if (mpiid2.eq.0) tm2 = MPI_WTIME()
 
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHp2xU'
+    if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3'
   call transpose1(plan,buf,nodeu,domainu,size)
-
+    if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3	done'
   if (mpiid2.eq.0) then
      tm1  = MPI_WTIME()
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
-
+write(*,*),'INSIDE CHX2PU all2allv',mpiid2
   call MPI_ALLTOALLV(buf, nodeu%scount, nodeu%sdisp, MPI_REAL4,&
        &buf, nodeu%rcount, nodeu%rdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
+       &communicator,ierr)
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv	done',mpiid2
+
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
      tmp2= tmp2 + abs((tm2-tm1))
   endif
 
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4'
   call transpose2(buf(nodeu%bound/2+1:nodeu%size),pen,nodeu,domainu)
-
+ if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4	done'
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()     
      tmp3 = tmp3 + abs((tm2-tm1))
@@ -406,38 +413,39 @@ subroutine chp2xu(pen,plan,buf,size)
 
 end subroutine chp2xu
 
-subroutine chx2pu(plan,pen,buf,size)
+subroutine chx2pu(plan,pen,buf,size,communicator)
   use shared_mem
   use point
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(nodeu%size), intent(in):: pen
   real(kind = 8), dimension(nodeu%size), intent(out):: plan
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
   integer, intent(in):: size
   integer:: ierr
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU'
   if (mpiid2.eq.0) tm2 = MPI_WTIME()
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3'
   call transpose3(pen,buf(nodeu%bound/2+1:nodeu%size),nodeu,domainu)
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3	done'
   if (mpiid2.eq.0) then
      tm1  = MPI_WTIME()
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv'
   call MPI_ALLTOALLV(buf, nodeu%rcount, nodeu%rdisp, MPI_REAL4,&
        &buf, nodeu%scount, nodeu%sdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
-
+       &communicator, ierr)
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv	done'
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
      tmp2= tmp2 + abs((tm2-tm1))
   endif
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4'
   call transpose4(buf,plan,nodeu,domainu,size)
-
+  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4	done'
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()     
      tmp3 = tmp3 + abs((tm2-tm1))
@@ -446,13 +454,13 @@ subroutine chx2pu(plan,pen,buf,size)
 end subroutine chx2pu
 
 !!========= change subroutines for Correlation kind structures. C*16 Planes:
-subroutine chp2xc(pen,plan,buf,size)
+subroutine chp2xc(pen,plan,buf,size,communicator)
   use shared_mem
   use point
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(node_corr%size), intent(in):: plan
   real(kind = 8), dimension(node_corr%size), intent(out):: pen
   real(kind = 8), dimension(node_corr%size), intent(inout):: buf
@@ -471,7 +479,7 @@ subroutine chp2xc(pen,plan,buf,size)
 
   call MPI_ALLTOALLV(buf, node_corr%scount, node_corr%sdisp, MPI_REAL4,&
        &buf, node_corr%rcount, node_corr%rdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
+       &communicator, ierr)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -490,13 +498,13 @@ end subroutine chp2xc
 
 
 
-subroutine chx2pc(plan,pen,buf,size)
+subroutine chx2pc(plan,pen,buf,size,communicator)
   use shared_mem
   use point
   use temporal
   use ctesp,only: mpiid2
   include "mpif.h"
-
+  integer,intent(in)::communicator
   real(kind = 8), dimension(node_corr%size), intent(in):: pen
   real(kind = 8), dimension(node_corr%size), intent(out):: plan
   real(kind = 8), dimension(node_corr%size), intent(inout):: buf
@@ -514,7 +522,7 @@ subroutine chx2pc(plan,pen,buf,size)
 
   call MPI_ALLTOALLV(buf, node_corr%rcount, node_corr%rdisp, MPI_REAL4,&
        &buf, node_corr%scount, node_corr%sdisp, MPI_REAL4,&
-       &MPI_COMM_WORLD, ierr)
+       &communicator, ierr)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()

@@ -24,7 +24,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      &          rhsut,rhsvt,rhswt,      &
      &          wki1,wki1t,wki2,wki2t,wki3,wki3t,      &
      &          wkp,wkf,wkpo,wkfo,bufuphy,buf_corr,   &  
-     &          dt,m,ical,istep,mpiid)
+     &          dt,m,ical,istep,mpiid,communicator)
 
   use alloc_dns
   use statistics
@@ -35,7 +35,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
   implicit none
   include 'mpif.h'
-
+  integer,intent(in):: communicator
   ! --------------------------- IN/OUT --------------------------!
   real*8, dimension(nx  ,mpu)::wki1,wki3,resu,resw
   real*8, dimension(nx  ,mpv)::wki2,resv
@@ -59,38 +59,41 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
   ! ------------------------ Program ------------------------------------!
-
-  
+ 
+  if(mpiid.eq.0) write(*,*) '=============================================1' 
   ! ===============================================================
   !     interpolate the velocities in P-P-F in 'x' (Everything R*8)
   !     transpose u_>resut and uinterp-> wki  to (zy)         
   ! ===============================================================
 
-  call chp2x(resu,ut,rhsut,mpiid,ny+1) !resu=u in pencils (keep it)
-  call chp2x(resv,vt,rhsut,mpiid,ny  )   !resv=v in pencils (keep it)
-  call chp2x(resw,wt,rhsut,mpiid,ny+1) !resw=w in pencils (keep it)
+  call chp2x(resu,ut,rhsut,mpiid,ny+1,communicator) !resu=u in pencils (keep it)
 
+if(mpiid.eq.0) write(*,*) '=============================================1.1' 
+  call chp2x(resv,vt,rhsut,mpiid,ny  ,communicator)   !resv=v in pencils (keep it)
+  if(mpiid.eq.0) write(*,*) '=============================================1.2'
+  call chp2x(resw,wt,rhsut,mpiid,ny+1,communicator) !resw=w in pencils (keep it)
+if(mpiid.eq.0) write(*,*) '=============================================1.3'
   call interpxx(resu,wki1,inxu,cofiux,inbx,2,mpu,1) !wki1:contains u_x in pencils
   call interpxx(resv,wki2,inxv,cofivx,inbx,1,mpv,0) !wki2:contains v_x in pencils
   call interpxx(resw,wki3,inxv,cofivx,inbx,1,mpu,0) !wki3:contains w_x in pencils 
-
+  if(mpiid.eq.0) write(*,*) '=============================================2' 
 !---------------------------------------------
  if (dostat) then   
      ! Previous to statistics I must derive v and w to compute the vorticity    
      call differxx(wki2,rhsvt,dcxv,dcbx,cofcxv,2,mpv)  ! d(v_x)dx: rhsvt 
      call differxx(wki3,rhswt,dcxv,dcbx,cofcxv,2,mpu)  ! d(w_x)dx: rhswt     
-     call chx2p(rhsvt,rhsvt,rhsut,mpiid,ny) !rhsvt is dvdx z aligned upper right
-     call chx2p(rhswt,rhswt,rhsut,mpiid,ny+1) !rhswt is dwdx z aligned center right  
+     call chx2p(rhsvt,rhsvt,rhsut,mpiid,ny,communicator) !rhsvt is dvdx z aligned upper right
+     call chx2p(rhswt,rhswt,rhsut,mpiid,ny+1,communicator) !rhswt is dwdx z aligned center right  
   end if
 !---------------------------------------------
 
   ! chx2p works inplace and wki{k} = wki{k}t It contains the velocity field
   ! interpolated in x and aligned in stream normal planes.  
-  call chx2p(wki1,wki1t,rhsut,mpiid,ny+1) !u_x in planes
-  call chx2p(wki2,wki2t,rhsut,mpiid,ny)   !v_x in planes
-  call chx2p(wki3,wki3t,rhsut,mpiid,ny+1) !w_x in planes
+  call chx2p(wki1,wki1t,rhsut,mpiid,ny+1,communicator) !u_x in planes
+  call chx2p(wki2,wki2t,rhsut,mpiid,ny,communicator)   !v_x in planes
+  call chx2p(wki3,wki3t,rhsut,mpiid,ny+1,communicator) !w_x in planes
 
-  
+  if(mpiid.eq.0) write(*,*) '=============================================3' 
 !---------------------------------------------
    if (dostat) then
      ical=ical+1          
@@ -106,11 +109,11 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   poco  = 1d-7
 
   if (m==1) then
-     call energies(ut,vt,wt,hy,ener)
+     call energies(ut,vt,wt,hy,ener,communicator)
      !     if (mpiid==0) write(*,'(a10,i5,12e10.2)')'rhst', m,(ener(i),i=1,12)
   endif
 
-
+  if(mpiid.eq.0) write(*,*) '=============================================4' 
   ! ==========================================================
   !    do first all the rhs that need d/dx to free buffers 
   ! ==========================================================
@@ -152,7 +155,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
         if (setstep) then
          !$OMP CRITICAL
          do j=jbf2,jef2
-           vm(j)=vmtmp(j)
+            vm(j)=max(vm(j),vmtmp(j))
          enddo
          !$OMP END CRITICAL          
         endif
@@ -166,7 +169,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
      !$OMP END PARALLEL
   enddo    !!!  i loop for rhs needing d/dx
-
+  if(mpiid.eq.0) write(*,*) '=============================================5' 
 !   if(mpiid.eq.0) then
 !   write(*,*) '----------------------------------'
 !   write(*,*) 'um',um
@@ -182,20 +185,20 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   ! difvisxx(uu,upencil,result) computes de convective+viscous terms in x
 
   ! rhsu: wki1 contains uu, compute duu/dx. resu contains u in pencils, compute d2(u)/d2x
-  call chp2x(wki1,wki1t,rhswt,mpiid,ny+1)
+  call chp2x(wki1,wki1t,rhswt,mpiid,ny+1,communicator)
   call difvisxx(wki1,resu,wki1,dcxu,vixu,dcbx,cofcxu,cofvxu,cofvbx,1,mpu,1,rex) 
-  call chx2p(wki1,wki1t,rhswt,mpiid,ny+1)
-
+  call chx2p(wki1,wki1t,rhswt,mpiid,ny+1,communicator)
+  
   ! rhsv: wki2 contains uv, compute duv/dx. resv contains v in pencils, compute d2(v)/d2x
-  call chp2x(wki2,wki2t,rhswt,mpiid,ny)
+  call chp2x(wki2,wki2t,rhswt,mpiid,ny,communicator)
   call difvisxx(wki2,resv,wki2,dcxv,vixv,dcbx,cofcxv,cofvxv,cofvbx,2,mpv,0,rex)  
-  call chx2p(wki2,wki2t,rhswt,mpiid,ny)
+  call chx2p(wki2,wki2t,rhswt,mpiid,ny,communicator)
 
   ! rhsw: wki3 contains uw, compute duw/dx. resw contains w in pencils, compute d2(w)/d2x
-  call chp2x(wki3,wki3t,rhswt,mpiid,ny+1)
+  call chp2x(wki3,wki3t,rhswt,mpiid,ny+1,communicator)
   call difvisxx(wki3,resw,wki3,dcxv,vixv,dcbx,cofcxv,cofvxv,cofvbx,2,mpu,0,rex)
-  call chx2p(wki3,wki3t,rhswt,mpiid,ny+1)
-
+  call chx2p(wki3,wki3t,rhswt,mpiid,ny+1,communicator)
+  if(mpiid.eq.0) write(*,*) '=============================================6' 
   ! =============================================================
   !         (x) storage completed, back to planes
   ! =============================================================
@@ -207,7 +210,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   rhswt =         wki3t  
   !$OMP END PARALLEL WORKSHARE
   if(ie.eq.nx) rhsut(:,:,nx)=wki1t(:,:,nx) !to preserve outflow BC
-
+  if(mpiid.eq.0) write(*,*) '=============================================7' 
   ! ================================================================  
   !            wki1, wki2, wki3 are now free 
   !   resu, resv, resw  (in x version) are not used any more, and can be used
@@ -223,17 +226,17 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      dt3 = minval(dymin/max(poco,vm)) 
       
      dtloc = min(dt1, dt2, dt3, dtret)
-!      if(mpiid.eq.0) then
-! 	write(*,*) '*************paso temporal nodo 0 *******'
-! 	write(*,*) 'dt1  ',dt1
-! 	write(*,*) 'dt2  ',dt2
-! 	write(*,*) 'dt3  ',dt3
-! 	write(*,*) 'dtloc',dtloc
-! 	write(*,*) '******************************************'
-!       endif
+     if(mpiid.eq.0) then
+	write(*,*) '*************paso temporal nodo 0 *******'
+	write(*,*) 'dt1  ',dt1
+	write(*,*) 'dt2  ',dt2
+	write(*,*) 'dt3  ',dt3
+	write(*,*) 'dtloc',dtloc
+	write(*,*) '******************************************'
+      endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
-     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)
+     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,communicator,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS
 !      if (mpiid2.eq.0) write(*,*) 'dtloc after reduction',dt
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
@@ -241,7 +244,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      endif
      setstep = .FALSE.
   endif
-
+  if(mpiid.eq.0) write(*,*) '=============================================8' 
   !  the RK integration constants -------
   var1=dt*(rkcv(m)+rkdv(m))   ! dt*(alpha+beta), for pressure
   var2=dt*rex*rkcv(m)         ! dt/Re*alpha
@@ -265,13 +268,15 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   resvt=vt 
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
-  
+  if(mpiid.eq.0) write(*,*) '=============================================9' 
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
-! #ifdef CREATEPROFILES        
+
+  if(mpiid.eq.0) write(*,*) '=============================================10' 
+#ifdef CREATEPROFILES        
   if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        
-  call impose_profiles(ut,vt,wt,mpiid)
-! #endif 
-  
+  call impose_profiles(ut,vt,wt,mpiid,communicator)
+#endif 
+   if(mpiid.eq.0) write(*,*) '=============================================11' 
 
   do i=ib0,ie-1
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
@@ -279,20 +284,20 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
         ut(:,j,i)=ut(:,j,i)-var1*idxx*(pt(:,j,i+1)-pt(:,j,i))         
      enddo
   enddo
-
+if(mpiid.eq.0) write(*,*) '=============================================12' 
   if (mpiid2.eq.0) tm1 = MPI_WTIME()
 
   if (mpiid.eq.pnodes-1) then
-     call MPI_SEND(pt,(nz2+1)*ny,MPI_COMPLEX16,mpiid-1,0,MPI_COMM_WORLD,istat,ierr)
+     call MPI_SEND(pt,(nz2+1)*ny,MPI_COMPLEX16,mpiid-1,0,communicator,istat,ierr)
   elseif (mpiid.eq.0) then
-     call MPI_RECV(wkf,(nz2+1)*ny,MPI_COMPLEX16,mpiid+1,0,MPI_COMM_WORLD,istat,ierr)
+     call MPI_RECV(wkf,(nz2+1)*ny,MPI_COMPLEX16,mpiid+1,0,communicator,istat,ierr)
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
      do j=2,ny
         ut(:,j,ie)=ut(:,j,ie)-var1*idxx*(wkf(:,j)-pt(:,j,ie))
      enddo
   else 
      call MPI_SENDRECV(pt,(nz2+1)*ny,MPI_COMPLEX16,mpiid-1,0,&
-          &                wkf,(nz2+1)*ny,MPI_COMPLEX16,mpiid+1,0,MPI_COMM_WORLD,istat,ierr)
+          &                wkf,(nz2+1)*ny,MPI_COMPLEX16,mpiid+1,0,communicator,istat,ierr)
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
      do j=2,ny
         ut(:,j,ie)=ut(:,j,ie)-var1*idxx*(wkf(:,j)-pt(:,j,ie))
@@ -305,7 +310,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   endif
   ! ----------------  u+dp/dx updated,  copy  v, w -------
 
-
+if(mpiid.eq.0) write(*,*) '=============================================13' 
   do i=ib0,ie
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k)
      ! ---  update v,w with pressure gradient
@@ -322,7 +327,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL
   enddo
 
-
+if(mpiid.eq.0) write(*,*) '=============================================14' 
   ! ==============================================================
   !      do rest of RHS, and finish updating velocities (including triple products)
   ! ==============================================================
@@ -333,7 +338,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   do i = ib0,ie  
-    if(i.ne.nx) then 
+    if(i.ne.nx) then !this is correct... rhsu(NX)=U_inf*dudx; rhsv(Nx)=U_inf*dvdx (this is done when in pencils)
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j)   
      !$OMP DO SCHEDULE(STATIC)
      do j = 2,ny-1   !----- Dissipative terms in z; kvis(:)=rex*kaz2(:)
@@ -400,11 +405,11 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL    
    endif
   enddo     !!! loop on i
-
+if(mpiid.eq.0) write(*,*) '=============================================15' 
   ! ======  ACHTUNG!!! impose & preserve viscous boundary conditions  ========
 
   call boun(ut,vt,wt)
-
+if(mpiid.eq.0) write(*,*) '=============================================16' 
   !$OMP PARALLEL WORKSHARE
   rhsut(:,:,ib:ib0-1) = 0d0 
   rhsvt(:,:,ib:ib0-1) = 0d0 
@@ -429,7 +434,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
     enddo
   enddo
   
-
+if(mpiid.eq.0) write(*,*) '=============================================18' 
   ! -- final velocity updates (var4(m=1)=0)     
     do i=ib0,ie
       if(i.eq.nx) var2=0d0 !Viscous terms equal 0 in the last plane
@@ -454,7 +459,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       enddo     
       !$OMP END PARALLEL                          
     enddo 
-  
+  if(mpiid.eq.0) write(*,*) '=============================================19' 
   !$OMP PARALLEL WORKSHARE  
   rhsupat = rhsut
   rhsvpat = rhsvt
@@ -464,24 +469,24 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
   ! -----  implicit (y) viscous steps 
   rkk =rex*dt*rkdv(m)
-  do i=ib0,ie 
+  do i=ib0,ie
      call implzy(ut(0,1,i),wki1t(0,1,i),vyui,cofvyu,ny+1,rkk)
      call implzy(vt(0,1,i),wki2t(0,1,i),vyvi,cofvyv,ny  ,rkk)
      call implzy(wt(0,1,i),wki3t(0,1,i),vyui,cofvyu,ny+1,rkk)
   enddo
-
+if(mpiid.eq.0) write(*,*) '=============================================END' 
   ener(13:15)=0
   dostat  = .FALSE.  
 end subroutine rhsp
 
 
 ! ===============================================================
-subroutine energies(ut,vt,wt,hy,ener)
+subroutine energies(ut,vt,wt,hy,ener,communicator)
   use ctesp
   use point
   implicit none
   include 'mpif.h'
-
+  integer,intent(in)::communicator
   complex*16 ut(0:nz2,ny+1,ib:ie),vt(0:nz2,ny,ib:ie),wt(0:nz2,ny+1,ib:ie)
   real*8     hy(0:ny),uner(15),ener(15)
   integer i,ierr
@@ -490,6 +495,6 @@ subroutine energies(ut,vt,wt,hy,ener)
   do i=ib,ie
      call ministats(ut(0,1,i),vt(0,1,i),wt(0,1,i),uner,hy,i) 
   enddo
-  call MPI_ALLREDUCE(uner,ener,15,MPI_real8,MPI_sum,MPI_COMM_WORLD,ierr)
+  call MPI_ALLREDUCE(uner,ener,15,MPI_real8,MPI_sum,communicator,ierr)
 
 end subroutine energies

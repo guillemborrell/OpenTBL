@@ -60,14 +60,14 @@ end subroutine boun
 ! B.C at the outflow  (assumes at least two planes in last node)   ???????????
 ! ==============================================================
 
-subroutine outflow_correction(ut,vt,rhsupat)
+subroutine outflow_correction(ut,vt,rhsupat,communicator)
   use alloc_dns,only:inby,ccon,y,idx,x,re,rkc,rkd,idy,dx,dy,delx
   use ctesp
   use point
   use omp_lib
   implicit none
   include 'mpif.h'
-
+  integer,intent(in)::communicator
   ! -------------------- I/O --------------------------------------------!
   real*8,dimension(0:2*nz2+1,ny+1,ib:ie)::ut,rhsupat
   real*8,dimension(0:2*nz2+1,ny  ,ib:ie)::vt
@@ -81,7 +81,7 @@ subroutine outflow_correction(ut,vt,rhsupat)
   if (ib==1)  sumax=sumax-sum(ut(0,2:ny,1)*dy(1:ny-1))
   if (ie==nx) sumax=sumax+sum(ut(0,2:ny,nx)*dy(1:ny-1))
 
-  call MPI_ALLREDUCE(sumax,alpha,1,MPI_real8,MPI_sum,MPI_COMM_WORLD,ierr)      
+  call MPI_ALLREDUCE(sumax,alpha,1,MPI_real8,MPI_sum,communicator,ierr)      
 
   alpha= -alpha/(y(ny)-y(1))
   if (ie==nx) then

@@ -209,13 +209,13 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
         call mpi_barrier(comm_local,ierr)   
-!         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
-!              &    res,res,resv,resv,resw,resw,        & 
-!              &    rhsu,rhsv,rhsw,                     &
-!              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
-!              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
-!              &    dt,isubstp,ical,istep,mpiid,comm_local)
-! 
+        call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
+             &    res,res,resv,resv,resw,resw,        & 
+             &    rhsu,rhsv,rhsw,                     &
+             &    wki1,wki1,wki2,wki2,wki3,wki3,      &
+             &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
+             &    dt,isubstp,ical,istep,mpiid,comm_local)
+
         call mpi_barrier(comm_local,ierr)    
         if (mpiid2 .eq. 0) then  
            th2 = MPI_WTIME()      
