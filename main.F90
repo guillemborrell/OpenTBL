@@ -128,11 +128,12 @@ end program capalimite
 !    auxiliary to read input param. 
 !  =======================================
 
-subroutine avanza(text)
+subroutine avanza(text,unit)
   implicit none
+  integer:: unit
   character*99 text
   do
-     read(19,'(a)') text
+     read(unit,'(a)') text
        write(*,*) text
      if(text(1:2)/='CC') exit
   enddo
