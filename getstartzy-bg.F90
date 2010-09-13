@@ -247,7 +247,7 @@
        enddo
        close(10);close(11);close(12);close(13)
        call flush(6)
-        write(*,*) 'VALORES DE U0 Y DE V0 DESPUES DE LEER EL CAMPO'
+        write(*,*) 'VALORES DE U0,v0,u,v,w DESPUES DE LEER EL CAMPO'
         do i=ny-10,ny
           write(*,'(3f20.6)') u0(i),v0(i)
        enddo
@@ -258,7 +258,14 @@
           u(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,1)
           v(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,2)
           w(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,3)
-          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)                
+          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)
+          if(i.eq.1024) then
+            write(*,*) '==========================================='
+            do j=ny-10,ny
+              write(*,'(3f20.6)') resu(1,j,1:3)
+            enddo   
+            write(*,*) '==========================================='
+          endif              
        enddo
     endif
     deallocate(resu)
