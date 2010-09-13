@@ -27,6 +27,8 @@ CALCDIR =$(INIT)
 
 		OBJECTS =$(OBJ)/mod.o\
 			      $(OBJ)/main.o\
+			      $(OBJ)/bl_1.o\
+			      $(OBJ)/bl_2.o\
 			      $(OBJ)/getstartzy-bg.o\
 			      $(OBJ)/boun.o\
 			      $(OBJ)/rhsp.o\
@@ -56,6 +58,17 @@ $(OBJDIR)/mod.o : $(SRCDIR)/mod.F90
 $(OBJDIR)/main.o : $(SRCDIR)/main.F90 $(SRCDIR)/mod.F90
 	@echo compiling----------------------------------------------------------------------:   main.F90
 	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/main.F90
+
+#
+$(OBJDIR)/bl_1.o : $(SRCDIR)/bl_1.F90 $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   bl_1.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/bl_1.F90
+
+#
+$(OBJDIR)/bl_2.o : $(SRCDIR)/bl_2.F90 $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   bl_2.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/bl_2.F90
+
 
 #
 $(OBJDIR)/getstartzy-bg.o : $(SRCDIR)/getstartzy-bg.F90 $(SRCDIR)/mod.F90 
