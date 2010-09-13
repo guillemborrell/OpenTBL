@@ -36,6 +36,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   implicit none
   include 'mpif.h'
   integer,intent(in):: communicator
+  
   ! --------------------------- IN/OUT --------------------------!
   real*8, dimension(nx  ,mpu)::wki1,wki3,resu,resw
   real*8, dimension(nx  ,mpv)::wki2,resv
@@ -59,8 +60,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
   ! ------------------------ Program ------------------------------------!
- 
-  if(mpiid.eq.0) write(*,*) '=============================================1' 
   ! ===============================================================
   !     interpolate the velocities in P-P-F in 'x' (Everything R*8)
   !     transpose u_>resut and uinterp-> wki  to (zy)         
@@ -68,15 +67,11 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
   call chp2x(resu,ut,rhsut,mpiid,ny+1,communicator) !resu=u in pencils (keep it)
 
-if(mpiid.eq.0) write(*,*) '=============================================1.1' 
   call chp2x(resv,vt,rhsut,mpiid,ny  ,communicator)   !resv=v in pencils (keep it)
-  if(mpiid.eq.0) write(*,*) '=============================================1.2'
   call chp2x(resw,wt,rhsut,mpiid,ny+1,communicator) !resw=w in pencils (keep it)
-if(mpiid.eq.0) write(*,*) '=============================================1.3'
   call interpxx(resu,wki1,inxu,cofiux,inbx,2,mpu,1) !wki1:contains u_x in pencils
   call interpxx(resv,wki2,inxv,cofivx,inbx,1,mpv,0) !wki2:contains v_x in pencils
   call interpxx(resw,wki3,inxv,cofivx,inbx,1,mpu,0) !wki3:contains w_x in pencils 
-  if(mpiid.eq.0) write(*,*) '=============================================2' 
 !---------------------------------------------
  if (dostat) then   
      ! Previous to statistics I must derive v and w to compute the vorticity    
@@ -93,7 +88,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
   call chx2p(wki2,wki2t,rhsut,mpiid,ny,communicator)   !v_x in planes
   call chx2p(wki3,wki3t,rhsut,mpiid,ny+1,communicator) !w_x in planes
 
-  if(mpiid.eq.0) write(*,*) '=============================================3' 
 !---------------------------------------------
    if (dostat) then
      ical=ical+1          
@@ -113,7 +107,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
      !     if (mpiid==0) write(*,'(a10,i5,12e10.2)')'rhst', m,(ener(i),i=1,12)
   endif
 
-  if(mpiid.eq.0) write(*,*) '=============================================4' 
   ! ==========================================================
   !    do first all the rhs that need d/dx to free buffers 
   ! ==========================================================
@@ -155,7 +148,7 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
         if (setstep) then
          !$OMP CRITICAL
          do j=jbf2,jef2
-            vm(j)=max(vm(j),vmtmp(j))
+           vm(j)=vmtmp(j)
          enddo
          !$OMP END CRITICAL          
         endif
@@ -169,7 +162,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
      enddo
      !$OMP END PARALLEL
   enddo    !!!  i loop for rhs needing d/dx
-  if(mpiid.eq.0) write(*,*) '=============================================5' 
 !   if(mpiid.eq.0) then
 !   write(*,*) '----------------------------------'
 !   write(*,*) 'um',um
@@ -198,7 +190,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
   call chp2x(wki3,wki3t,rhswt,mpiid,ny+1,communicator)
   call difvisxx(wki3,resw,wki3,dcxv,vixv,dcbx,cofcxv,cofvxv,cofvbx,2,mpu,0,rex)
   call chx2p(wki3,wki3t,rhswt,mpiid,ny+1,communicator)
-  if(mpiid.eq.0) write(*,*) '=============================================6' 
   ! =============================================================
   !         (x) storage completed, back to planes
   ! =============================================================
@@ -210,7 +201,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
   rhswt =         wki3t  
   !$OMP END PARALLEL WORKSHARE
   if(ie.eq.nx) rhsut(:,:,nx)=wki1t(:,:,nx) !to preserve outflow BC
-  if(mpiid.eq.0) write(*,*) '=============================================7' 
   ! ================================================================  
   !            wki1, wki2, wki3 are now free 
   !   resu, resv, resw  (in x version) are not used any more, and can be used
@@ -244,7 +234,6 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
      endif
      setstep = .FALSE.
   endif
-  if(mpiid.eq.0) write(*,*) '=============================================8' 
   !  the RK integration constants -------
   var1=dt*(rkcv(m)+rkdv(m))   ! dt*(alpha+beta), for pressure
   var2=dt*rex*rkcv(m)         ! dt/Re*alpha
@@ -269,7 +258,7 @@ if(mpiid.eq.0) write(*,*) '=============================================1.3'
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
   if(mpiid.eq.0) write(*,*) '=============================================9' 
-  call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
+  call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
   if(mpiid.eq.0) write(*,*) '=============================================10' 
 #ifdef CREATEPROFILES        

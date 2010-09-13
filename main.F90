@@ -92,14 +92,16 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
-! write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
+write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
 
 
 !Call the 2 BLs:
 if (mpiid_global .lt. size(mpiid_1)) then
     call bl_1(new_mpiid,mpiid_global,MPI_COMM_WORLD,new_comm) !The small one
+    if (new_mpiid.eq.0) write(*,*) '============VALOR DEL COMUNICADOR 1 & MPI_COMM_WORLD========',new_comm,MPI_COMM_WORLD
 else
 !     call bl_2(new_mpiid,mpiid_global,MPI_COMM_WORLD,new_comm) !The good one
+     if (new_mpiid.eq.0) write(*,*) '============VALOR DEL COMUNICADOR 2 & MPI_COMM_WORLD ========',new_comm,MPI_COMM_WORLD
 endif
 
 
@@ -146,7 +148,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   times=0d0
   pi=4d0*atan(1d0)
   tvcrt=2d0*pi/(16*160)
-
+  if(mpiid.eq.0) write(*,*) 'COMUNICADOR EN BL1:',comm_local
   !$ CALL OMP_SET_DYNAMIC(.FALSE.)
   mpiid2=mpiid
   !Then number of processors used when compilling is assigned to th program:
@@ -208,32 +210,33 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
      endif     
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-        call mpi_barrier(comm_local,ierr)   
+        call mpi_barrier(comm_local,ierr)
+        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp   
         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
              &    dt,isubstp,ical,istep,mpiid,comm_local)
-
-        call mpi_barrier(comm_local,ierr)    
-        if (mpiid2 .eq. 0) then  
-           th2 = MPI_WTIME()      
-           tmp13 =tmp13+abs(th2-th1)
-        endif
-!         call outflow_correction(u,v,rhsupa)        
-        if (mpiid2 .eq. 0) then  
-           th1 = MPI_WTIME()      
-           tmp18 =tmp18+abs(th2-th1)
-        endif
-        call mpi_barrier(comm_local,ierr)   
-        vardt = 5d-1/dt/rkdv(isubstp)         
-!         call pois(u,v,w,p,res,res,resw,vardt,mpiid)
 ! 
-        if (mpiid2 .eq. 0) then  
-           th2 = MPI_WTIME()      
-           tmp14 =tmp14+abs(th2-th1)
-        endif
+!         call mpi_barrier(comm_local,ierr)    
+!         if (mpiid2 .eq. 0) then  
+!            th2 = MPI_WTIME()      
+!            tmp13 =tmp13+abs(th2-th1)
+!         endif
+! !         call outflow_correction(u,v,rhsupa)        
+!         if (mpiid2 .eq. 0) then  
+!            th1 = MPI_WTIME()      
+!            tmp18 =tmp18+abs(th2-th1)
+!         endif
+!         call mpi_barrier(comm_local,ierr)   
+!         vardt = 5d-1/dt/rkdv(isubstp)         
+! !         call pois(u,v,w,p,res,res,resw,vardt,mpiid)
+! ! 
+!         if (mpiid2 .eq. 0) then  
+!            th2 = MPI_WTIME()      
+!            tmp14 =tmp14+abs(th2-th1)
+!         endif
      enddo
      !.............................................
      call mpi_barrier(comm_local,ierr)
@@ -767,7 +770,7 @@ subroutine summary1(istep,dt,vcontrol)
   write(*,'(a35,2f10.4)')  'ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME
 !!!!!!!!!!!!!!!! ONLY FOR 1 PLANE PER NODE !!!!!!!!!!!! CHECKING THE CORRECT TIMING
-  if(tmp1-tmp27-tmp28.gt.20) then
+  if(tmp1-tmp27-tmp28.gt.200) then
   WRITE(*,*) '======== EXCESIVE TIME ============== NOW stopping'
   vcontrol=.true.
   endif

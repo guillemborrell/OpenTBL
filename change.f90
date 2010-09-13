@@ -221,7 +221,7 @@ subroutine pointers_p2p(rank)
   
 end subroutine pointers_p2p
 
-subroutine chp2x(pen,plan,buf,rank,jee,control,communicator)
+subroutine chp2x(pen,plan,buf,rank,jee,communicator)
   ! Driver routine to keep the changes to bl minimal. Look at
   ! the chp2xu and chp2xv routines to understand the whole thing.
 
@@ -243,12 +243,11 @@ subroutine chp2x(pen,plan,buf,rank,jee,control,communicator)
   real(kind = 8), dimension(nodeu%size), intent(in):: plan
   real(kind = 8), dimension(nodeu%size), intent(out):: pen
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
-  integer, intent(in):: rank,jee,control
-  
+  integer, intent(in):: rank,jee
+
   if (jee == domainv%NY) then
      call chp2xv(pen,plan,buf,nummpi,communicator) !here does not matter the value of control
   elseif (jee == domainu%NY) then
-     if(mpiid.eq.2) write(*,*) 'LLAMANDO A CHP2XU**************'
      call chp2xu(pen,plan,buf,nummpi,communicator)
   elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
      call chp2xc(pen,plan,buf,nummpi,communicator)    
@@ -309,6 +308,7 @@ subroutine chp2xv(pen,plan,buf,size,communicator)
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
 
+  
   call MPI_ALLTOALLV(buf, nodev%scount, nodev%sdisp, MPI_REAL4,&
        &buf, nodev%rcount, nodev%rdisp, MPI_REAL4,&
        &communicator, ierr)
@@ -380,7 +380,6 @@ subroutine chp2xu(pen,plan,buf,size,communicator)
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
   integer, intent(in):: size
   integer:: ierr
-
   if (mpiid2.eq.0) tm2 = MPI_WTIME()
 
   if (mpiid2.eq.0) write(*,*),'INSIDE CHp2xU'
@@ -391,6 +390,7 @@ subroutine chp2xu(pen,plan,buf,size,communicator)
      tm1  = MPI_WTIME()
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
+
 write(*,*),'INSIDE CHX2PU all2allv',mpiid2
   call MPI_ALLTOALLV(buf, nodeu%scount, nodeu%sdisp, MPI_REAL4,&
        &buf, nodeu%rcount, nodeu%rdisp, MPI_REAL4,&
