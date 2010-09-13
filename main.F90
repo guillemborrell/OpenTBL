@@ -207,36 +207,43 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
         write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
-     endif     
+     endif 
+
+     if (.TRUE.) setstep=.TRUE.
+     if (mod(istep,avcrt)==0.and.istep>stest) dostat=.TRUE.    
+
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
         call mpi_barrier(comm_local,ierr)
-        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp   
+        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......'   
         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
              &    dt,isubstp,ical,istep,mpiid,comm_local)
-! 
-!         call mpi_barrier(comm_local,ierr)    
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp13 =tmp13+abs(th2-th1)
-!         endif
-! !         call outflow_correction(u,v,rhsupa)        
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp18 =tmp18+abs(th2-th1)
-!         endif
-!         call mpi_barrier(comm_local,ierr)   
-!         vardt = 5d-1/dt/rkdv(isubstp)         
-! !         call pois(u,v,w,p,res,res,resw,vardt,mpiid)
-! ! 
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp14 =tmp14+abs(th2-th1)
-!         endif
+
+        call mpi_barrier(comm_local,ierr)    
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp13 =tmp13+abs(th2-th1)
+        endif
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
+        call outflow_correction(u,v,rhsupa,comm_local)        
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp18 =tmp18+abs(th2-th1)
+        endif
+        call mpi_barrier(comm_local,ierr)   
+        vardt = 5d-1/dt/rkdv(isubstp)     
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......'     
+        call pois(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
+
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp14 =tmp14+abs(th2-th1)
+        endif
      enddo
      !.............................................
      call mpi_barrier(comm_local,ierr)
@@ -406,7 +413,7 @@ subroutine iniciap_1(mpiid,communicator)
      if(mpiid.eq.0) write(*,*) 'xout ', xout,' out of bounds, stopping'
      stop
   endif
-
+  if(mpiid.eq.0) write(*,*) 'xout ', xout,'in Node #',mpiout
   if (mpiid==0) write(*,*) 'ALOCATANDO...................................'
   call alloavar(ntotb,ntotv,mpiid)
   call rfti(nz)
@@ -765,7 +772,7 @@ subroutine summary1(istep,dt,vcontrol)
   ttot9=ttot9+tmp28
 
   write(*,*)
-  write(*,'(a10,i8,2e15.6,a30,2f10.4)')  'step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
+  write(*,'(a10,i8,2E20.10,a30,2f14.4)')  'step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
   write(*,'(a35,3f10.4)')  'tiempos: Trans,Comm,Total Step',tmp3,tmp2,tmp1-tmp27-tmp28
   write(*,'(a35,2f10.4)')  'ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME

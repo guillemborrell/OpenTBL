@@ -166,7 +166,6 @@ subroutine pointers_p2p(rank)
   implicit none
   integer:: rank,i
   write(*,*) '						NUMMPI',nummpi,'rank',rank
-  if(mpiid2.eq.0) write(*,*) 'nx,ny,nz1',nx,ny,nz1
   !========Setting Structure Data Types:
   call comm_setup(nx,ny,nz1,rank,nummpi,nodev,domainv,1)  
   call comm_setup(nx,ny+1,nz1,rank,nummpi,nodeu,domainu,1)
@@ -382,20 +381,17 @@ subroutine chp2xu(pen,plan,buf,size,communicator)
   integer:: ierr
   if (mpiid2.eq.0) tm2 = MPI_WTIME()
 
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHp2xU'
-    if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3'
+ 
+
   call transpose1(plan,buf,nodeu,domainu,size)
-    if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3	done'
   if (mpiid2.eq.0) then
      tm1  = MPI_WTIME()
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
 
-write(*,*),'INSIDE CHX2PU all2allv',mpiid2
   call MPI_ALLTOALLV(buf, nodeu%scount, nodeu%sdisp, MPI_REAL4,&
        &buf, nodeu%rcount, nodeu%rdisp, MPI_REAL4,&
        &communicator,ierr)
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv	done',mpiid2
 
 
   if (mpiid2.eq.0) then
@@ -403,9 +399,7 @@ write(*,*),'INSIDE CHX2PU all2allv',mpiid2
      tmp2= tmp2 + abs((tm2-tm1))
   endif
 
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4'
   call transpose2(buf(nodeu%bound/2+1:nodeu%size),pen,nodeu,domainu)
- if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4	done'
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()     
      tmp3 = tmp3 + abs((tm2-tm1))
@@ -425,27 +419,20 @@ subroutine chx2pu(plan,pen,buf,size,communicator)
   real(kind = 8), dimension(nodeu%size), intent(inout):: buf
   integer, intent(in):: size
   integer:: ierr
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU'
   if (mpiid2.eq.0) tm2 = MPI_WTIME()
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3'
   call transpose3(pen,buf(nodeu%bound/2+1:nodeu%size),nodeu,domainu)
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose3	done'
   if (mpiid2.eq.0) then
      tm1  = MPI_WTIME()
      tmp3 = tmp3 + abs((tm2-tm1))
   endif
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv'
   call MPI_ALLTOALLV(buf, nodeu%rcount, nodeu%rdisp, MPI_REAL4,&
        &buf, nodeu%scount, nodeu%sdisp, MPI_REAL4,&
        &communicator, ierr)
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU all2allv	done'
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
      tmp2= tmp2 + abs((tm2-tm1))
   endif
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4'
   call transpose4(buf,plan,nodeu,domainu,size)
-  if (mpiid2.eq.0) write(*,*),'INSIDE CHX2PU transpose4	done'
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()     
      tmp3 = tmp3 + abs((tm2-tm1))

@@ -226,8 +226,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
-     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,communicator,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS
-!      if (mpiid2.eq.0) write(*,*) 'dtloc after reduction',dt
+     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,communicator,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
+     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
         tmp20 = tmp20 + abs(tm2-tm1)
@@ -257,7 +257,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   resvt=vt 
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
-  if(mpiid.eq.0) write(*,*) '=============================================9' 
+  if(mpiid.eq.0) write(*,*) 'CALLING GENFLU.............................' 
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
   if(mpiid.eq.0) write(*,*) '=============================================10' 

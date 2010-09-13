@@ -8,7 +8,7 @@
 !  old version from MP Simens, storage changed for BGP by
 !                     JJS, Dec 24/2009
 !=============================================================
-subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
+subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
 
   use point
   use alloc_dns,only:idx,idy,idxx,idyy,phiy,dy,y,kaz,kaz2,kmod,ayp
@@ -17,7 +17,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
   use temporal
   implicit none
   include 'mpif.h'
-
+  integer,intent(in):: communicator
   ! ---------------------- I/O -------------------------------------!
   integer mpiid
   real*8 dt,varstep
@@ -34,7 +34,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
 
   countu=(nz2+1)*(ny+1)
   countv=(nz2+1)*ny
-  comm = MPI_COMM_WORLD
+  comm = communicator
   tipo=MPI_COMPLEX16
 
   ! --- compute the divergence, we are in (zy) 
@@ -79,7 +79,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
   endif
 
   !  ----  go to lines, transform, and go back to planes ----
-  call chp2x(res,rest,rt,mpiid,ny)
+  call chp2x(res,rest,rt,mpiid,ny,comm)
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()
   endif
@@ -97,7 +97,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
      tm2 = MPI_WTIME()
      tmp10 = tmp10 + abs(tm2-tm1)
   endif
-  call chx2p(res,rest,rt,mpiid,ny)
+  call chx2p(res,rest,rt,mpiid,ny,comm)
 
   rest(0,:,ib:ie)=real(rest(0,:,ib:ie),kind=8) !Ensuring the 0th mode is Real
 
@@ -129,7 +129,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
  
 
   !  ----  go to lines, back-transform, and go back to planes ----
-  call chp2x(res,rest,rt,mpiid,ny)
+  call chp2x(res,rest,rt,mpiid,ny,comm)
 
   if (mpiid2.eq.0) then
      tm1 = MPI_WTIME()
@@ -141,7 +141,7 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
      tm2 = MPI_WTIME()
      tmp10 = tmp10 + abs(tm2-tm1)
   endif
-  call chx2p(res,rest,rt,mpiid,ny)
+  call chx2p(res,rest,rt,mpiid,ny,comm)
 
   
   do i =ib0,ie
@@ -188,32 +188,32 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid)
      tmp23 = tmp23 + abs(tm2-tm1)-(tp2-tp1)
   endif
 
-
- if(paso.eq.1) then
-      if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON'
-      do i=ib,ie   
-         pdiv(1:ny,i)=real(ut(0,1:ny,i),kind=8) !Each node copy a piece of the array
-      enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)
-      if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
-      pdiv=0d0
-
-      do i=ib,ie   
-         pdiv(1:ny,i)=real(vt(0,1:ny,i),kind=8) !Each node copy a piece of the array
-      enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)
-      if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)
-      pdiv=0d0
-
-      do i=ib,ie   
-         pdiv(1:ny,i)=real(wt(0,1:ny,i),kind=8) !Each node copy a piece of the array
-      enddo
-      call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,MPI_COMM_WORLD,ierr)      
-      if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
-      pdiv=0d0
-
-      if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON.............DONE'
- endif
+! 
+!  if(paso.eq.1) then
+!       if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON'
+!       do i=ib,ie   
+!          pdiv(1:ny,i)=real(ut(0,1:ny,i),kind=8) !Each node copy a piece of the array
+!       enddo
+!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)
+!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
+!       pdiv=0d0
+! 
+!       do i=ib,ie   
+!          pdiv(1:ny,i)=real(vt(0,1:ny,i),kind=8) !Each node copy a piece of the array
+!       enddo
+!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)
+!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)
+!       pdiv=0d0
+! 
+!       do i=ib,ie   
+!          pdiv(1:ny,i)=real(wt(0,1:ny,i),kind=8) !Each node copy a piece of the array
+!       enddo
+!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)      
+!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
+!       pdiv=0d0
+! 
+!       if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON.............DONE'
+!  endif
 
 
 end subroutine pois

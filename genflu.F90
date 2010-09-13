@@ -40,7 +40,8 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   if(mpiid2.eq.0) tm3 = MPI_WTIME()
 
   !  ------  bring reference ref. planes --------
-  if (mpiid==mpiout) then    
+  if (mpiid==mpiout) then
+     write(*,*) '**ut(0,250,xout)**',ut(0,250,xout)	     
      call MPI_SEND(ut(0,1,xout),countu,tipo,0,1,comm,istat,ierr)
      call MPI_SEND(vt(0,1,xout),countv,tipo,0,2,comm,istat,ierr)
      call MPI_SEND(wt(0,1,xout),countu,tipo,0,3,comm,istat,ierr)
@@ -63,23 +64,40 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      else
         timec = tloc
      endif
+     
      um= (dt/timec)*ut(0,:,1)+um*(1d0-dt/timec)
      utauout = sqrt(abs((um(2)-um(1))/(y(2)-y(1))/re))
 
      !  --- compute momentum thickness -----
      uinf=sum(um(ny+1-20:ny+1-5))/16d0 
      u99 = 0.99*uinf   
-
+     
      do j=1,ny-2
         if (um(j).ge.u99) exit
         jtop = j+1
      enddo
      dout = y(jtop)       
      rthout = sum((uinf-um(2:jtop+3))*um(2:jtop+3)*dy(1:jtop+2))*re/uinf
+     
+     
 
      !  --------  scaling factors and interp. limits --------------
      gamma(2)  = rthin/rthout   
      gamma(1)  = gamma(2)**(0.125)
+     
+     if(mpiid.eq.0) then
+	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+	write(*,*) 'dt',dt
+	write(*,*) 'timec',timec
+	write(*,*) 'ut(0,250,1)',ut(0,250,1)	
+	write(*,*) 'Uinfinity=',uinf
+	write(*,*) 'utau_out',utauout
+	write(*,*) 'jtop',jtop
+	write(*,*) 'dout',dout
+	write(*,*) 'rthout',rthout
+	write(*,*) 'gamma',gamma
+	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+     endif
 
      ! --------- new grids for rescaling
      do k=1,2
@@ -302,7 +320,7 @@ endsubroutine info_per_step
 ! OLD GENFLU..........................
 
 #ifdef OLDGENFLU
-subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
+subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   !------------------------------------------------------------------------*
   !     fluctuating velocity profile from a BL
   !------------------------------------------------------------------------*
@@ -315,9 +333,10 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
   use omp_lib
   implicit none
   include "mpif.h"
+  integer,intent(in)::communicator
 
   !------------------------------- I/O -------------------------------!
-
+  
   real*8  y(0:ny+1),den
   real*8 tiempo,re,dt,uinf,wsca(ny+1)
 
@@ -335,7 +354,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
   if(mpiid2.eq.0) write(*,*) 'USANDO OLD-GENFLU'
   countu=2*(nz2+1)*(ny+1)
   countv=2*(nz2+1)*ny
-  comm=MPI_COMM_WORLD
+  comm=communicator
   tipo=MPI_REAL8
   tloc=tiempo-timeinit
 
@@ -442,7 +461,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m)
         if(mpiid==id) then            
            cfinfo(j)=ut(0,2,ib)                       
         endif
-        call MPI_BCAST(cfinfo(j),1,MPI_REAL8,id,MPI_COMM_WORLD,ierr)
+        call MPI_BCAST(cfinfo(j),1,MPI_REAL8,id,communicator,ierr)
      enddo
      cfinfo=cfinfo*den     
      if(mpiid==0) then        
