@@ -57,6 +57,12 @@
     fil3=chinit(1:index(chinit,' ')-1)//'.'//'w'
     fil4=chinit(1:index(chinit,' ')-1)//'.'//'p'
 
+    if(mpiid.eq.0) then
+    write(*,*) '**************FILE=',fil1
+    write(*,*) '**************FILE=',fil2
+    write(*,*) '**************FILE=',fil3
+    write(*,*) '**************FILE=',fil4
+    endif
 
 #ifdef RPARALLEL
     nfile=1			    !Number of files for parallel IO

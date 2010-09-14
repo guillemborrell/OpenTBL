@@ -52,7 +52,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
 
   if (mpiid .eq. 0) write(*,*) '======== CALLING GETSTART 2 ==============='
   if (mpiid2.eq.0) th2 = MPI_WTIME()                
-  call getstartzy_2(u,v,w,p,dt,mpiid)
+  call getstartzy_2(u,v,w,p,dt,mpiid,comm_local)
   if (mpiid2 .eq. 0) then  
      th1 = MPI_WTIME()      
      tmp29 =tmp29+abs(th2-th1)
@@ -62,36 +62,36 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
   endif
    
   call coef_2(mpiid)
-  call inlet_retheta_2(u0,rthin,din,mpiid) !compute Rth_inlet and d99_inlet
+  call inlet_retheta_2(u0,rthin,din,mpiid,comm_local) !compute Rth_inlet and d99_inlet
   call magicnumber_2(mpiid)
-! 
-! #ifdef CREATEPROFILES
-!   paso=-1 !Substeps counter
-!   if(mpiid.eq.0) open(170,file='extraprofiles',form='unformatted',status='unknown',convert='BIG_ENDIAN')
-!   open(270,file='plano_div.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')
-!   open(280,file='zero-mode.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')  
-!   call create_profiles_2(u,v,w,rthin,mpiid)
-!   call impose_profiles_2(u,v,w,mpiid) 
-!   close(17)  
-! #endif
-! 
-!   call alloabuff_2(ntotb,ntotv,ntot_corr,mpiid)
-! 
-!   rhsupa = 0d0
-!   rhswpa = 0d0
-!   rhsvpa = 0d0
-! 
-! #ifdef CREATEPROFILES
-!    if(mpiid.eq.0) write(*,*) 'Checking Divergence of the Field:'
-!    call check_divergence_2(u,v,w,rhsupa,mpiid)
-! #endif
-! 
-!   call mpi_barrier(comm_local,ierr)
-! 
-! #ifdef FLOPS
-!   CALL HPM_INIT()
-!   CALL HPM_START('WORK1')
-! #endif
+
+#ifdef CREATEPROFILES
+  paso=-1 !Substeps counter
+  if(mpiid.eq.0) open(170,file='extraprofiles',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+  open(270,file='plano_div.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+  open(280,file='zero-mode.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')  
+  call create_profiles_2(u,v,w,rthin,mpiid,comm_local)
+  call impose_profiles_2(u,v,w,mpiid,comm_local) 
+  close(17)  
+#endif
+
+  call alloabuff_2(ntotb,ntotv,ntot_corr,mpiid)
+
+  rhsupa = 0d0
+  rhswpa = 0d0
+  rhsvpa = 0d0
+
+#ifdef CREATEPROFILES
+   if(mpiid.eq.0) write(*,*) 'Checking Divergence of the Field:'
+   call check_divergence_2(u,v,w,rhsupa,mpiid)
+#endif
+
+  call mpi_barrier(comm_local,ierr)
+
+#ifdef FLOPS
+  CALL HPM_INIT()
+  CALL HPM_START('WORK1')
+#endif
 ! 
 ! #ifndef NOINFOSTEP
 ! !Genflu info:
@@ -111,13 +111,15 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
 !      do isubstp = 1,3
 !         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
 !         call mpi_barrier(comm_local,ierr)   !************************
-! 
+!         call mpi_barrier(comm_local,ierr)
+!         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
+!         IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......'   
 !         call rhsp_2(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
 !              &    res,res,resv,resv,resw,resw,        & 
 !              &    rhsu,rhsv,rhsw,                     &
 !              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
 !              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
-!              &    dt,isubstp,ical,istep,mpiid)
+!              &    dt,isubstp,ical,istep,mpiid,comm_local)
 ! 
 !         call mpi_barrier(comm_local,ierr)    !********************
 !         if (mpiid2 .eq. 0) then  
@@ -125,7 +127,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
 !            tmp13 =tmp13+abs(th2-th1)
 !         endif
 ! 
-!         call outflow_correction_2(u,v,rhsupa)
+!         call outflow_correction_2(u,v,rhsupa,comm_local)
 !         
 !         if (mpiid2 .eq. 0) then  
 !            th1 = MPI_WTIME()      
@@ -136,7 +138,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
 !         vardt = 5d-1/dt/rkdv(isubstp)   
 ! 
 !       
-!         call pois_2(u,v,w,p,res,res,resw,vardt,mpiid)
+!         call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
 ! 
 !         if (mpiid2 .eq. 0) then  
 !            th2 = MPI_WTIME()      
