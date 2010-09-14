@@ -72,7 +72,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
   open(280,file='zero-mode.dat',form='unformatted',status='unknown',convert='BIG_ENDIAN')  
   call create_profiles_2(u,v,w,rthin,mpiid,comm_local)
   call impose_profiles_2(u,v,w,mpiid,comm_local) 
-  close(17)  
+  close(170)  
 #endif
 
   call alloabuff_2(ntotb,ntotv,ntot_corr,mpiid)
@@ -92,107 +92,107 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
   CALL HPM_INIT()
   CALL HPM_START('WORK1')
 #endif
-! 
-! #ifndef NOINFOSTEP
-! !Genflu info:
-! if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
-! #endif
-! 
-!   do istep = 1,nsteps
-!      if(mpiid.eq.0) then
-!         tc1 = MPI_WTIME()
-!         write(*,'(a60,i6)') '....................................................istep=',istep
-!      endif
-! 
-!      if (.TRUE.) setstep=.TRUE.
-!      if (mod(istep,avcrt)==0.and.istep>stest) dostat=.TRUE.
-! 
-!      !.............................................  
-!      do isubstp = 1,3
-!         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-!         call mpi_barrier(comm_local,ierr)   !************************
-!         call mpi_barrier(comm_local,ierr)
-!         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
-!         IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......'   
-!         call rhsp_2(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
-!              &    res,res,resv,resv,resw,resw,        & 
-!              &    rhsu,rhsv,rhsw,                     &
-!              &    wki1,wki1,wki2,wki2,wki3,wki3,      &
-!              &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
-!              &    dt,isubstp,ical,istep,mpiid,comm_local)
-! 
-!         call mpi_barrier(comm_local,ierr)    !********************
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp13 =tmp13+abs(th2-th1)
-!         endif
-! 
-!         call outflow_correction_2(u,v,rhsupa,comm_local)
-!         
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp18 =tmp18+abs(th2-th1)
-!         endif
-!         call mpi_barrier(comm_local,ierr)   !************************
-! 
-!         vardt = 5d-1/dt/rkdv(isubstp)   
-! 
-!       
-!         call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
-! 
-!         if (mpiid2 .eq. 0) then  
-!            th2 = MPI_WTIME()      
-!            tmp14 =tmp14+abs(th2-th1)
-!         endif
-!      enddo
-!      !.............................................
-!      call mpi_barrier(comm_local,ierr)
-!      tiempo = tiempo+dt
-!      if (times .ge. tvcrt) then
-!         times=times-tvcrt
-!      endif
-!      times=times+dt
-! 
-!      ! I/O Operations --------------------------------
-!      if (mod(istep,stats).eq.0) then
-!         if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
-! !         call escrst_2(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical)
-!         ical=0
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp27 =tmp27+abs(th2-th1)
-!         endif
-!      endif
-! 
-!      if (mod(istep,reav).eq.0) then
-!         if (mpiid2.eq.0) th2 = MPI_WTIME() 
-! !         call escribezy_2(u,v,w,p,dt,mpiid)   !Vul & BG     
-!         if (mpiid2 .eq. 0) then  
-!            th1 = MPI_WTIME()      
-!            tmp28 =tmp28+abs(th2-th1)
-!         endif
-!      endif
-! 
-!      if (mpiid .eq. 0) then  ! Tiempos 
-!         tc2 = MPI_WTIME()      
-!         tmp1 = tc2-tc1     
-!         call summary1_2(istep,dt,vcontrol)             
-!      endif
-! #ifdef CHECKTIME
-!      call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-!      IF(vcontrol) stop
-! #endif
-!   enddo
-! 
-! 
-! #ifndef NOINFOSTEP
-! close(360)
-! #endif
-! #ifdef CREATEPROFILES 
-! close(270)
-! close(280)
-! #endif
-!   if (mpiid.eq.0) call summary2_2()
+
+#ifndef NOINFOSTEP
+!Genflu info:
+if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
+#endif
+
+  do istep = 1,nsteps
+     if(mpiid.eq.0) then
+        tc1 = MPI_WTIME()
+        write(*,'(a60,i6)') '....................................................istep=',istep
+     endif
+
+     if (.TRUE.) setstep=.TRUE.
+     if (mod(istep,avcrt)==0.and.istep>stest) dostat=.TRUE.
+
+     !.............................................  
+     do isubstp = 1,3
+        if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
+        call mpi_barrier(comm_local,ierr)   !************************
+        call mpi_barrier(comm_local,ierr)
+        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......'   
+        call rhsp_2(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
+             &    res,res,resv,resv,resw,resw,        & 
+             &    rhsu,rhsv,rhsw,                     &
+             &    wki1,wki1,wki2,wki2,wki3,wki3,      &
+             &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr, & 
+             &    dt,isubstp,ical,istep,mpiid,comm_local)
+
+        call mpi_barrier(comm_local,ierr)    !********************
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp13 =tmp13+abs(th2-th1)
+        endif
+
+        call outflow_correction_2(u,v,rhsupa,comm_local)
+        
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp18 =tmp18+abs(th2-th1)
+        endif
+        call mpi_barrier(comm_local,ierr)   !************************
+
+        vardt = 5d-1/dt/rkdv(isubstp)   
+
+      
+        call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
+
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp14 =tmp14+abs(th2-th1)
+        endif
+     enddo
+     !.............................................
+     call mpi_barrier(comm_local,ierr)
+     tiempo = tiempo+dt
+     if (times .ge. tvcrt) then
+        times=times-tvcrt
+     endif
+     times=times+dt
+
+     ! I/O Operations --------------------------------
+     if (mod(istep,stats).eq.0) then
+        if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
+        call escrst_2(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical)
+        ical=0
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp27 =tmp27+abs(th2-th1)
+        endif
+     endif
+
+     if (mod(istep,reav).eq.0) then
+        if (mpiid2.eq.0) th2 = MPI_WTIME() 
+         call escribezy_2(u,v,w,p,dt,mpiid)   !Vul & BG     
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp28 =tmp28+abs(th2-th1)
+        endif
+     endif
+
+     if (mpiid .eq. 0) then  ! Tiempos 
+        tc2 = MPI_WTIME()      
+        tmp1 = tc2-tc1     
+        call summary1_2(istep,dt,vcontrol)             
+     endif
+#ifdef CHECKTIME
+     call MPI_BCAST(vcontrol,1 ,MPI_LOGICAL,0,comm_local,ierr)
+     IF(vcontrol) stop
+#endif
+  enddo
+
+
+#ifndef NOINFOSTEP
+close(360)
+#endif
+#ifdef CREATEPROFILES 
+close(270)
+close(280)
+#endif
+  if (mpiid.eq.0) call summary2_2()
 endsubroutine bl_2
 
 

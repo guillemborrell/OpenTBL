@@ -181,9 +181,9 @@ subroutine summary1(istep,dt,vcontrol)
   ttot9=ttot9+tmp28
 
   write(*,*)
-  write(*,'(a10,i8,2E20.10,a30,2f14.4)')  'step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
-  write(*,'(a35,3f10.4)')  'tiempos: Trans,Comm,Total Step',tmp3,tmp2,tmp1-tmp27-tmp28
-  write(*,'(a35,2f10.4)')  'ffts: fft, cos', tmp11,tmp10
+  write(*,'(a10,i8,2E20.10,a30,2f14.4)')  'BL1: step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
+  write(*,'(a35,3f10.4)')  'BL1: tiempos: Trans,Comm,Total Step',tmp3,tmp2,tmp1-tmp27-tmp28
+  write(*,'(a35,2f10.4)')  'BL1: ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME
 !!!!!!!!!!!!!!! ONLY FOR 1 PLANE PER NODE !!!!!!!!!!!! CHECKING THE CORRECT TIMING
   if(tmp1-tmp27-tmp28.gt.200) then
@@ -208,7 +208,7 @@ subroutine summary2()
   ttotm=ttotm+tmp29 !tmp29: reading time
   
   write(*,*) '==============================================================='
-  write(*,'(a40,1f10.0,a2)') 'TOTAL MEM ALLOCATED FIRST BL (node):',totmem,'Mb'
+  write(*,'(a40,1f10.0,a2)') 'BL1: TOTAL MEM ALLOCATED FIRST BL (node):',totmem,'Mb'
   write(*,*) 'Size, Nodes, Threads',nx,ny,nz,nummpi,nthreads
   write(*,*) '---------------------------------------------------------------'
   write(*,'(a30,f15.4)') 'tiempo total: ', ttotm
@@ -301,13 +301,13 @@ subroutine summary1_2(istep,dt,vcontrol)
   ttot9=ttot9+tmp28
 
   write(*,*)
-  write(*,'(a10,i8,2E20.10,a30,2f14.4)')  'step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
-  write(*,'(a35,3f10.4)')  'tiempos: Trans,Comm,Total Step',tmp3,tmp2,tmp1-tmp27-tmp28
-  write(*,'(a35,2f10.4)')  'ffts: fft, cos', tmp11,tmp10
+  write(*,'(a10,i8,2E20.10,a30,2f14.4)')  'BL2: step',istep, dt,tiempo,'Re_theta: in/out-ref',rthin,rthout
+  write(*,'(a35,3f10.4)')  'BL2: tiempos: Trans,Comm,Total Step',tmp3,tmp2,tmp1-tmp27-tmp28
+  write(*,'(a35,2f10.4)')  'BL2: ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME
 !!!!!!!!!!!!!!! ONLY FOR 1 PLANE PER NODE !!!!!!!!!!!! CHECKING THE CORRECT TIMING
   if(tmp1-tmp27-tmp28.gt.200) then
-  WRITE(*,*) '======== EXCESIVE TIME ============== NOW stopping'
+  WRITE(*,*) '======== BL2: EXCESIVE TIME ============== NOW stopping'
   vcontrol=.true.
   endif
 #endif
@@ -319,6 +319,10 @@ subroutine summary1_2(istep,dt,vcontrol)
   tmp3  =0d0; tmp6=0d0; tmp9=0d0; tmp12=0d0; tmp15=0d0;tmp18=0d0;tmp21=0d0;tmp24=0d0;tmp27=0d0;tmp30=0d0     
 end subroutine summary1_2
 
+
+
+
+
 subroutine summary2_2()
   use temporal_2
   use ctesp_2
@@ -327,7 +331,7 @@ subroutine summary2_2()
   ttotm=ttotm+tmp29 !tmp29: reading time
   
   write(*,*) '==============================================================='
-  write(*,'(a40,1f10.0,a2)') 'TOTAL MEM ALLOCATED SECOND BL (node):',totmem,'Mb'
+  write(*,'(a40,1f10.0,a2)') 'BL2: TOTAL MEM ALLOCATED SECOND BL (node):',totmem,'Mb'
   write(*,*) 'Size, Nodes, Threads',nx,ny,nz,nummpi,nthreads
   write(*,*) '---------------------------------------------------------------'
   write(*,'(a30,f15.4)') 'tiempo total: ', ttotm
