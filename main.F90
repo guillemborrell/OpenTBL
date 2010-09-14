@@ -133,8 +133,7 @@ subroutine avanza(text,unit)
   integer:: unit
   character*99 text
   do
-     read(unit,'(a)') text
-       write(*,*) text
+     read(unit,'(a)') text     
      if(text(1:2)/='CC') exit
   enddo
 endsubroutine avanza
