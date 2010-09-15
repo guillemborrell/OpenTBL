@@ -64,7 +64,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   !     interpolate the velocities in P-P-F in 'x' (Everything R*8)
   !     transpose u_>resut and uinterp-> wki  to (zy)         
   ! ===============================================================
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 0',ut(0,250,xout)	
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 0',ut(0,250,xout)	
   
   call chp2x_2(resu,ut,rhsut,mpiid,ny+1,communicator) !resu=u in pencils (keep it)
 
@@ -108,7 +108,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !     if (mpiid==0) write(*,'(a10,i5,12e10.2)')'rhst', m,(ener(i),i=1,12)
   endif
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 1',ut(0,250,xout)	  
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 1',ut(0,250,xout)	  
 
 
   ! ==========================================================
@@ -166,13 +166,15 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
      !$OMP END PARALLEL
   enddo    !!!  i loop for rhs needing d/dx
-  if(mpiid.eq.0) then
-  write(*,*) '----------------------------------'
-  write(*,*) '**MAX um',um
-  write(*,*) '**MAX vm',maxval(vm)
-  write(*,*) '**MAX wm',wm
-  write(*,*) '----------------------------------'
-  endif
+  if(setstep) then
+    if(mpiid.eq.0) then
+	write(*,*) '----------------------------------'
+	write(*,*) '**MAX um',um
+	write(*,*) '**MAX vm',maxval(vm)
+	write(*,*) '**MAX wm',wm
+	write(*,*) '----------------------------------'
+    endif
+   endif
 
   ! ============================================================
   !    beginning the part is (x) storage 
@@ -262,20 +264,17 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
 
-  if(mpiid.eq.0) then
-    write(*,*) 'RECEIVING THE INLET FROM BL1.............................' 
-  call genflu_2(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator) !This is not call anymore
-!     call MPI_RECV(ut(0,1,1),(nz2+1)*(ny+1),MPI_REAL8,mpiids1(3+1),1,MPI_COMM_WORLD,istat,ierr)
-  
-  endif
+  if(mpiid.eq.0) write(*,*) 'CALLING GENFLU.............................' 
+  call genflu_2(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
- 
+!   if(mpiid.eq.0) write(*,*) '=============================================10' 
 #ifdef CREATEPROFILES        
   if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        
   call impose_profiles_2(ut,vt,wt,mpiid,communicator)
 #endif 
+   
 
   do i=ib0,ie-1
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
@@ -305,7 +304,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
   endif
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -313,6 +312,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   endif
   ! ----------------  u+dp/dx updated,  copy  v, w -------
 
+! if(mpiid.eq.0) write(*,*) '=============================================13' 
   do i=ib0,ie
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k)
      ! ---  update v,w with pressure gradient
@@ -329,6 +329,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL
   enddo
 
+! if(mpiid.eq.0) write(*,*) '=============================================14' 
   ! ==============================================================
   !      do rest of RHS, and finish updating velocities (including triple products)
   ! ==============================================================
@@ -406,9 +407,11 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL    
    endif
   enddo     !!! loop on i
+! if(mpiid.eq.0) write(*,*) '=============================================15' 
   ! ======  ACHTUNG!!! impose & preserve viscous boundary conditions  ========
 
   call boun_2(ut,vt,wt)
+! if(mpiid.eq.0) write(*,*) '=============================================16' 
   !$OMP PARALLEL WORKSHARE
   rhsut(:,:,ib:ib0-1) = 0d0 
   rhsvt(:,:,ib:ib0-1) = 0d0 
@@ -433,6 +436,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
     enddo
   enddo
   
+! if(mpiid.eq.0) write(*,*) '=============================================18' 
   ! -- final velocity updates (var4(m=1)=0)     
     do i=ib0,ie
       if(i.eq.nx) var2=0d0 !Viscous terms equal 0 in the last plane
@@ -457,6 +461,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       enddo     
       !$OMP END PARALLEL                          
     enddo 
+!   if(mpiid.eq.0) write(*,*) '=============================================19' 
   !$OMP PARALLEL WORKSHARE  
   rhsupat = rhsut
   rhsvpat = rhsvt
@@ -472,7 +477,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call implzy_2(wt(0,1,i),wki3t(0,1,i),vyui,cofvyu,ny+1,rkk)
   enddo
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
+! if(mpiid.eq.0) write(*,*) '=============================================END' 
   ener(13:15)=0
   dostat  = .FALSE.  
 end subroutine rhsp_2
