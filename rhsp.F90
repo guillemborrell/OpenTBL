@@ -215,20 +215,20 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       
      dtloc = min(dt1, dt2, dt3, dtret)
      if(mpiid.eq.0) then
-        write(*,*) '******************************************'
-	write(*,*) '**MAX um',um
-	write(*,*) '**MAX vm',maxval(vm)
-	write(*,*) '**MAX wm',wm	
-	write(*,*) '*************paso temporal nodo 0 *******'
-	write(*,*) 'dt1  ',dt1
-	write(*,*) 'dt2  ',dt2
-	write(*,*) 'dt3  ',dt3
-	write(*,*) 'dtloc',dtloc
-	write(*,*) '******************************************'
+!         write(*,*) '******************************************'
+! 	write(*,*) '**MAX um',um
+! 	write(*,*) '**MAX vm',maxval(vm)
+! 	write(*,*) '**MAX wm',wm	
+! 	write(*,*) '*************paso temporal nodo 0 *******'
+! 	write(*,*) 'dt1  ',dt1
+! 	write(*,*) 'dt2  ',dt2
+! 	write(*,*) 'dt3  ',dt3
+	write(*,*) 'dtloc 				BL1',dtloc
+! 	write(*,*) '******************************************'
       endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
-     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,communicator,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
+     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
      if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
@@ -262,7 +262,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
 !   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
 
-  if(mpiid.eq.0) write(*,*) 'CALLING GENFLU.............................' 
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
 !   if(mpiid.eq.0) write(*,*) '=============================================10' 

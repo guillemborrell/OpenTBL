@@ -43,7 +43,7 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC         500    505          500           1                 0
-              5     20           30             20    0
+              2     20           30             20    0
 CC            7500     7500          500            50                 0
 CC         501       500          125            5                 0
 CC            

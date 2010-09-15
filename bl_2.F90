@@ -101,7 +101,7 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
   do istep = 1,nsteps
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
-        write(*,'(a60,i6)') '....................................................istep=',istep
+        write(*,'(a60,i6)') 'Second BL....................................................istep=',istep
      endif
 
      if (.TRUE.) setstep=.TRUE.
@@ -113,7 +113,6 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
         call mpi_barrier(comm_local,ierr)   !************************
         call mpi_barrier(comm_local,ierr)
 !         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......	2'   
         call rhsp_2(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
@@ -137,7 +136,6 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
 
         vardt = 5d-1/dt/rkdv(isubstp)   
 
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......	2'
         call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
 
         if (mpiid2 .eq. 0) then  

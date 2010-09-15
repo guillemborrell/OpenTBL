@@ -30,7 +30,6 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   times=0d0
   pi=4d0*atan(1d0)
   tvcrt=2d0*pi/(16*160)
-  if(mpiid.eq.0) write(*,*) 'COMUNICADOR EN BL1:',comm_local
   !$ CALL OMP_SET_DYNAMIC(.FALSE.)
   mpiid2=mpiid
   !Then number of processors used when compilling is assigned to th program:
@@ -96,7 +95,6 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
         call mpi_barrier(comm_local,ierr)
 !         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......	1'   
         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
@@ -117,7 +115,6 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
         endif
         call mpi_barrier(comm_local,ierr)   
         vardt = 5d-1/dt/rkdv(isubstp)     
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......	1'     
         call pois(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
 
         if (mpiid2 .eq. 0) then  
