@@ -91,12 +91,12 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
-! write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
+write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
 
 
 !Call the 2 BLs:
 if (mpiid_global .lt. size(mpiid_1)) then
-!     call bl_1(new_mpiid,mpiid_global,MPI_COMM_WORLD,new_comm) !The good one
+    call bl_1(new_mpiid,mpiid_global,MPI_COMM_WORLD,new_comm) !The good one
     if (new_mpiid.eq.0) write(*,*) '============VALOR DEL COMUNICADOR 1 & MPI_COMM_WORLD========',new_comm,MPI_COMM_WORLD
 else
     call bl_2(new_mpiid,mpiid_global,MPI_COMM_WORLD,new_comm) !The small one

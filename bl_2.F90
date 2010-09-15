@@ -127,7 +127,7 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
            tmp13 =tmp13+abs(th2-th1)
         endif
 
-!         call outflow_correction_2(u,v,rhsupa,comm_local)
+        call outflow_correction_2(u,v,rhsupa,comm_local)
         
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
@@ -137,8 +137,8 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
 
         vardt = 5d-1/dt/rkdv(isubstp)   
 
-!         IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......	2'
-!         call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......	2'
+        call pois_2(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
 
         if (mpiid2 .eq. 0) then  
            th2 = MPI_WTIME()      

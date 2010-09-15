@@ -64,7 +64,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   !     interpolate the velocities in P-P-F in 'x' (Everything R*8)
   !     transpose u_>resut and uinterp-> wki  to (zy)         
   ! ===============================================================
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 0',ut(0,250,xout)	
+!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 0',ut(0,250,xout)	
   
   call chp2x(resu,ut,rhsut,mpiid,ny+1,communicator) !resu=u in pencils (keep it)
 
@@ -108,7 +108,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !     if (mpiid==0) write(*,'(a10,i5,12e10.2)')'rhst', m,(ener(i),i=1,12)
   endif
 
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 1',ut(0,250,xout)	  
+!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 1',ut(0,250,xout)	  
 
 
   ! ==========================================================
@@ -166,13 +166,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
      !$OMP END PARALLEL
   enddo    !!!  i loop for rhs needing d/dx
-  if(mpiid.eq.0) then
-  write(*,*) '----------------------------------'
-  write(*,*) '**MAX um',um
-  write(*,*) '**MAX vm',maxval(vm)
-  write(*,*) '**MAX wm',wm
-  write(*,*) '----------------------------------'
-  endif
+ 
 
   ! ============================================================
   !    beginning the part is (x) storage 
@@ -221,6 +215,10 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       
      dtloc = min(dt1, dt2, dt3, dtret)
      if(mpiid.eq.0) then
+        write(*,*) '******************************************'
+	write(*,*) '**MAX um',um
+	write(*,*) '**MAX vm',maxval(vm)
+	write(*,*) '**MAX wm',wm	
 	write(*,*) '*************paso temporal nodo 0 *******'
 	write(*,*) 'dt1  ',dt1
 	write(*,*) 'dt2  ',dt2
@@ -262,7 +260,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
+!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
 
   if(mpiid.eq.0) write(*,*) 'CALLING GENFLU.............................' 
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
@@ -303,7 +301,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
   endif
 
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
+!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -476,7 +474,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call implzy(wt(0,1,i),wki3t(0,1,i),vyui,cofvyu,ny+1,rkk)
   enddo
 
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
+!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
 ! if(mpiid.eq.0) write(*,*) '=============================================END' 
   ener(13:15)=0
   dostat  = .FALSE.  

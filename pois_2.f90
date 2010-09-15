@@ -118,12 +118,12 @@ subroutine pois_2(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
      enddo
      
      
-     if (i .eq.2) then
-         dpdyH  = -rest(0,ny-1,1)/(dy(ny)+dy(ny-1))
-         dpdyH1 = -phiy(ny-1)/(dy(ny)+dy(ny-1))
-         a      = -dpdyH/dpdyH1
-         write(*,*) 'masas',a,dpdyH,dpdyH1
-     endif
+!      if (i .eq.2) then
+!          dpdyH  = -rest(0,ny-1,1)/(dy(ny)+dy(ny-1))
+!          dpdyH1 = -phiy(ny-1)/(dy(ny)+dy(ny-1))
+!          a      = -dpdyH/dpdyH1
+!          write(*,*) 'masas',a,dpdyH,dpdyH1
+!      endif
   enddo
 
  
