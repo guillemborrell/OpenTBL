@@ -85,19 +85,19 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      gamma(2)  = rthin/rthout   
      gamma(1)  = gamma(2)**(0.125)
      
-     if(mpiid.eq.0) then
-	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
-	write(*,*) 'dt',dt
-	write(*,*) 'timec',timec
-	write(*,*) 'ut(0,250,1)',ut(0,250,1)	
-	write(*,*) 'Uinfinity=',uinf
-	write(*,*) 'utau_out',utauout
-	write(*,*) 'jtop',jtop
-	write(*,*) 'dout',dout
-	write(*,*) 'rthout',rthout
-	write(*,*) 'gamma',gamma
-	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
-     endif
+!      if(mpiid.eq.0) then
+! 	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+! 	write(*,*) 'dt',dt
+! 	write(*,*) 'timec',timec
+! 	write(*,*) 'ut(0,250,1)',ut(0,250,1)	
+! 	write(*,*) 'Uinfinity=',uinf
+! 	write(*,*) 'utau_out',utauout
+! 	write(*,*) 'jtop',jtop
+! 	write(*,*) 'dout',dout
+! 	write(*,*) 'rthout',rthout
+! 	write(*,*) 'gamma',gamma
+! 	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+!      endif
 
      ! --------- new grids for rescaling
      do k=1,2

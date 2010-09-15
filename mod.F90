@@ -8,7 +8,8 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-integer,parameter:: numnodes_1=1,numnodes_2=4
+integer,parameter:: numnodes_1=11,numnodes_2=11
+integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1)
 endmodule num_nodes
 
 

@@ -42,8 +42,7 @@ program capalimite
   implicit none
   include "mpif.h"
 
-  integer ierr,mpiid_global,numprocs_total,i,j,k,new_mpiid    
-  integer:: mpiid_1(numnodes_1),mpiid_2(numnodes_2)
+  integer ierr,mpiid_global,numprocs_total,i,j,k,new_mpiid      
   integer orig_group, new_group, new_comm
 
   !----------------------------------------------------------------------*
@@ -61,13 +60,13 @@ program capalimite
   endif
 
 !First local group:
-do i=1,size(mpiid_1)
-mpiid_1(i)=i-1
+do i=0,size(mpiid_1)-1
+mpiid_1(i)=i
 enddo
 
 !Second local group:
-do i=1,size(mpiid_2)
-mpiid_2(i)=i-1+size(mpiid_1)
+do i=0,size(mpiid_2)-1
+mpiid_2(i)=i+size(mpiid_1)
 enddo
 
 if(mpiid_global.eq.0) then
@@ -92,7 +91,7 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
-write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
+! write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
 
 
 !Call the 2 BLs:

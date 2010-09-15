@@ -53,7 +53,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
      th1 = MPI_WTIME()      
      tmp29 =tmp29+abs(th2-th1)
      write(*,*) 
-     write(*,'(a40,f15.3,a3)') '===== FIELD (u,v,w,p) read in: =======',tmp29,'Sg' 
+     write(*,'(a40,f15.3,a3)') '===== FIELD 1 (u,v,w,p) read in: =======',tmp29,'Sg' 
      write(*,*)    
   endif
    
@@ -95,8 +95,8 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
         call mpi_barrier(comm_local,ierr)
-        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......'   
+!         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling rhsp......	1'   
         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
@@ -109,7 +109,7 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
            th2 = MPI_WTIME()      
            tmp13 =tmp13+abs(th2-th1)
         endif
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
+!         IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
         call outflow_correction(u,v,rhsupa,comm_local)        
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
@@ -117,7 +117,7 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
         endif
         call mpi_barrier(comm_local,ierr)   
         vardt = 5d-1/dt/rkdv(isubstp)     
-        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......'     
+        IF(MPIID.EQ.0) WRITE(*,*) 'Calling poisson......	1'     
         call pois(u,v,w,p,res,res,resw,vardt,mpiid,comm_local)
 
         if (mpiid2 .eq. 0) then  
@@ -192,7 +192,7 @@ subroutine iniciap_1(mpiid,communicator)
   !----------------------------------------------------------------------!
 
   if (mpiid .eq. 0) then
-     open(29,file='hrem.dat',status='old')   
+     open(19,file='hrem.dat',status='old')   
      call avanza(text,19)
      !                  Re    ,ax    ,ay    ,az    ,r  
      read(text,*) dat(1),dat(2),dat(3),dat(4),dat(5) 
@@ -218,7 +218,7 @@ subroutine iniciap_1(mpiid,communicator)
      read(text,'(a100)') chfile
      call avanza(text,19)
      read(text,'(a100)') chinfo
-     close (29)
+     close (19)
   endif
 
   call MPI_BCAST(dat    ,6 ,MPI_REAL8    ,0,communicator,ierr)
