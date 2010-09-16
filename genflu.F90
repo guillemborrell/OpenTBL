@@ -41,7 +41,6 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
   !  ------  bring reference ref. planes --------
   if (mpiid==mpiout) then
-     write(*,*) '**ut(0,250,xout)**',ut(0,250,xout)	     
      call MPI_SEND(ut(0,1,xout),countu,tipo,0,1,comm,istat,ierr)
      call MPI_SEND(vt(0,1,xout),countv,tipo,0,2,comm,istat,ierr)
      call MPI_SEND(wt(0,1,xout),countu,tipo,0,3,comm,istat,ierr)

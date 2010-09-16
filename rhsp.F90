@@ -25,7 +25,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      &          wki1,wki1t,wki2,wki2t,wki3,wki3t,      &
      &          wkp,wkf,wkpo,wkfo,bufuphy,buf_corr,   &  
      &          dt,m,ical,istep,mpiid,communicator)
-
+  use num_nodes
   use alloc_dns
   use statistics
   use temporal
@@ -260,16 +260,26 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
 
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
+  !Sending Plane to the Big BL (Second BL)
+  if(mpiid.eq.mpi_inlet) then
+      write(*,*) 'SEND TO:',mpiid_2(0), 'FROM NODE',mpi_inlet,'global',mpiid_1(mpi_inlet)
+      write(*,*) '*Value to be Sent*: U,w,v_t(0,45,x_inlet)',ut(0,45,x_inlet),wt(0,45,x_inlet),vt(0,45,x_inlet)
+      call MPI_SEND(ut(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
+      write(*,*) '*U SENT.........'
+      call MPI_SEND(wt(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_2(0),2,MPI_COMM_WORLD,istat,ierr)
+      write(*,*) '*W SENT.........'
+      call MPI_SEND(vt(:,:,x_inlet),(nz2+1)*ny    ,MPI_COMPLEX16,mpiid_2(0),3,MPI_COMM_WORLD,istat,ierr)       
+      write(*,*) '*V SENT.........'
+  endif
 
-!   if(mpiid.eq.0) write(*,*) '=============================================10' 
+
+
 #ifdef CREATEPROFILES        
   if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        
   call impose_profiles(ut,vt,wt,mpiid,communicator)
 #endif 
-!    if(mpiid.eq.0) write(*,*) '=============================================11' 
 
   do i=ib0,ie-1
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
@@ -280,7 +290,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 	
 
 
-! if(mpiid.eq.0) write(*,*) '=============================================12' 
   if (mpiid2.eq.0) tm1 = MPI_WTIME()
 
   if (mpiid.eq.pnodes-1) then
@@ -308,7 +317,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   endif
   ! ----------------  u+dp/dx updated,  copy  v, w -------
 
-! if(mpiid.eq.0) write(*,*) '=============================================13' 
   do i=ib0,ie
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k)
      ! ---  update v,w with pressure gradient
@@ -325,7 +333,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL
   enddo
 
-! if(mpiid.eq.0) write(*,*) '=============================================14' 
   ! ==============================================================
   !      do rest of RHS, and finish updating velocities (including triple products)
   ! ==============================================================
@@ -403,11 +410,9 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      !$OMP END PARALLEL    
    endif
   enddo     !!! loop on i
-! if(mpiid.eq.0) write(*,*) '=============================================15' 
   ! ======  ACHTUNG!!! impose & preserve viscous boundary conditions  ========
 
   call boun(ut,vt,wt)
-! if(mpiid.eq.0) write(*,*) '=============================================16' 
   !$OMP PARALLEL WORKSHARE
   rhsut(:,:,ib:ib0-1) = 0d0 
   rhsvt(:,:,ib:ib0-1) = 0d0 
@@ -432,7 +437,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
     enddo
   enddo
   
-! if(mpiid.eq.0) write(*,*) '=============================================18' 
   ! -- final velocity updates (var4(m=1)=0)     
     do i=ib0,ie
       if(i.eq.nx) var2=0d0 !Viscous terms equal 0 in the last plane
@@ -457,7 +461,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
       enddo     
       !$OMP END PARALLEL                          
     enddo 
-!   if(mpiid.eq.0) write(*,*) '=============================================19' 
   !$OMP PARALLEL WORKSHARE  
   rhsupat = rhsut
   rhsvpat = rhsvt
@@ -474,7 +477,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   enddo
 
 !   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
-! if(mpiid.eq.0) write(*,*) '=============================================END' 
   ener(13:15)=0
   dostat  = .FALSE.  
 end subroutine rhsp

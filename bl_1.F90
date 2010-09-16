@@ -40,6 +40,10 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   ! creates coordinates for parallel pros's.
   if (mpiid.eq.0) write(*,*) '======== PROGRAM 1 BEGINS ==============='
   call  iniciap_1(mpiid,comm_local)
+  call MPI_BCAST(mpi_inlet,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+  
+  
+  if(mpiid.eq.0) write(*,*) 'BL1********* GLOBAL MPIID mpiid2',mpiid_2,'mpi_inlet',mpi_inlet
   
 
   ! reads/generates inlet conditions initiates arrays (just in case)
@@ -159,12 +163,13 @@ close(28)
 #endif
 close(38)
   if (mpiid.eq.0) call summary2()
-  
+!   
 endsubroutine bl_1
  
 
 
 subroutine iniciap_1(mpiid,communicator)
+  use num_nodes
   use alloc_dns
   use names
   use point
@@ -283,6 +288,23 @@ subroutine iniciap_1(mpiid,communicator)
      stop
   endif
   if(mpiid.eq.0) write(*,*) 'xout ', xout,'in Node #',mpiout
+
+
+
+  ! --  found out in BL1 where is the Inlet plane for BL2: 
+  mpi_inlet=-100  
+  do i=0,nummpi-1
+     if (ibeg(i).le.x_inlet .and. iend(i).ge.x_inlet) then
+        mpi_inlet=i
+        exit
+     endif     
+  enddo
+  if(mpi_inlet<0) then
+     if(mpiid.eq.0) write(*,*) 'x_inlet ', x_inlet,' out of bounds, stopping'
+     stop
+  endif
+  if(mpiid.eq.0) write(*,*) '********  x_inlet  ******** ', x_inlet,'*****  in Node #  *****',mpi_inlet
+
   if (mpiid==0) write(*,*) 'ALOCATANDO...................................'
   call alloavar(ntotb,ntotv,mpiid)
   call rfti(nz)

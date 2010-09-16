@@ -45,6 +45,9 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
   ! creates coordinates for parallel pros's.
   if (mpiid.eq.0) write(*,*) '======== PROGRAM 2 BEGINS ==============='
   call  iniciap_2(mpiid,comm_local)
+  call MPI_BCAST(mpi_inlet,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+  
+  if(mpiid.eq.0) write(*,*) 'BL2**********: GLOBAL MPIID mpiid1',mpiid_1,'mpi_inlet',mpi_inlet
   
 
   ! reads/generates inlet conditions initiates arrays (just in case)

@@ -25,7 +25,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      &          wki1,wki1t,wki2,wki2t,wki3,wki3t,      &
      &          wkp,wkf,wkpo,wkfo,bufuphy,buf_corr,   &  
      &          dt,m,ical,istep,mpiid,communicator)
-
+  use num_nodes
   use alloc_dns_2
   use statistics_2
   use temporal_2
@@ -261,12 +261,18 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 2',ut(0,250,xout)	
+ !Receive Initial Condition for the BL2 from BL1:
+  if(mpiid.eq.0) then
+      write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),'local node in BL1',mpi_inlet
+      call MPI_RECV(ut(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
+      write(*,*) 'U RECEIVED.........'
+      call MPI_RECV(wt(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
+      write(*,*) 'W RECEIVED.........'
+      call MPI_RECV(vt(:,:,ib),(nz2+1)*ny    ,MPI_COMPLEX16,mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
+      write(*,*) 'V RECEIVED.........'
+      write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
+  endif
 
-  if(mpiid.eq.0) write(*,*) 'CALLING GENFLU.............................' 
-  call genflu_2(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
-
-!   if(mpiid.eq.0) write(*,*) '=============================================10' 
 #ifdef CREATEPROFILES        
   if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        
   call impose_profiles_2(ut,vt,wt,mpiid,communicator)
