@@ -54,6 +54,16 @@ program capalimite
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid_global,ierr)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr) !Total number of cores for the 2 BLs
 
+  if(numprocs_total.ne.numnodes_1+numnodes_2) then
+    if(mpiid_global.eq.0) then
+      write(*,*) 'Number of nodes in Script:',numprocs_total
+      write(*,*) 'Number of nodes in module:',numnodes_1+numnodes_2
+      write(*,*) '==== WRONG NUMBER OF NODES...stopping NOW!  ===='      
+    endif  
+    stop
+  endif  
+
+
   if(mpiid_global.eq.0) then
 	write(*,*) 'CREATING GROUPS-------------------------'
 	write(*,*) 'Distributing ranks:'
