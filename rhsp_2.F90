@@ -95,7 +95,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
          call statsp_2( wki1t,ut,vt,wt,pt, &   
      &                rhsvt,rhswt,resu,rhsut,rhsut,&
      &                wkp,wkpo,rhswt,bufuphy,rhsut,buf_corr,buf_corr,&
-     &                wkp,wkpo,bufuphy,mpiid)
+     &                wkp,wkpo,bufuphy,mpiid,communicator)
   endif
 !---------------------------------------------
 

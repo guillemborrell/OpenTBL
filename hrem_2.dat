@@ -26,7 +26,7 @@ CC
 CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
-       3.5d+03        15D+00      3.15D+00     2.86D+00  1D0
+       3.5d+03    9.213D+00      3.15D+00     2.86D+00  1D0
 CC     3.5d+03     139.4D+00     10.34D+00    14.07D+00  1D0
 CC
 CC
@@ -35,7 +35,7 @@ CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
 CC
-     0.6d0        1
+     1.2d0        1
 CC
 CC  #steps      #steps       #steps     #steps            time to   
 CC             Write field  Write stat  compute stat      start
@@ -43,7 +43,8 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC         500    505          500           1                 0
-              2     20           30             20    0
+CC            2000    1000       1000          10    0
+            10    10       10          2    0
 CC            7500     7500          500            50                 0
 CC         501       500          125            5                 0
 CC            
@@ -64,10 +65,12 @@ CC
 CC 2)FILE NAMES used in the code ====================================
 CC INPUT: ------------------------------------------------------------
 CC/wamba4/sillero/tbl.zpg.tcl5.225
-/wamba1/gungor/timetrace2/out.097
+/wamba2/guillem/surrogate/outsur.092
 CC OUTPUT: -----------------------------------------------------------
-/wamba4/sillero/imagenes-bl/bl600-2wo
+CC/wamba4/sillero/imagenes-bl/bl600-2wo
+/wamba2/guillem/short/2bls-bl2
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 CC/wamba4/sillero/imagenes-bl/bl600-2wo
-/home/jsillero/2bls/info.dat
+CC/home/jsillero/2bls/info.dat
+/wamba2/guillem/short/2bls-bl2.001.dat
 CC=====================================================================

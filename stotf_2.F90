@@ -50,7 +50,7 @@
 subroutine statsp_2(u_x,u,v,w,p, &
      &            dvdx,dwdx,upencil,dudx_zy,dudx_pencil,&
      &            buf1,buf2,buf3,buf4,buf5,buf_cor,buf_corp,&
-     &            bphy1,bphy2,bphy3,mpiid)
+     &            bphy1,bphy2,bphy3,mpiid,communicator)
 
   use alloc_dns_2
   use statistics_2
@@ -59,6 +59,7 @@ subroutine statsp_2(u_x,u,v,w,p, &
   use omp_lib
   implicit none
   include 'mpif.h'
+  integer,intent(in)::communicator
   !Pencils:
   real*8, dimension(nx  ,mpu),intent(in):: upencil
   real*8, dimension(nx  ,mpu):: dudx_pencil
@@ -386,7 +387,7 @@ subroutine statsp_2(u_x,u,v,w,p, &
   !========================== Out of the loop ib:ie (global)=============================
   !dudx_zy & dudx_pencil only used HERE!!! (==buf5;it was free to use up to here)   
   call differxx_2(upencil,dudx_pencil,dcxv,dcbx,cofcxv,2,mpu)  !dudx_pencil=d(u)dx pencils @th center of the cell
-  call chx2p_2(dudx_pencil,dudx_zy,dwdx,mpiid,ny+1)            !dudx_zy =d(u)dx in planes . dwdx==buffer
+  call chx2p_2(dudx_pencil,dudx_zy,dwdx,mpiid,ny+1,communicator)            !dudx_zy =d(u)dx in planes . dwdx==buffer
   !==============================================================================
    
   do i=ib,ie
@@ -429,7 +430,7 @@ subroutine statsp_2(u_x,u,v,w,p, &
 !Big buffers are free: dwdx,dvdx,rhsut
 !===============CORRELATIONS==================
 #ifndef NOCORR
-call compute_corr_2(coru,corv,corw,coruv,corp,corox,coroy,coroz,buf_cor,buf_corp,dwdx,dudx_zy,mpiid)
+call compute_corr_2(coru,corv,corw,coruv,corp,corox,coroy,coroz,buf_cor,buf_corp,dwdx,dudx_zy,mpiid,communicator)
 #endif
 end subroutine statsp_2
 
@@ -439,13 +440,14 @@ end subroutine statsp_2
 !=================================================================
 
 
-subroutine compute_corr_2(cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,buf_cor,buf_corp,buf_change,buf_cor2,mpiid)
+subroutine compute_corr_2(cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,buf_cor,buf_corp,buf_change,buf_cor2,mpiid,communicator)
   use ctesp_2,only: nx,ny,nz,nz2,ncorr,lxcorr,xcorpoint,nxp,xci,xco
   use point_2
   use omp_lib
   implicit none
   include 'mpif.h'
   integer:: mpiid,ii,j
+  integer,intent(in)::communicator
    real*8,dimension(nx,mp_corr2,lxcorr)::cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8
   !Correlations buffers:
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_cor  !in planes: To storage the 7 variables: u,v,w,p,omega_x,y,z
@@ -461,7 +463,7 @@ subroutine compute_corr_2(cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,buf_cor,buf_co
    !!!!!!!!!!!CHANGING CORRELATIONS BUFFERS TO PENCILS
   do ii=1,lxcorr
      do j=1,7       
-        call chp2x_2(buf_corp(1,1,j,ii),buf_cor2(0,1,ib,j,ii),buf_change,mpiid,ncorr)       
+        call chp2x_2(buf_corp(1,1,j,ii),buf_cor2(0,1,ib,j,ii),buf_change,mpiid,ncorr,communicator)       
      enddo
      !Computing correlations:     
      call c_corr_2(cor1 (1,1,ii),buf_corp(1,1,1,ii),buf_corp(1,1,1,ii),ii,mpiid)!cor_u   

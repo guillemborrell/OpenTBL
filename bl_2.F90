@@ -104,7 +104,7 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
   do istep = 1,nsteps
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
-        write(*,'(a60,i6)') 'Second BL....................................................istep=',istep
+!         write(*,'(a60,i6)') 'Second BL....................................................istep=',istep
      endif
 
      if (.TRUE.) setstep=.TRUE.

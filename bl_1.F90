@@ -6,8 +6,7 @@
 subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   use alloc_dns
   use main_val
-  use names
-  use genmod
+  use names  
   use temporal
   use point
   use statistics,only: ener
@@ -90,7 +89,7 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
   do istep = 1,nsteps
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
-        write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
+!         write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
      endif 
 
      if (.TRUE.) setstep=.TRUE.
@@ -136,9 +135,20 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
      times=times+dt
 
      ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
+        ! I/O Operations --------------------------------
+     if (mod(istep,stats).eq.0) then
+        if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
+        call escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical)
+        ical=0
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp27 =tmp27+abs(th2-th1)
+        endif
+     endif
+
      if (mod(istep,reav).eq.0) then
         if (mpiid2.eq.0) th2 = MPI_WTIME() 
-!         call escribezy(u,v,w,p,dt,mpiid)   !Vul & BG     
+         call escribezy(u,v,w,p,dt,mpiid)   !Vul & BG     
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
            tmp28 =tmp28+abs(th2-th1)
