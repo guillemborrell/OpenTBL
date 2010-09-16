@@ -7,6 +7,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   use alloc_dns
   use main_val
   use names
+  use genmod
   use temporal
   use point
   use statistics,only: ener

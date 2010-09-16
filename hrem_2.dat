@@ -59,7 +59,7 @@ CC   idat(8)       idat(9)   idat(10)      idat(11)  idat(12)
 CC
 CC  flaggen       utauout           rthout             dout
 CC
-       0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
+       0          0d0         0d0    0d0
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC INPUT: ------------------------------------------------------------

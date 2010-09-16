@@ -263,14 +263,11 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
  !Receive Initial Condition for the BL2 from BL1:
   if(mpiid.eq.0) then
-      write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),'local node in BL1',mpi_inlet
+!       write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),'local node in BL1',mpi_inlet
       call MPI_RECV(ut(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
-      write(*,*) 'U RECEIVED.........'
       call MPI_RECV(wt(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
-      write(*,*) 'W RECEIVED.........'
       call MPI_RECV(vt(:,:,ib),(nz2+1)*ny    ,MPI_COMPLEX16,mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
-      write(*,*) 'V RECEIVED.........'
-      write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
+!       write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
   endif
 
 #ifdef CREATEPROFILES        
