@@ -43,8 +43,8 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC         500    505          500           1                 0
-CC            2000    1000       1000          10    0
-            10    10       10          2    0
+            6000    500       500          10    0
+CC            2    2       2          2    0
 CC            7500     7500          500            50                 0
 CC         501       500          125            5                 0
 CC            
@@ -68,7 +68,7 @@ CC/wamba4/sillero/tbl.zpg.tcl5.225
 /wamba2/guillem/short/out.106
 CC OUTPUT: -----------------------------------------------------------
 CC/wamba4/sillero/imagenes-bl/bl600-2wo
-/wamba2/guillem/short/2bls-bl1
+/wamba2/sillero/short/2bls-bl1
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 CC/wamba4/sillero/imagenes-bl/bl600-2wo
 CC/home/jsillero/2bls/info.dat

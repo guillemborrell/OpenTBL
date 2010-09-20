@@ -138,7 +138,7 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
         ! I/O Operations --------------------------------
      if (mod(istep,stats).eq.0) then
         if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
-        call escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical)
+        call escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical,comm_local)
         ical=0
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
@@ -148,7 +148,7 @@ if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert=
 
      if (mod(istep,reav).eq.0) then
         if (mpiid2.eq.0) th2 = MPI_WTIME() 
-         call escribezy(u,v,w,p,dt,mpiid)   !Vul & BG     
+         call escribezy(u,v,w,p,dt,mpiid,comm_local)   !Vul & BG     
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
            tmp28 =tmp28+abs(th2-th1)

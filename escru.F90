@@ -9,7 +9,7 @@
 #define MAXPE 64*1024
 #define MAXCHARLEN 250
   
-  subroutine escribezy(u,v,w,p,dt,mpiid)
+  subroutine escribezy(u,v,w,p,dt,mpiid,communicator)
     !----------------------------------------------------------------------*
     ! escribe campos de u,v,w,p
     !----------------------------------------------------------------------*
@@ -20,6 +20,7 @@
     use ctesp
     implicit none
     include 'mpif.h'
+    integer,intent(in):: communicator
     real*8,dimension(nz1,ny+1,ib:ie)::u,w
     real*8,dimension(nz1,ny  ,ib:ie)::p,v
     real*4,dimension(:,:,:),allocatable::resu
@@ -34,7 +35,7 @@
     ! ------------------------- Program ----------------------------  
     pi=4d0*atan(1d0)
     dum=0d0
-    comm=MPI_COMM_WORLD
+    comm=communicator
     tipo=MPI_real4
 
     write(ext1,'(i3.3)') ifile     
@@ -389,7 +390,7 @@
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
 
-  subroutine escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical)
+  subroutine escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical,communicator)
     use names
     use statistics
     use point
@@ -399,7 +400,7 @@
     !The needed variables of alloc_dns are passed as arguments  
     implicit none  
     include 'mpif.h'
-
+    integer,intent(in):: communicator
     integer status(MPI_STATUS_SIZE),ierr,i,j,k,lim1,lim2,t_size,siz,dot
     integer mpiid,ii,kk,ind,comm,tipo,elements_spec,nbud
     real*8 x(0:nx+1),y(0:ny+1),ax,ay,az,cfl,tiempo,re,xxx    
@@ -412,7 +413,7 @@
 #else
     integer:: ical
 #endif  
-    comm=MPI_COMM_WORLD
+    comm=communicator
     tipo=MPI_real8
     ! ------------------------ codigo ------------------------------------! 
     totalcal=totalcal+ical
@@ -728,7 +729,7 @@
        call flush(40)     
     end if 
   
-    call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid)  
+    call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid,communicator)  
 
     ! Initialize everything to zero
     coru=0d0;corv=0d0;corw=0d0;coruv=0d0;
@@ -816,16 +817,17 @@ tipo=MPI_DOUBLE_COMPLEX
 
 
 ! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid)
-subroutine escr_corr(c1,c2,c3,c4,c5,c6,c7,c8,rank)
+subroutine escr_corr(c1,c2,c3,c4,c5,c6,c7,c8,rank,communicator)
 use ctesp,only:nx,nz2,ncorr,lxcorr,nummpi,nxp,ny
 use point
 implicit none
 include 'mpif.h'
+integer,intent(in):: communicator
 real*8,allocatable,dimension(:,:)::buf_cor 
 real*8,dimension(nx,pcib2:pcie2,lxcorr)::c1,c2,c3,c4,c5,c6,c7,c8
 integer:: rank,ierr,comm,status(MPI_STATUS_SIZE),i,j,dot,tipo,k,l
 
- comm = MPI_COMM_WORLD
+ comm = communicator
  tipo = MPI_real8
   
 allocate(buf_cor(1:nx,8)) !8 Correlations
