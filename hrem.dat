@@ -26,7 +26,7 @@ CC
 CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
-       3.5d+03    9.213D+00      3.15D+00     2.86D+00  1D0
+       3.5d+03     5.926D+00      3.15D+00     2.86D+00  1D0
 CC     3.5d+03     139.4D+00     10.34D+00    14.07D+00  1D0
 CC
 CC
@@ -68,7 +68,7 @@ CC/wamba4/sillero/tbl.zpg.tcl5.225
 /wamba2/guillem/short/out.106
 CC OUTPUT: -----------------------------------------------------------
 CC/wamba4/sillero/imagenes-bl/bl600-2wo
-/wamba2/sillero/short/2bls-bl1
+/wamba2/guillem/short/2bls-bl1-513-311-255
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 CC/wamba4/sillero/imagenes-bl/bl600-2wo
 CC/home/jsillero/2bls/info.dat
