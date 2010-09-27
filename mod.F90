@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=9,numnodes_2=15,x_inlet=450
+	integer,parameter:: numnodes_1=6,numnodes_2=16,x_inlet=225
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -40,8 +40,8 @@ module ctesp
 !====================================================
 #else
 !====================================================
- parameter ( nx =513,   ny =331, nz=768)
- parameter ( xin = 1 , xout =450) !50d99-Re2500
+ parameter ( nx =257,   ny =331, nz=768)
+ parameter ( xin = 1 , xout =225) !50d99-Re2500
 !====================================================
 #endif
 
