@@ -289,9 +289,6 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
    endif
    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-   if(mpiid == 0) then
-      write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
-   end if
 
 
 #ifdef CREATEPROFILES        

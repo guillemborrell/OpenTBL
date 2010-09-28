@@ -264,11 +264,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   !Sending Plane to the Big BL (Second BL)
   if(mpiid.eq.mpi_inlet) then
-      write(*,*) 'SEND TO:',mpiid_2(0), 'FROM NODE',mpi_inlet,&
-           &'global',mpiid_1(mpi_inlet)
-      write(*,*) (nz2+1),'x',ny+1,'complex16'
-      write(*,*) '*Value to be Sent*: U,w,v_t(0,45,x_inlet)',&
-           &ut(0,45,x_inlet),wt(0,45,x_inlet),vt(0,45,x_inlet)
       call MPI_SEND(ut(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&
            &mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
       call MPI_SEND(wt(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&
