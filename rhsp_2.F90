@@ -57,6 +57,20 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   complex*16, dimension(0:nz2_1,ny+1):: buf_comm
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
   
+  real*8, dimension(0:ny_1+1):: y_1
+  real*8, dimension(1:ny_1+1):: ym_1
+  real*8, dimension(1:ny+1):: ym
+
+  interface
+     function interpout(y,u,yi,ny,nz) result(ui)
+       integer, intent(in):: ny,nz
+       real*8, intent(in):: yi
+       real*8, dimension(ny), intent(in):: y
+       complex*16, dimension(nz,ny), intent(in):: u
+       complex*16, dimension(nz):: ui
+     end function interpout
+  end interface
+
   
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
@@ -265,23 +279,54 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
  !Receive Initial Condition for the BL2 from BL1:
   if(mpiid.eq.0) then
 
+     ym = 0.5d0*(y(0:ny)+y(1:ny+1))
+
      !FIXME: Find a reusable thing for buff_comm
 
      ut(:,:,ib) = 0d0
      vt(:,:,ib) = 0d0
      wt(:,:,ib) = 0d0
 
-      call MPI_RECV(buf_comm,(nz2_1+1)*(ny+1),MPI_COMPLEX16,&
-           &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
-      ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+     call MPI_RECV(y_1,ny_1+2,MPI_REAL8,mpiid_1(mpi_inlet),1,&
+          &MPI_COMM_WORLD,istat,ierr)
+     
+     ym_1 = 0.5d0*(y(0:ny_1)+y(1:ny_1+1))
 
-      call MPI_RECV(buf_comm,(nz2_1+1)*(ny+1),MPI_COMPLEX16,&
-           &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
-      wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
 
-      call MPI_RECV(buf_comm,(nz2_1+1)*ny    ,MPI_COMPLEX16,&
-           &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
-      vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
+     call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
+          &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
+
+     if (ny /= ny_1) then
+        do j=1,ny_1
+           ut(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1+1,nz2_1+1)
+        end do
+     else
+        ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+     end if
+
+     call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
+          &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
+
+     if (ny /= ny_1) then
+        do j=1,ny_1
+           wt(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1+1,nz2_1+1)
+        end do
+     else
+        wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+     end if
+
+
+     call MPI_RECV(buf_comm,(nz2_1+1)*ny_1    ,MPI_COMPLEX16,&
+          &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
+
+     if (ny /= ny_1) then
+        do j=1,ny_1
+           vt(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1,nz2_1+1)
+        end do
+     else
+        vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
+     end if
+
 
    endif
    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -520,3 +565,30 @@ subroutine energies_2(ut,vt,wt,hy,ener,communicator)
   call MPI_ALLREDUCE(uner,ener,15,MPI_real8,MPI_sum,communicator,ierr)
 
 end subroutine energies_2
+
+function interpout(y,u,yi,ny,nz) result(ui)
+  integer, intent(in):: ny,nz
+  real*8, intent(in):: yi
+  real*8, dimension(ny), intent(in):: y
+  complex*16, dimension(nz,ny), intent(in):: u
+  complex*16, dimension(nz):: ui
+
+  integer:: i
+  real*8:: y0, y1
+
+  if (yi > y(ny)) then
+     ui(:) = u(:,ny)
+  elseif (yi < y(1)) then
+     ui(:) = u(:,1)
+  else
+     do i=1,ny
+        if (y(i) > yi) then
+           y1 = y(i)
+           y0 = y(i-1)
+           ui(:) = u(:,i-1)+(u(:,i)-u(:,i-1))/(y1-y0)*(yi-y0)
+           exit
+        end if
+     end do
+  end if
+
+end function interpout
