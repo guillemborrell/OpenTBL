@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=6,numnodes_2=16,x_inlet=225
+	integer,parameter:: numnodes_1=2,numnodes_2=10,x_inlet=225
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 

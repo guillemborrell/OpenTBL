@@ -271,9 +271,6 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      vt(:,:,ib) = 0d0
      wt(:,:,ib) = 0d0
 
-      write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),&
-           &'local node in BL1',mpi_inlet
-      write(*,*) (nz2_1+1),'x',ny+1,'complex16'
       call MPI_RECV(buf_comm,(nz2_1+1)*(ny+1),MPI_COMPLEX16,&
            &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
       ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
