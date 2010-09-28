@@ -54,6 +54,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   !----------------From outside
   complex*16 ,dimension(0:nz2,ny+1)::wkf,wkfo
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr !special buffer for correlations 
+  complex*16, dimension(0:nz2_1,ny+1):: buf_comm
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
   
   
@@ -263,12 +264,35 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
  !Receive Initial Condition for the BL2 from BL1:
   if(mpiid.eq.0) then
-!       write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),'local node in BL1',mpi_inlet
-      call MPI_RECV(ut(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
-      call MPI_RECV(wt(:,:,ib),(nz2+1)*(ny+1),MPI_COMPLEX16,mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
-      call MPI_RECV(vt(:,:,ib),(nz2+1)*ny    ,MPI_COMPLEX16,mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
-!       write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
-  endif
+
+     !FIXME: Find a reusable thing for buff_comm
+
+     ut(:,:,ib) = 0d0
+     vt(:,:,ib) = 0d0
+     wt(:,:,ib) = 0d0
+
+      write(*,*) 'I MUST RECEIVE FROM:',mpiid_1(mpi_inlet),&
+           &'local node in BL1',mpi_inlet
+      write(*,*) (nz2_1+1),'x',ny+1,'complex16'
+      call MPI_RECV(buf_comm,(nz2_1+1)*(ny+1),MPI_COMPLEX16,&
+           &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
+      ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+
+      call MPI_RECV(buf_comm,(nz2_1+1)*(ny+1),MPI_COMPLEX16,&
+           &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
+      wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+
+      call MPI_RECV(buf_comm,(nz2_1+1)*ny    ,MPI_COMPLEX16,&
+           &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
+      vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
+
+   endif
+   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
+   if(mpiid == 0) then
+      write(*,*) 'Value Received: U,w,v_t(0,45,x_inlet)',ut(0,45,ib),wt(0,45,ib) ,vt(0,45,ib)  
+   end if
+
 
 #ifdef CREATEPROFILES        
   if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        

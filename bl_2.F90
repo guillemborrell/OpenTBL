@@ -23,6 +23,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
   real*8 dt,vardt
   integer isubstp,istep,ical,ierr
   logical:: vcontrol
+  character*60:: newfile
   vcontrol=.false. !just checking correct time step
   
   ! Medimos tiempo ! 
@@ -101,6 +102,12 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
 if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
 #endif
 
+#ifdef TRACE
+write(newfile,'("Uflow.",i4.4)') mpiid
+open(988,file=trim(chfile)//newfile,form='unformatted')
+write(988) ib,ie,ny
+#endif
+
   do istep = 1,nsteps
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
@@ -153,6 +160,11 @@ if(mpiid.eq.0) open(360,file=chinfoext,form='formatted',status='unknown',convert
         times=times-tvcrt
      endif
      times=times+dt
+
+#ifdef TRACE
+     !* write timetrace
+     call timetrace_2(u,v,w,p,tiempo,mpiid)
+#endif
 
      ! I/O Operations --------------------------------
      if (mod(istep,stats).eq.0) then
@@ -427,3 +439,24 @@ CALL MPI_BCAST(din,1,MPI_REAL8,0,communicator,ierr)
 
 endsubroutine inlet_retheta_2
 
+subroutine timetrace_2(u,v,w,p,time,mpiid)
+  use point
+  use names
+  use genmod
+  use alloc_dns
+  use ctesp
+  implicit none
+  include 'mpif.h'
+  real*8,dimension(nz1,ny+1,ib:ie)::u,w    
+  real*8,dimension(nz1,ny  ,ib:ie)::p,v
+  integer i,j,k,l,irec,mpiid
+  real*8 time
+
+  write(988) time,((u(1,k,i),k=1,ny+1),i=ib,ie), &
+&                 ((v(1,k,i),k=1,ny  ),i=ib,ie), &
+&                 ((w(1,k,i),k=1,ny+1),i=ib,ie)
+! if(mpiid.eq.0)write(*,*)time,(u(1,2,i),i=ib,ie)
+  
+  flush(988)
+
+end subroutine timetrace_2

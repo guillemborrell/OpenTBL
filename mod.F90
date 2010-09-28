@@ -40,7 +40,7 @@ module ctesp
 !====================================================
 #else
 !====================================================
- parameter ( nx =257,   ny =331, nz=768)
+ parameter ( nx =257,   ny =331, nz=384)
  parameter ( xin = 1 , xout =225) !50d99-Re2500
 !====================================================
 #endif
@@ -366,6 +366,9 @@ module ctesp_2
  parameter ( xin = 1 , xout =100) !50d99-Re2500
 !====================================================
 #endif
+
+ parameter ( nz_1 = 384)
+ parameter ( nz1_1 = 2*(nz_1/3), nz2_1=nz1_1/2-1 )
 
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
   parameter ( nplanes = nz/3)
