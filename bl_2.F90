@@ -120,7 +120,6 @@ write(988) ib,ie,ny
      !.............................................  
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-        call mpi_barrier(comm_local,ierr)   !************************
         call mpi_barrier(comm_local,ierr)
 !         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',comm_local,'substep',isubstp
         call rhsp_2(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &

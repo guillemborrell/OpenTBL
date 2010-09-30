@@ -290,16 +290,19 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call MPI_RECV(y_1,ny_1+2,MPI_REAL8,mpiid_1(mpi_inlet),1,&
           &MPI_COMM_WORLD,istat,ierr)
      
-     ym_1 = 0.5d0*(y(0:ny_1)+y(1:ny_1+1))
+     ym_1 = 0.5d0*(y_1(0:ny_1)+y_1(1:ny_1+1))
 
 
      call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
           &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        do j=1,ny_1
-           ut(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1+1,nz2_1+1)
+        do j=1,ny+1
+           ut(0:nz2_1,j,ib) = interpout(ym_1,buf_comm,ym(j),ny_1+1,nz2_1+1)
         end do
+        write(*,*) "Field interpolated in y"
+        write(*,*) "@j=40", ut(0,10,ib), ut(0,10,ib+1)
+        write(*,*) "@j=200", ut(0,200,ib), ut(0,200,ib+1)
      else
         ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
      end if
@@ -308,8 +311,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        do j=1,ny_1
-           wt(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1+1,nz2_1+1)
+        do j=1,ny+1
+           wt(0:nz2_1,j,ib) = interpout(ym_1,buf_comm,ym(j),ny_1+1,nz2_1+1)
         end do
      else
         wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
@@ -320,8 +323,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        do j=1,ny_1
-           vt(0:nz2_1,j,ib) = interpout(ym,buf_comm,ym_1(j),ny_1,nz2_1+1)
+        do j=1,ny
+           vt(0:nz2_1,j,ib) = interpout(y_1,buf_comm,y(j),ny_1,nz2_1+1)
         end do
      else
         vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
