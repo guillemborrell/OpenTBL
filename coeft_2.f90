@@ -12,15 +12,25 @@ subroutine coef_2(mpiid)
   use point_2
   use statistics_2,only:hy
   use ctesp_2
+  use num_nodes
+  use mod_interpout
 
   implicit none      
 
-
+  include 'mpif.h'
+  
   integer i,j,ii,n,np,flagv,mpiid,im,n1,n2
 
   real*8 bcc(5),a,b,c,d,am,am1,invre,dtrex,dtrez,dtrey,fact,point0,daux
   real*8 fren(nx),aux,dxi(0:nx),xxi(0:nx),dyi(1:ny),yyi(0:ny),ayy,gamy
 
+  real*8, dimension(0:ny_1+1):: y_1
+  real*8, dimension(1:ny_1+1):: ym_1
+  real*8, dimension(1:ny+1):: ym
+
+  !MPI workspaces
+  integer istat(MPI_STATUS_SIZE),ierr
+  
   pi = 4d0*atan(1d0)
   np = 5
 
@@ -864,6 +874,32 @@ subroutine coef_2(mpiid)
   !************************************************************************
   iflag = 0
   call soltrix_2(phiy,ny-1,1,ny-1,phiy,1,1,ayphi,iflag)
+
+  !**********************************************************
+  ! Linear interpolation to connect the two boundary layers
+  !**********************************************************
+
+  if(mpiid == 0) then
+     call MPI_RECV(y_1,ny_1+2,MPI_REAL8,mpiid_1(mpi_inlet),1,&
+          &MPI_COMM_WORLD,istat,ierr)
+  end if
+
+  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
+  if(mpiid == 0) then
+     write(*,*) "INFO: y vector from first bl received"
+  end if
+
+  ! y grid for u-like variables
+  ym = 0.5d0*(y(0:ny)+y(1:ny+1))
+  ym_1 = 0.5d0*(y_1(0:ny_1)+y_1(1:ny_1+1))
+
+  planu = interpout_plan(ym_1,ym,ny_1+1,ny+1,0)
+  planv = interpout_plan(y_1(1:ny),y(1:ny),ny_1,ny,0)
+
+  if(mpiid == 0)then
+     write(*,*) "INFO: interpolation plan completed"
+  end if
 
   return 
 end subroutine coef_2

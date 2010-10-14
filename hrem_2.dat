@@ -43,7 +43,7 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC         500    505          500           1                 0
-            6000    500       500           5    0
+            8000    500       500           5    0
 CC            2000    1000       1000          10    0
 CC            2    2       2          2    0
 CC            7500     7500          500            50                 0
@@ -65,9 +65,9 @@ CC
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC INPUT: ------------------------------------------------------------
-/wamba15/guillem/short/outsur.092
+/wamba17/guillem/surrogate/outsur.092
 CC OUTPUT: -----------------------------------------------------------
-/wamba15/guillem/short/2bls-bl2-257-165-127
+/wamba17/guillem/short/2bls-bl2-257-165-127
 CC FILE FOR LOCAL INFO: -----------------------------------------------
-/wamba15/guillem/short/bl2.001.dat
+/wamba17/guillem/short/bl2.001.dat
 CC=====================================================================

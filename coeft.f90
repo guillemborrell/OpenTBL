@@ -12,14 +12,19 @@ subroutine coef(mpiid)
   use point
   use statistics,only:hy
   use ctesp
+  use num_nodes
 
   implicit none      
 
+  include 'mpif.h'
 
   integer i,j,ii,n,np,flagv,mpiid,im,n1,n2
 
   real*8 bcc(5),a,b,c,d,am,am1,invre,dtrex,dtrez,dtrey,fact,point0,daux
   real*8 fren(nx),aux,dxi(0:nx),xxi(0:nx),dyi(1:ny),yyi(0:ny),ayy,gamy
+
+  !MPI workspaces
+  integer istat(MPI_STATUS_SIZE),ierr
 
   pi = 4d0*atan(1d0)
   np = 5
@@ -865,6 +870,17 @@ subroutine coef(mpiid)
   iflag = 0
   call soltrix(phiy,ny-1,1,ny-1,phiy,1,1,ayphi,iflag)
 
+  !**********************************************************
+  ! Linear interpolation to connect the two boundary layers
+  !**********************************************************
+
+
+  if (mpiid == mpi_inlet) then
+     call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
+  end if
+
+
+  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
   return 
 end subroutine coef
 

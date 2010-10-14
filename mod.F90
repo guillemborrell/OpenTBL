@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=4,numnodes_2=18,x_inlet=225
+	integer,parameter:: numnodes_1=4,numnodes_2=12,x_inlet=225
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -246,6 +246,7 @@ contains
     deallocate(node%rdisp)
   end subroutine nodedealloc
 end module shared_mem
+
 
 ! ---------------------------------------------------------------!
 module point
@@ -536,6 +537,92 @@ module fourthings_2
 end module fourthings_2
 ! ---------------------------------------------------------------!
 
+!!! Interpolation of the inflow for BL2
+!!! This module is only needed by BL2
+module mod_interpout
+  type plan_interpout
+     integer, dimension(:), pointer:: id
+     real(kind=8), dimension(:), pointer:: c1
+     real(kind=8), dimension(:), pointer:: c0
+  end type plan_interpout
+
+  contains
+
+    function interpout_plan(y1,y,ny1,ny,flags) result(plan)
+      type(plan_interpout):: plan
+      integer:: ny1, ny 
+      integer:: flags
+      real(kind = 8), dimension(ny1):: y1 !old mesh
+      real(kind = 8), dimension(ny):: y !new mesh
+
+      integer:: cursor,j
+
+      allocate(plan%id(ny))
+      allocate(plan%c1(ny))
+      allocate(plan%c0(ny))
+
+      do cursor = 1,ny
+         if (y(cursor) <= y1(1)) then
+            plan%id(cursor) = 1
+            plan%c1(cursor) = 1/real((y1(2)-y1(1)),kind=8)
+            plan%c0(cursor) = y1(1)/real(y1(2)-y1(1),kind=8)
+         else if (y(cursor) >= y1(ny1)) then
+            plan%id(cursor) = ny1-1;
+            plan%c1(cursor) = 1/real(y1(ny1)-y1(ny1-1),kind=8);
+            plan%c0(cursor) = y1(ny1-1)/real(y1(ny1)-y1(ny1-1),kind=8);
+         else
+            do j = 1,ny1
+               if (y1(j) > y(cursor)) then
+                  plan%id(cursor) = j-1;
+                  plan%c1(cursor) = 1d0/real(y1(j)-y1(j-1),kind=8);
+                  plan%c0(cursor) = y1(j-1)/real(y1(j)-y1(j-1),kind=8);
+                  exit
+               end if
+            end do
+         end if
+      end do
+
+    end function interpout_plan
+
+    function dinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
+      integer:: ny,ny1,nz,nz1
+      type(plan_interpout):: plan
+      real(kind=8), dimension(nz1,ny1):: u
+      real(kind=8), dimension(ny):: y
+      real(kind=8), dimension(nz,ny):: ui
+      
+      integer:: j
+
+      !$OMP PARALLEL DO
+      do j = 1,ny
+         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
+              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+              & (plan%c1(j)*y(j)-plan%c0(j))
+      end do
+      !$OMP END PARALLEL DO
+
+    end function dinterpout
+
+    function zinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
+      integer:: ny,ny1,nz,nz1
+      type(plan_interpout):: plan
+      complex(kind=8), dimension(nz1,ny1):: u
+      real(kind=8), dimension(ny):: y
+      complex(kind=8), dimension(nz,ny):: ui
+      
+      integer:: j
+
+      !$OMP PARALLEL DO
+      do j = 1,ny
+         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
+              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+              & (plan%c1(j)*y(j)-plan%c0(j))
+      end do
+      !$OMP END PARALLEL DO
+      
+    end function zinterpout
+end module mod_interpout
+
 module shared_mem_2
   implicit none
   type nodedata
@@ -577,6 +664,7 @@ end module shared_mem_2
 module point_2
   use omp_lib
   use shared_mem_2
+  use mod_interpout
   integer,dimension(:),allocatable :: ibeg,iend,pcibeg,pciend,pcibeg2,pciend2
   integer:: ib,ie,ib0,mmx,mpu,mpv,mpiout,ntotb,ntotv,ntot_corr,ntot_corr2
   integer:: mp_corr,mp_corr2,pcib,pcie,pcib2,pcie2
@@ -588,6 +676,7 @@ module point_2
   !$OMP THREADPRIVATE(ompid,nthreads,chunk1,chunk2,chunk3)
   integer jbf1,jef1,jbf2,jef2,mpvb,mpve
   !$OMP THREADPRIVATE(jbf1,jef1,jbf2,jef2,mpvb,mpve)
+  type(plan_interpout):: planu,planv
 end module point_2
 
 ! ---------------------------------------------------------------!
