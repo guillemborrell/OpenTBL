@@ -264,7 +264,6 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   !Sending Plane to the Big BL (Second BL)
   if(mpiid.eq.mpi_inlet) then
-     call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
      call MPI_SEND(ut(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&
           &mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
      call MPI_SEND(wt(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&

@@ -898,7 +898,7 @@ subroutine coef_2(mpiid)
   planv = interpout_plan(y_1(1:ny),y(1:ny),ny_1,ny,0)
 
   if(mpiid == 0)then
-     write(*,*) "INFO: interpolation plan completed"
+     write(*,*) "INFO: interpolation plan completed",planu%id
   end if
 
   return 
