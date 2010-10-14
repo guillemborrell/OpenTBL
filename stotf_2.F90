@@ -95,7 +95,7 @@ subroutine statsp_2(u_x,u,v,w,p, &
      do k = 0,nz2
         buf5(k,ny+1) = buf5(k,ny) !copying the last point ny-->ny+1 
      enddo
-     call interpyy_2(buf5(0,1),buf5(0,1),inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf5=p_y  !works in place
+     !call interpyy_2(buf5(0,1),buf5(0,1),inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf5=p_y  !works in place
           
      !================Statistics for Reynolds stresses: uu,vv,ww and uv    
      call interpyy_2(u_x(0,1,i),buf1(0,1)  ,inyu,cofiuy,inby,ny+1,0,nz1,nz1)   !buf1=(u_x)_y          
@@ -399,7 +399,7 @@ subroutine statsp_2(u_x,u,v,w,p, &
      do k = 0,nz2
         buf1(k,ny+1) = buf1(k,ny) !copying the last point ny-->ny+1 
      enddo
-     call interpyy_2(buf1,buf1,inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf1=p_y  !works in place 
+     !call interpyy_2(buf1,buf1,inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf1=p_y  !works in place 
      !---------------------------------------------
      !Case for u: dudx_zy=dudx
 #ifdef INFOINTER 
