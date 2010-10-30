@@ -52,10 +52,10 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-             1        1             20         10               0
-CC            
+CC 
+        10     3500        10      2                0           
 CC First  output file  number=====================================
-083 
+001 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -72,9 +72,9 @@ CC 2)FILE NAMES used in the code ====================================
 CC
 CC
 CC======================= INPUT: =======================================
-/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-par.083
+/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
 CC======================================OUTPUT============================
-/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-LR-ser
 CC====================== FILE FOR LOCAL INFO: ===================================
-/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-LR-ser
 CC====================================================================
