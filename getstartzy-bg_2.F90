@@ -139,7 +139,7 @@
     if (mpiid.eq.0) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*RECL_MULT    
+       rsize=2*nz2*(ny+1)*4    
        open (38,file=fil1,status='old',form='unformatted',access='direct',recl=rsize,convert='BIG_ENDIAN')
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(38,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
@@ -175,14 +175,14 @@
     rsize1 = nz1r*(ny+1)
     rsize2 = nz1r*(ny  )
 
-!     nzz = min(nz1r,nz1)
-    nzz = nz1r !now nz1r can be > than nz1.
+     nzz = min(nz1r,nz1)
+   
     allocate (resu(nz1r,ny+1,4))
 
     if (mpiid.eq.0) then
 
        open (40,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')       
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')       
 
   
 #ifdef OLDHEADER
@@ -207,11 +207,11 @@
        !opening rest of the files: 
 
        open (41,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        open (42,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')
        open (43,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        write(*,*) '----- files OPEN ------'
        write(*,*) fil1
        write(*,*) fil2
@@ -224,15 +224,15 @@
        !!  start reading the flow field  
        do i=ib,ie                
           irec = i+1
-          read(40,rec=irec) resu(1:nzz,1:ny+1,1)
-          read(41,rec=irec) resu(1:nzz,1:ny,2)
-          read(42,rec=irec) resu(1:nzz,1:ny+1,3)
-          read(43,rec=irec) resu(1:nzz,1:ny,4)
+          read(40,rec=irec) resu(1:nz1r,1:ny+1,1)
+          read(41,rec=irec) resu(1:nz1r,1:ny,2)
+          read(42,rec=irec) resu(1:nz1r,1:ny+1,3)
+          read(43,rec=irec) resu(1:nz1r,1:ny,4)
 
-          u(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,1)
-          v(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,2)
-          w(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,3)
-          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)
+          u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)
+          v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)
+          w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)
+          p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
 
           if (i==1) then
              u0=resu(1,:,1)
@@ -244,10 +244,10 @@
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'Read & Send up to:',i         
              irec = i+1
-             read(40,rec=irec) resu(1:nzz,1:ny+1,1)
-             read(41,rec=irec) resu(1:nzz,1:ny,2)
-             read(42,rec=irec) resu(1:nzz,1:ny+1,3)
-             read(43,rec=irec) resu(1:nzz,1:ny,4)
+             read(40,rec=irec) resu(1:nz1r,1:ny+1,1)
+             read(41,rec=irec) resu(1:nz1r,1:ny,2)
+             read(42,rec=irec) resu(1:nz1r,1:ny+1,3)
+             read(43,rec=irec) resu(1:nz1r,1:ny,4)
              call MPI_SEND(resu,rsize,tipo,dot,1,commu,ierr)                    
           enddo
        enddo
@@ -261,10 +261,10 @@
     else  !   --- the other nodes receive the information  
        do i=ib,ie       
           call MPI_RECV(resu,rsize,tipo,0,1,commu,status,ierr)
-          u(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,1)
-          v(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,2)
-          w(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,3)
-          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)
+          u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)
+          v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)
+          w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)
+          p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
           if(i.eq.1024) then
             write(*,*) '==========================================='
             do j=ny-10,ny
@@ -288,7 +288,7 @@
     if (mpiid.eq.mpiw1) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*RECL_MULT    
+       rsize=2*nz2*(ny+1)*4    
        open (40,file=fil1,status='old',form='unformatted',access='direct',recl=rsize)
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(40,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
@@ -323,7 +323,7 @@
 
     if (mpiid.eq.mpiw1) then
        open (40,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN'         
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')         
        read(40,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
             & (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
        write(*,*) 'in file    ', uchar,tiempo,nxr,nyr,nzr
@@ -336,7 +336,7 @@
        !!  start reading the flow field  
        do i=ib,ie                
           irec = i+1
-          read(10,rec=irec) resu(1:nzz,1:ny+1,1)         
+          read(10,rec=irec) resu(1:nz1r,1:ny+1,1)         
           u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)        
           if (i==1) then
              u0=resu(1,:,1)            
@@ -346,7 +346,7 @@
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'U: Read & Send up to:',i         
              irec = i+1
-             read(40,rec=irec) resu(1:nzz,1:ny+1,1)           
+             read(40,rec=irec) resu(1:nz1r,1:ny+1,1)           
              call MPI_SEND(resu(:,:,1),rsize1,tipo,dot,1,commu,ierr)                    
           enddo
        enddo
@@ -362,12 +362,12 @@
     !-----------------------------------
     if (mpiid.eq.mpiw2) then    
        open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
           irec = i+1       
-          read(41,rec=irec) resu(1:nzz,1:ny,2)                 
+          read(41,rec=irec) resu(1:nz1r,1:ny,2)                 
           v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)         
           if (i==1) then
              u0=resu(1,:,1)          
@@ -379,7 +379,7 @@
              do i= ibeg(dot),iend(dot)   
              if (mod(i,200).eq.0) write(*,*) 'V: Read & Send up to:',i                  
                 irec = i+1             
-                read(41,rec=irec) resu(1:nzz,1:ny,2)           
+                read(41,rec=irec) resu(1:nz1r,1:ny,2)           
                 call MPI_SEND(resu(:,:,2),rsize1,tipo,dot,2,commu,ierr)                    
              enddo
           endif
@@ -394,12 +394,12 @@
     !-----------------------------------
     if (mpiid.eq.mpiw3) then
        open (42,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
           irec = i+1         
-          read(42,rec=irec) resu(1:nzz,1:ny+1,3)                  
+          read(42,rec=irec) resu(1:nz1r,1:ny+1,3)                  
           w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)               
        enddo
        do dot = 0,nummpi-1  
@@ -407,7 +407,7 @@
              do i= ibeg(dot),iend(dot) 
              if (mod(i,200).eq.0) write(*,*) 'W: Read & Send up to:',i                   
                 irec = i+1          
-                read(42,rec=irec) resu(1:nzz,1:ny+1,3)            
+                read(42,rec=irec) resu(1:nz1r,1:ny+1,3)            
                 call MPI_SEND(resu(:,:,3),rsize1,tipo,dot,3,commu,ierr)                    
              enddo
           endif
@@ -422,11 +422,11 @@
     !-----------------------------------
     if (mpiid.eq.mpiw4) then
        open (43,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        irec=1      
        do i=ib,ie                
           irec = i+1         
-          read(43,rec=irec) resu(1:nzz,1:ny,4)         
+          read(43,rec=irec) resu(1:nz1r,1:ny,4)         
           p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
        enddo
   
@@ -435,7 +435,7 @@
                 do i= ibeg(dot),iend(dot)
                 if (mod(i,200).eq.0) write(*,*) 'UV: Read & Send up to:',i                            
                    irec = i+1             
-                   read(43,rec=irec) resu(1:nzz,1:ny,4)
+                   read(43,rec=irec) resu(1:nz1r,1:ny,4)
                    call MPI_SEND(resu(:,:,4),rsize1,tipo,dot,4,commu,ierr)                    
                 enddo
              endif

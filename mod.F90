@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=4,numnodes_2=12,x_inlet=225
+	integer,parameter:: numnodes_1=512,numnodes_2=1536,x_inlet=3900
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -33,17 +33,12 @@ module ctesp
   real*8 totmem
 
 ! Parameters for genflu and getstart!
-#ifdef BLGRANDE
+
 !====================================================
- parameter ( nx =8193,   ny =711, nz=4096)
- parameter ( xin = 1 , xout =3671*2/2) !50d99-Re2500
+parameter ( nx =4097,   ny =386, nz=2880)
+parameter ( xin = 1 , xout =2480) !50d99
 !====================================================
-#else
-!====================================================
- parameter ( nx =257,   ny =165, nz=384)
- parameter ( xin = 1 , xout =225) !50d99-Re2500
-!====================================================
-#endif
+
 
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
   parameter ( nplanes = nz/3)
@@ -356,15 +351,10 @@ module ctesp_2
   real*8 totmem
 
 ! Parameters for genflu and getstart!
-#ifdef BLGRANDE
+
 !====================================================
- parameter ( nx =8193,   ny =711, nz=4096)
- parameter ( xin = 1 , xout =3671*2/2) !50d99-Re2500
-!====================================================
-#else
-!====================================================
- parameter ( nx =769,   ny =331, nz=768)
- parameter ( xin = 1 , xout =100) !50d99-Re2500
+ parameter ( nx =7681,   ny =711, nz=2048)
+parameter ( xin = 1 , xout =3410) !50d99
 !====================================================
 #endif
 
@@ -622,6 +612,11 @@ module mod_interpout
       
     end function zinterpout
 end module mod_interpout
+
+
+
+
+
 
 module shared_mem_2
   implicit none
