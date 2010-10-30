@@ -1,0 +1,146 @@
+#########################################################################
+#           Makefile for BOUNDARY LAYER CODE
+###################################################################
+
+
+
+F77 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r  
+F90 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r
+
+#F77 =mpixlf90_r 
+#F90 =mpixlf90_r
+##########################################################
+OPTFLAGS = -O3 -qarch=450d -qtune=450 -g
+MACROSF = -WF,-DTIMER,-DBG,-DNOINFOGENFLU
+MACROSIO= -WF,-DRSERIAL,-DSERIAL
+MACROSST= -WF,-DINFOINTER,-DOLDHEADER
+LIBRARYF= -L/soft/apps/UPC/lib -lhpm -I/home/morozov/soft/V1R3M0-fftw-3.1.2-double/include
+##########################################################
+
+F90FLAGS =$(MACROSF) $(MACROSIO)  $(MACROSST)  $(OPTFLAGS) -qextname=flush -qsmp=omp -c $(LIBRARYF)
+LFLAGS   =$(MACROSF) $(MACROSIO)  $(MACROSST)   $(OPTFLAGS) -qsmp=omp $(LIBRARYF)    
+               
+##################################################### objects alpha
+INIT = .
+SRCDIR = $(INIT)
+OBJ=$(INIT)
+OBJDIR = $(OBJ)
+CALCDIR =$(INIT)
+
+		OBJECTS =$(OBJ)/mod.o\
+			      $(OBJ)/main.o\
+			      $(OBJ)/getstartzy-bg.o\
+			      $(OBJ)/boun.o\
+			      $(OBJ)/rhsp.o\
+			      $(OBJ)/coeft.o\
+			      $(OBJ)/pois.o\
+			      $(OBJ)/change.o\
+			      $(OBJ)/stotf.o\
+			      $(OBJ)/alloa.o\
+			      $(OBJ)/ffts.o\
+			      $(OBJ)/genflu.o\
+			      $(OBJ)/lip.o\
+			      $(OBJ)/escru.o\
+
+#################################################### 
+ITPC : printmsgA $(OBJECTS)
+	@echo Linking ===============================================================
+	$(F77) $(OBJECTS) $(LFLAGS) -o $@ /home/morozov/soft/V1R3M0-fftw-3.1.2-double/lib/libfftw3.a /home/morozov/soft/V1R3M0-fftw-3.1.2-float/lib/libfftw3f.a  libsion.a
+
+	@echo $@ =============== BUILT. CONGRATULATIONS =============================
+
+#################################################### compile
+#
+$(OBJDIR)/mod.o : $(SRCDIR)/mod.F90  
+	@echo compiling----------------------------------------------------------------------:   mod.f
+	cd $(OBJDIR); $(F90) $(F90FLAGS) -I$(SRCDIR) $(SRCDIR)/mod.F90
+#
+$(OBJDIR)/main.o : $(SRCDIR)/main.F90 $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   main.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/main.F90
+
+#
+$(OBJDIR)/getstartzy-bg.o : $(SRCDIR)/getstartzy-bg.F90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   getstartzy-bg.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/getstartzy-bg.F90
+#
+$(OBJDIR)/boun.o : $(SRCDIR)/boun.f90 $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   boun.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/boun.f90
+#
+$(OBJDIR)/rhsp.o : $(SRCDIR)/rhsp.f90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   rhsp.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/rhsp.f90
+#
+$(OBJDIR)/pois.o : $(SRCDIR)/pois.f90 $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   pois.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/pois.f90
+
+#
+$(OBJDIR)/stotf.o : $(SRCDIR)/stotf.F90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   stotf.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/stotf.F90
+#
+$(OBJDIR)/coeft.o : $(SRCDIR)/coeft.f90 $(SRCDIR)/mod.F90   
+	@echo compiling----------------------------------------------------------------------:   coeft.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/coeft.f90
+#
+$(OBJDIR)/lip.o : $(SRCDIR)/lip.f90 $(SRCDIR)/mod.F90  
+	@echo compiling----------------------------------------------------------------------:   lip.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/lip.f90
+
+#
+$(OBJDIR)/change.o : $(SRCDIR)/change.f90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   change.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/change.f90
+
+$(OBJDIR)/alloa.o : $(SRCDIR)/alloa.F90  $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   alloa.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/alloa.F90
+#
+$(OBJDIR)/ffts.o : $(SRCDIR)/ffts.f90  $(SRCDIR)/mod.F90
+	@echo compiling----------------------------------------------------------------------:   ffts.f90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/ffts.f90
+#
+$(OBJDIR)/genflu.o : $(SRCDIR)/genflu.F90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   genflu.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/genflu.F90
+#
+$(OBJDIR)/escru.o : $(SRCDIR)/escru.F90 $(SRCDIR)/mod.F90 
+	@echo compiling----------------------------------------------------------------------:   escru.F90
+	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/escru.F90
+#
+########################################################## message
+printmsgA :
+	@echo ===========================================================
+	@echo Building MAIN for $(SYSTEM)
+	@echo Compiler flags : $(F90FLAGS)
+	@echo Linker   flags : $(LFLAGS)
+	@echo ============================================================
+#
+###################################################### end of file
+#
+#
+clean: 
+	find . \( -name '*.o' \) -exec rm -rf {} \;
+	find . \( -name '*.mod' \) -exec rm -rf {} \;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
