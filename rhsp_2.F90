@@ -50,7 +50,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   real*8 var1,var2,var3,var4,dt,dtloc,uner(15),enerd(15)
   real*8 um,wm,poco,rkk,dt1,dt2,dt3,vmax,maxwk1,maxwk0,wmtmp
   integer i,j,k,l,istep,jv,imaxwk1,kmaxwk1,imaxwk0,kmaxwk0
-  integer kk,k2
+  integer kk,k2,nzz
   !----------------From outside
   complex*16 ,dimension(0:nz2,ny+1)::wkf,wkfo
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr !special buffer for correlations 
@@ -280,30 +280,33 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      ym = 0.5d0*(y(0:ny)+y(1:ny+1))
 
      !FIXME: Find a reusable thing for buf_comm
+     nzz=min(nz2_1,nz2)
 
      ut(:,:,ib) = 0d0
      vt(:,:,ib) = 0d0
      wt(:,:,ib) = 0d0
+     
+     nzz=min(nz2_1,nz2) !Find the minimum size of the Kz
 
      call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
           &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        ut(0:nz2_1,:,ib) = zinterpout(ym,buf_comm,planu,&
+        ut(0:nzz,:,ib) = zinterpout(ym,buf_comm(0:nzz,1),planu,&
              & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
         write(*,*) "Field interpolated in y"
      else
-        ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+        ut(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
      end if
 
      call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
           &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        wt(0:nz2_1,:,ib) = zinterpout(ym,buf_comm,planu,&
+        wt(0:nzz,:,ib) = zinterpout(ym,buf_comm(0:nzz,1),planu,&
              & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
      else
-        wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+        wt(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
      end if
 
 
@@ -311,10 +314,10 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        vt(0:nz2_1,1:ny,ib) = zinterpout(y,buf_comm,planv,&
+        vt(0:nzz,1:ny,ib) = zinterpout(y,buf_comm(0:nzz,1),planv,&
              & nz2_1+1,ny,nz2_1+1,ny_1)
      else
-        vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
+        vt(0:nzz,1:ny,ib) = buf_comm(0:nzz,1:ny)
      end if
 
 

@@ -4,6 +4,7 @@
 
 
 
+
 F77 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r  
 F90 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r
 
@@ -61,8 +62,7 @@ CALCDIR =$(INIT)
 
 ITPC : printmsgA $(OBJECTS)
 	@echo Linking ===============================================================
-	$(F77) $(OBJECTS) $(LFLAGS) -o $@ /usr/local/lib/libfftw3.a /usr/local/lib/libfftw3f.a
-
+	$(F77) $(OBJECTS) $(LFLAGS) -o $@ /home/morozov/soft/V1R3M0-fftw-3.1.2-double/lib/libfftw3.a /home/morozov/soft/V1R3M0-fftw-3.1.2-float/lib/libfftw3f.a  libsion.a
 	@echo $@ =============== BUILT. CONGRATULATIONS =============================
 
 #################################################### compile

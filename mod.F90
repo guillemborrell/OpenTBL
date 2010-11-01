@@ -353,7 +353,7 @@ module ctesp_2
 ! Parameters for genflu and getstart!
 
 !====================================================
- parameter ( nx =7681,   ny =711, nz=2880)
+ parameter ( nx =7681,   ny =711, nz=2048)
 parameter ( xin = 1 , xout =3410) !50d99
 !====================================================
 
