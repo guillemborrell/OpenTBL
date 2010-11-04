@@ -449,6 +449,8 @@
        
        call MPI_BARRIER(commu,ierr)
        deallocate(resu)
+     call MPI_BCAST(v0,ny,mpi_real8,mpiw2,commu,ierr)
+
 #endif
 
 
@@ -466,7 +468,6 @@
        endif
        if(mpiid.eq.0) write(*,*) 'BROADCASTING TIEMPO,Y,DT'  
        call MPI_BCAST(tiempo,1,mpi_real8,0,commu,ierr)
-       call MPI_BCAST(v0,ny,mpi_real8,mpiw2,commu,ierr)
        call MPI_BCAST(y,ny+2,mpi_real8,0,commu,ierr) !need by coeft!!
        call MPI_BCAST(dt,1,mpi_real8,0,commu,ierr)       
        if(mpiid.eq.0) write(*,*) 'DONE BROADCASTING'
