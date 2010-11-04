@@ -1044,42 +1044,4 @@ endsubroutine escr_corr_2
     !     WRITE(*,*) field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,xout,timein,dt,procs
   end subroutine writeheader_2
 
-  !===========BARRIER SUBROUTINES=============
-  subroutine barrier_after_start(comm)
-    integer, intent(in) :: comm
-    integer ierr
-    call MPI_BARRIER(comm,ierr)
-  end subroutine barrier_after_start
-
-  subroutine barrier_after_malloc(comm)
-    integer, intent(in) :: comm
-    integer ierr
-
-    call MPI_BARRIER(comm,ierr)
-  end subroutine barrier_after_malloc
-
-  subroutine barrier_after_open(comm)
-    integer, intent(in) :: comm
-    integer ierr
-    call MPI_BARRIER(comm,ierr)
-    return
-  end subroutine barrier_after_open
-
-  subroutine barrier_after_write(comm)
-    integer, intent(in) :: comm
-    integer:: ierr
-    call MPI_BARRIER(comm,ierr)
-  end subroutine barrier_after_write
-
-  subroutine barrier_after_read(comm)
-    integer, intent(in) :: comm
-    integer:: ierr
-    call MPI_BARRIER(comm,ierr)
-  end subroutine barrier_after_read
-
-  subroutine barrier_after_close(comm)
-    integer, intent(in) :: comm
-    integer:: ierr
-    call MPI_BARRIER(comm,ierr)
-  end subroutine barrier_after_close
 #endif
