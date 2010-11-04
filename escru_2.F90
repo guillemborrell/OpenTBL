@@ -92,7 +92,7 @@
        !Writting v:
        resu(:,1:ny,2:)=real(v,kind=4)  
        call blockwrite_2 (fil2,comm,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
-       call writeheader_2fil2,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
+       call writeheader_2(fil2,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
        !Writting w:
        resu(:,:,2:)=real(w,kind=4)           
        call blockwrite_2 (fil3,comm,resu,chunksM1,nfile,mpiid,sidio)      
@@ -428,7 +428,7 @@
        budfile=trim(chfile)//'.'//ext1//'.'//ext//'.budget'
        spectraplane=trim(chfile)//'.'//ext1//'.'//ext//'.extraesp'
 
-       open(39,file=stfile,status='unknown',form='unformatted',convert='Big_endian');rewind(39)
+       open(39,file=stfile,status='unknown',form='unformatted');rewind(39)
        indst=indst!+1 !WE WRITE STATISTICS WHEN RECORD IMAGES ONLY!!
        write(*,*) 'writing in==============  ',stfile       
        write(*,'(6f12.4,4i10)') tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical
@@ -581,7 +581,7 @@
 #ifndef NODISSIPATION
     !=================== BUDGETS =======================
     if (mpiid.eq.0) then
-       open(55,file=budfile,status='unknown',form='unformatted',convert='Big_endian');rewind(55)
+       open(55,file=budfile,status='unknown',form='unformatted');rewind(55)
        write(*,*) 'writing in==============',budfile
        !HEADER
        write(55) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical    

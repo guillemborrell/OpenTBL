@@ -336,7 +336,7 @@
        !!  start reading the flow field  
        do i=ib,ie                
           irec = i+1
-          read(10,rec=irec) resu(1:nz1r,1:ny+1,1)         
+          read(40,rec=irec) resu(1:nz1r,1:ny+1,1)         
           u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)        
           if (i==1) then
              u0=resu(1,:,1)            
@@ -361,7 +361,7 @@
 
     !-----------------------------------
     if (mpiid.eq.mpiw2) then    
-       open (11,file=fil2,status='unknown', &
+       open (41,file=fil2,status='unknown', &
             & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
@@ -370,7 +370,7 @@
           read(41,rec=irec) resu(1:nz1r,1:ny,2)                 
           v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)         
           if (i==1) then
-             u0=resu(1,:,1)          
+             v0=resu(1,:,1)          
           endif
        enddo
 
@@ -467,6 +467,7 @@
        endif
        if(mpiid.eq.0) write(*,*) 'BROADCASTING TIEMPO,Y,DT'  
        call MPI_BCAST(tiempo,1,mpi_real8,0,commu,ierr)
+       call MPI_BCAST(v0,ny,mpi_real8,mpiw2,commu,ierr)
        call MPI_BCAST(y,ny+2,mpi_real8,0,commu,ierr) !need by coeft!!
        call MPI_BCAST(dt,1,mpi_real8,0,commu,ierr)       
        if(mpiid.eq.0) write(*,*) 'DONE BROADCASTING'

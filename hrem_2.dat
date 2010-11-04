@@ -53,7 +53,7 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        1000     1000        1000      10                0
+        4000     2000        2000      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
 001 

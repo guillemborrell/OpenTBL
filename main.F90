@@ -79,12 +79,12 @@ do i=0,size(mpiid_2)-1
 mpiid_2(i)=i+size(mpiid_1)
 enddo
 
-if(mpiid_global.eq.0) then
- write(*,*) 'Ranks: mpiid_1 and mpiid_2'
- write(*,*) 'R1:',mpiid_1
- write(*,*) 'R2:',mpiid_2
- write(*,*) '-------------------------------------------------'
-endif
+!if(mpiid_global.eq.0) then
+! write(*,*) 'Ranks: mpiid_1 and mpiid_2'
+! write(*,*) 'R1:',mpiid_1
+! write(*,*) 'R2:',mpiid_2
+! write(*,*) '-------------------------------------------------'
+!endif
 
 
    !  Extract the original group handle: This is the entire number of available cores

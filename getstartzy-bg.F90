@@ -369,7 +369,7 @@
           read(11,rec=irec) resu(1:nz1r,1:ny,2)                 
           v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)         
           if (i==1) then
-             u0=resu(1,:,1)          
+             v0=resu(1,:,1)          
           endif
        enddo
 
@@ -466,6 +466,7 @@
        endif
        if(mpiid.eq.0) write(*,*) 'BROADCASTING TIEMPO,Y,DT'  
        call MPI_BCAST(tiempo,1,mpi_real8,0,commu,ierr)
+       call MPI_BCAST(v0,ny,mpi_real8,mpiw2,commu,ierr)
        call MPI_BCAST(y,ny+2,mpi_real8,0,commu,ierr) !need by coeft!!
        call MPI_BCAST(dt,1,mpi_real8,0,commu,ierr)       
        if(mpiid.eq.0) write(*,*) 'DONE BROADCASTING'

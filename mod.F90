@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=512,numnodes_2=1536,x_inlet=3504 !!this for Re_theta=2800.from statistics
+	integer,parameter:: numnodes_1=2048,numnodes_2=6*1024,x_inlet=3504 !!this for Re_theta=2800.from statistics
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -353,7 +353,7 @@ module ctesp_2
 ! Parameters for genflu and getstart!
 
 !====================================================
- parameter ( nx =7681,   ny =711, nz=2048)
+parameter ( nx =6145, ny =711, nz=2560)
 parameter ( xin = 1 , xout =3410) !50d99
 !====================================================
 
