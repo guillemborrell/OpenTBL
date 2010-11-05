@@ -293,7 +293,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
      if (ny /= ny_1) then
         ut(0:nzz,:,ib) = zinterpout(ym,buf_comm(0:nzz,1),planu,&
-             & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
+             & nz2+1,ny+1,nz2_1+1,ny_1+1)
         write(*,*) "Field interpolated in y"
      else
         ut(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
@@ -304,7 +304,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
      if (ny /= ny_1) then
         wt(0:nzz,:,ib) = zinterpout(ym,buf_comm(0:nzz,1),planu,&
-             & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
+             & nz2+1,ny+1,nz2_1+1,ny_1+1)
      else
         wt(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
      end if
@@ -315,7 +315,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
      if (ny /= ny_1) then
         vt(0:nzz,1:ny,ib) = zinterpout(y,buf_comm(0:nzz,1),planv,&
-             & nz2_1+1,ny,nz2_1+1,ny_1)
+             & nz2+1,ny,nz2_1+1,ny_1)
      else
         vt(0:nzz,1:ny,ib) = buf_comm(0:nzz,1:ny)
      end if
