@@ -353,7 +353,7 @@ module ctesp_2
 ! Parameters for genflu and getstart!
 
 !====================================================
-parameter ( nx =6145, ny =711, nz=2880)
+parameter ( nx =6145, ny =711, nz=2560)
 parameter ( xin = 1 , xout =3410) !50d99
 !====================================================
 
@@ -574,19 +574,22 @@ module mod_interpout
 
     end function interpout_plan
 
-    function dinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
-      integer:: ny,ny1,nz,nz1
+
+
+  function dinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
+      integer:: ny,ny1,nz,nz1,nzz
       type(plan_interpout):: plan
       real(kind=8), dimension(nz1,ny1):: u
       real(kind=8), dimension(ny):: y
       real(kind=8), dimension(nz,ny):: ui
       
       integer:: j
+      nzz=min(nz,nz1)
 
-      !$OMP PARALLEL DO
+      !$OMP PARALLEL DO 
       do j = 1,ny
-         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
-              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+         ui(1:nzz,j) = u(1:nzz,plan%id(j)) + &
+              & (u(1:nzz,plan%id(j)+1)-u(1:nzz,plan%id(j)))*&
               & (plan%c1(j)*y(j)-plan%c0(j))
       end do
       !$OMP END PARALLEL DO
@@ -594,26 +597,24 @@ module mod_interpout
     end function dinterpout
 
     function zinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
-      integer:: ny,ny1,nz,nz1
+      integer:: ny,ny1,nz,nz1,nzz
       type(plan_interpout):: plan
       complex(kind=8), dimension(nz1,ny1):: u
       real(kind=8), dimension(ny):: y
       complex(kind=8), dimension(nz,ny):: ui
-      
-      integer:: j
 
+      integer:: j
+      nzz=min(nz,nz1)
       !$OMP PARALLEL DO
       do j = 1,ny
-         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
-              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+         ui(1:nzz,j) = u(1:nzz,plan%id(j)) + &
+              & (u(1:nzz,plan%id(j)+1)-u(1:nzz,plan%id(j)))*&
               & (plan%c1(j)*y(j)-plan%c0(j))
-      end do
+      end do 
       !$OMP END PARALLEL DO
       
     end function zinterpout
 end module mod_interpout
-
-
 
 
 

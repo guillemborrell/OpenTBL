@@ -12,7 +12,7 @@ F90 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r
 #F90 =mpixlf90_r
 ##########################################################
 OPTFLAGS = -O3 -qarch=450d -qtune=450 -g
-MACROSF = -WF,-DTIMER,-DBG,-DNOCORR,-DNOSPECTRA
+MACROSF = -WF,-DTIMER,-DBG,-DNOCORR,-DNOSPECTRA,-DNOINFOSTEP
 MACROSIO= -WF,-DRSERIAL,-DWSERIAL,-DNEWGENFLU
  
 LIBRARYF= -L/soft/apps/UPC/lib -lhpm -I/home/morozov/soft/V1R3M0-fftw-3.1.2-double/include
