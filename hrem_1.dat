@@ -48,10 +48,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC        10      100          10       2                0
-        4000     2000        2000      10                0
+        3600     3600        3600      10                0
 CC            
 CC First  output file  number=====================================
-001 
+026 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -66,7 +66,8 @@ CC
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
-/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.004
+CC/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.084
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000.025
 CC ============================ OUTPUT  ========================================
 /intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000
 CC FILE FOR LOCAL INFO: -----------------------------------------------

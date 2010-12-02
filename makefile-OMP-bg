@@ -146,7 +146,7 @@ $(OBJDIR)/boun_2.o : $(SRCDIR)/boun_2.f90 $(SRCDIR)/mod.F90
 	@echo compiling----------------------------------------------------------------------:   boun_2.f90  **SECOND BL**
 	cd $(OBJDIR); $(F90) $(F90FLAGS)   -I$(SRCDIR) $(SRCDIR)/boun_2.f90
 #
-$(OBJDIR)/rhsp_2.o : $(SRCDIR)/rhsp.F90 $(SRCDIR)/mod.F90 
+$(OBJDIR)/rhsp_2.o : $(SRCDIR)/rhsp_2.F90 $(SRCDIR)/mod.F90 
 	@echo compiling----------------------------------------------------------------------:   rhsp_2.F90  **SECOND BL**
 	cd $(OBJDIR); $(F90) $(F90FLAGS)  -I$(SRCDIR) $(SRCDIR)/rhsp_2.F90
 #

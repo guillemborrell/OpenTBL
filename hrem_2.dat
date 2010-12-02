@@ -37,6 +37,8 @@ CC     3.5d+03    93.34D+00     12.61D+00    18.54D+00  1D0
 CC================================================================================================
 CC       3.5d+03    223.08D+00     12.55D+00    14.07D+00  1D0
          3.5d+03    209.14D+00     12.55D+00    18.54D+00  1D0
+CC         3.5d+03    167.31D+00     12.55D+00    18.54D+00  1D0
+CC
 CC       3.5d+03    111.54D+00     12.55D+00    14.07D+00  1D0  !NARROW LZ..... WRONG
 CC         3.5d+03    111.54D+00     12.55D+00    18.54D+00  1D0
 CC     3.5d+03     139.4D+00     10.34D+00    14.07D+00  1D0
@@ -53,10 +55,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        4000     2000        2000      10                0
+        3600     3600        3600      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
-001 
+026 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -73,9 +75,10 @@ CC 2)FILE NAMES used in the code ====================================
 CC
 CC
 CC======================= INPUT: =======================================
-/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
+CC/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x.025
 CC======================================OUTPUT============================
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-LR-ser
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x
 CC====================== FILE FOR LOCAL INFO: ===================================
 /intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-LR-ser
 CC====================================================================
