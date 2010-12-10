@@ -22,7 +22,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
   ! ----------------------- Workspace ------------------------------!      
   integer m,k,l,jtop,j,mpiid,kk,i,kll,khh,ii,ntop(2),kl(ny,2)
-  real*8  tloc,den,www1,u99,uinf
+  real*8  tloc,den,www1,u99,uinf,valf
   real*8  fsca(ny,2),ysca(ny),wlwa(ny)
 
   ! --------------------- MPI workspaces -----------------------------!
@@ -50,6 +50,13 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      call MPI_RECV(ut(0,1,1),countu,tipo,mpiout,1,comm,istat,ierr)
      call MPI_RECV(vt(0,1,1),countv,tipo,mpiout,2,comm,istat,ierr)
      call MPI_RECV(wt(0,1,1),countu,tipo,mpiout,3,comm,istat,ierr)
+     
+
+     do j=120,ny+1
+        valf=exp((y(j)-y(120))**0.6/(-1.2))
+        ut(2:end,j,1)=ut(2:end,j,1)*valf   
+        wt(2:end,j,1)=wt(2:end,j,1)*valf
+     enddo
 
      if(mpiid2.eq.0) then
         tm4 = MPI_WTIME()
