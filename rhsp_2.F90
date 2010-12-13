@@ -483,8 +483,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 	rhsut(k,1,i)= -1d0/inby(2,1)*(inby(2,2)*rhsut(k,2,i)+inby(2,3)*rhsut(k,3,i)+inby(2,4)*rhsut(k,4,i))   
 	rhswt(k,1,i)= -1d0/inby(2,1)*(inby(2,2)*rhswt(k,2,i)+inby(2,3)*rhswt(k,3,i)+inby(2,4)*rhswt(k,4,i))
 
-	rhsut(k,ny+1,i)= -1d0/ccon(1,1)*(ccon(1,2)*rhsut(k,ny,i)+ccon(1,3)*rhsut(k,ny-1,i)+ccon(1,4)*rhsut(k,ny-2,i))   
-	rhswt(k,ny+1,i)= -1d0/ccon(1,1)*(ccon(1,2)*rhswt(k,ny,i)+ccon(1,3)*rhswt(k,ny-1,i)+ccon(1,4)*rhswt(k,ny-2,i))
+	rhsut(k,ny+1,i)=0d0 
+	rhswt(k,ny+1,i)=0d0
       enddo
     enddo
   enddo

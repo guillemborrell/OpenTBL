@@ -51,7 +51,7 @@ CC        10      100          10       2                0
         3600     3600        3600      10                0
 CC            
 CC First  output file  number=====================================
-029 
+031 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -67,10 +67,10 @@ CC
 CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
 CC/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.084
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000.028
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000-exp.030
 CC ============================ OUTPUT  ========================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000-exp
 CC FILE FOR LOCAL INFO: -----------------------------------------------
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-R1100-3000-exp
 CC
 CC====================================================================

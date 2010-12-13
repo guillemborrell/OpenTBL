@@ -54,8 +54,8 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 
      do j=120,ny+1
         valf=exp((y(j)-y(120))**0.6/(-1.2))
-        ut(2:end,j,1)=ut(2:end,j,1)*valf   
-        wt(2:end,j,1)=wt(2:end,j,1)*valf
+        ut(2:,j,1)=ut(2:,j,1)*valf   
+        wt(2:,j,1)=wt(2:,j,1)*valf
      enddo
 
      if(mpiid2.eq.0) then
