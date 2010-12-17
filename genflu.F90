@@ -52,10 +52,10 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      call MPI_RECV(wt(0,1,1),countu,tipo,mpiout,3,comm,istat,ierr)
      
 
-     do j=120,ny+1
-        valf=exp((y(j)-y(120))**0.6/(-1.2))
-        ut(2:,j,1)=ut(2:,j,1)*valf   
-        wt(2:,j,1)=wt(2:,j,1)*valf
+     do j=1,ny+1
+      fblend=0.5*(1-tanh(y(j)-y(110)))
+      ut(2:,j,1)=ut(2:,j,1)*fblend
+      wt(2:,j,1)=wt(2:,j,1)*fblend
      enddo
 
      if(mpiid2.eq.0) then
