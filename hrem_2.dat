@@ -55,10 +55,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        3600     3600        3600      10                0
+        3500     3500        3500      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
-035 
+037 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -76,7 +76,7 @@ CC
 CC
 CC======================= INPUT: =======================================
 CC/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x.030
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x.036
 CC======================================OUTPUT============================
 /intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x
 CC====================== FILE FOR LOCAL INFO: ===================================

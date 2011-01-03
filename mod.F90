@@ -65,19 +65,14 @@ parameter ( xin = 1 , xout =2480) !50d99
   ! Points for spectra and correlations
   integer nspec,ltot,lxp,ncorr,tots,lxcorr
   integer xci,xco 
-  parameter(nspec=20,xci=1,xco=nx)
+  parameter(nspec=18,xci=1,xco=nx)
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-#ifdef BLGRANDE
-  data xpoint /6912,10542,14171/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /6912,10542,14171/
-#else
-  data xpoint /200,600,1200/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /200,600,1200/
-#endif
+  data xpoint /1000,2500,3500/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
+  data xcorpoint /1000,2500,3500/
   data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
 
 #ifdef PLANESPECTRA 
@@ -393,13 +388,8 @@ parameter ( xin = 1 , xout =3410) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-#ifdef BLGRANDE
-  data xpoint /6912,10542,14171/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /6912,10542,14171/
-#else
-  data xpoint /200,600,1200/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /200,600,1200/
-#endif
+  data xpoint /3500,5000,6000/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
+  data xcorpoint /3500,5000,6000/
   data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
 
 #ifdef PLANESPECTRA 

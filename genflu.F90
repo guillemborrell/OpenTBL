@@ -16,7 +16,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   integer,intent(in)::communicator
   !------------------------------- I/O -------------------------------!
   real*8  y(0:ny+1)
-  real*8  tiempo,re,dt
+  real*8  tiempo,re,dt,fblend
   real*8, dimension(0:2*nz2+1,ny+1,ib:ie):: ut,wt
   real*8, dimension(0:2*nz2+1,ny,ib:ie)  :: vt
 
