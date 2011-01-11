@@ -846,7 +846,7 @@ allocate(buf_cor(1:nx,8)) !8 Correlations
           buf_cor(:,7)=c7(1:nx,i,j)
           buf_cor(:,8)=c8(1:nx,i,j)          
           buf_cor=buf_cor/(2d0*nxp(j)+1d0) !averaging         
-          write(40) ((buf_cor(k,l),k=1,nx),l=1,8)  
+          write(47) ((buf_cor(k,l),k=1,nx),l=1,8)  
        enddo
 
        do dot = 1,nummpi-1
