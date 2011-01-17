@@ -71,9 +71,9 @@ parameter ( xin = 1 , xout =2480) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-  data xpoint /1000,2500,3500/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /1000,2500,3500/
-  data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
+  data xpoint /1915,2935,3955/ 
+  data xcorpoint /1915,2935,3955/
+  data nxp /38,44,52/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
@@ -388,9 +388,9 @@ parameter ( xin = 1 , xout =3410) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-  data xpoint /3500,5000,6000/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /3500,5000,6000/
-  data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
+  data xpoint /2604,3944,5324/
+  data xcorpoint /2604,3944,5324/
+  data nxp /50,58,68/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 

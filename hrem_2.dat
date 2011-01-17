@@ -58,7 +58,7 @@ CC
         3500     3500        3500      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
-041 
+042 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -76,7 +76,7 @@ CC
 CC
 CC======================= INPUT: =======================================
 CC/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x.040
+/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x.041
 CC======================================OUTPUT============================
 /intrepid-fs0/users/sillero/scratch/2bl-image/2bls-Re2800-6200-final-x
 CC====================== FILE FOR LOCAL INFO: ===================================
