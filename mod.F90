@@ -65,7 +65,7 @@ parameter ( xin = 1 , xout =2480) !50d99
   ! Points for spectra and correlations
   integer nspec,ltot,lxp,ncorr,tots,lxcorr
   integer xci,xco 
-  parameter(nspec=18,xci=1,xco=nx)
+  parameter(nspec=25,xci=1,xco=nx)
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
@@ -382,7 +382,7 @@ parameter ( xin = 1 , xout =3410) !50d99
   ! Points for spectra and correlations
   integer nspec,ltot,lxp,ncorr,tots,lxcorr
   integer xci,xco 
-  parameter(nspec=20,xci=1,xco=nx)
+  parameter(nspec=25,xci=1,xco=nx)
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
