@@ -201,8 +201,8 @@ subroutine summary1(istep,dt,vcontrol)
   endif
 #endif
   write(*,*)
-          write(32,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
-          call flush(32)
+  write(32,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
+  call flush(32)
   tmp1  =0d0; tmp4=0d0; tmp7=0d0; tmp10=0d0; tmp13=0d0;tmp16=0d0;tmp19=0d0;tmp22=0d0;tmp25=0d0;tmp28=0d0
   tmp2  =0d0; tmp5=0d0; tmp8=0d0; tmp11=0d0; tmp14=0d0;tmp17=0d0;tmp20=0d0;tmp23=0d0;tmp26=0d0;!tmp29=0d0
   tmp3  =0d0; tmp6=0d0; tmp9=0d0; tmp12=0d0; tmp15=0d0;tmp18=0d0;tmp21=0d0;tmp24=0d0;tmp27=0d0;tmp30=0d0     
@@ -321,8 +321,8 @@ subroutine summary1_2(istep,dt,vcontrol)
   endif
 #endif
   write(*,*)
-          write(38,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
-          call flush(38)
+  write(38,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
+  call flush(38)
   tmp1  =0d0; tmp4=0d0; tmp7=0d0; tmp10=0d0; tmp13=0d0;tmp16=0d0;tmp19=0d0;tmp22=0d0;tmp25=0d0;tmp28=0d0
   tmp2  =0d0; tmp5=0d0; tmp8=0d0; tmp11=0d0; tmp14=0d0;tmp17=0d0;tmp20=0d0;tmp23=0d0;tmp26=0d0;!tmp29=0d0
   tmp3  =0d0; tmp6=0d0; tmp9=0d0; tmp12=0d0; tmp15=0d0;tmp18=0d0;tmp21=0d0;tmp24=0d0;tmp27=0d0;tmp30=0d0     

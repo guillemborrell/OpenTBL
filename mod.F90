@@ -260,7 +260,7 @@ module statistics
   use ctesp,only: nx,ny,nz,nz2
   implicit none
 
-  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,vortx,vorty,vortz,&
+  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,uw,vw,vortx,vorty,vortz,&
        &vortxa,vortya,vortza,oxp,oyp,ozp,&
        &u3,v3,u2v,v2u,w2v,w2u,dispu,dispv,dispw,dispuv,&
        &pp,pm,pup,pvp,pdudx,pdvdy,pdudy,pdvdx,pdwdz,&
@@ -670,7 +670,7 @@ module statistics_2
   use ctesp_2,only: nx,ny,nz,nz2
   implicit none
 
-  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,vortx,vorty,vortz,&
+  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,uw,vw,vortx,vorty,vortz,&
        &vortxa,vortya,vortza,oxp,oyp,ozp,&
        &u3,v3,u2v,v2u,w2v,w2u,dispu,dispv,dispw,dispuv,&
        &pp,pm,pup,pvp,pdudx,pdvdy,pdudy,pdvdx,pdwdz,&

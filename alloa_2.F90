@@ -68,9 +68,11 @@ subroutine alloa_2(mpiid)
   allocate(va(ny  ,ib:ie))
   allocate(wa(ny+1,ib:ie))
   allocate(uv(ny+1,ib:ie)) 
+  allocate(vw(ny+1,ib:ie)) 
+  allocate(uw(ny+1,ib:ie))  
   allocate(pp(ny,ib:ie))
   allocate(pm(ny,ib:ie))
-  us =0d0;vs =0d0;ws =0d0;ua =0d0;wa =0d0;va =0d0
+  us =0d0;vs =0d0;ws =0d0;ua =0d0;wa =0d0;va =0d0;uw=0d0;vw=0d0;
   uv=0d0;pp=0d0;pm=0d0
 !--Vorticities: mean and fluctuations---------------------------  
   allocate(vortx(ny+1,ib:ie))

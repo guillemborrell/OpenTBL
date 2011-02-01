@@ -436,8 +436,8 @@
        write(39) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical       
        write(39) (y(i), i=0,ny+1)
     end if
-    ! master only things  
-    allocate(wkn(ny,11),wknp(ny+1,4))
+     ! master only things  
+    allocate(wkn(ny,13),wknp(ny+1,4))
     if (mpiid.eq.0) write(39) 0d0
 
     ! things in ib:ie  
@@ -459,6 +459,8 @@
           wkn (:,9) =vortxa(1:ny,i)
           wkn (:,10)=vortya(1:ny,i)
           wkn (:,11)=vortza(1:ny,i)
+          wkn (:,12)=uw (1:ny,i)
+          wkn (:,13)=vw (1:ny,i)
 
           write(39) (wknp(j,1),j=1,ny+1),&
                &    (wkn (j,1),j=1,ny  ),&
@@ -475,7 +477,9 @@
                &    (wkn (j,8),j=1,ny  ),&
                &    (wkn (j,9),j=1,ny  ),&
                &    (wkn (j,10),j=1,ny  ),&
-               &    (wkn (j,11),j=1,ny  )
+               &    (wkn (j,11),j=1,ny  ),&
+               &    (wkn (j,12),j=1,ny  ),&
+               &    (wkn (j,13),j=1,ny  )
        enddo
 
        do dot = 1,nummpi-1
@@ -498,7 +502,9 @@
                   &    (wkn (j,8),j=1,ny  ),&
                   &    (wkn (j,9),j=1,ny  ),&
                   &    (wkn (j,10),j=1,ny  ),&
-                  &    (wkn (j,11),j=1,ny  )
+                  &    (wkn (j,11),j=1,ny  ),&
+                  &    (wkn (j,12),j=1,ny  ),&
+                  &    (wkn (j,13),j=1,ny  )
           enddo
        enddo
        call flush(39)
@@ -521,15 +527,17 @@
           wkn (:,9) =vortxa(1:ny,i)
           wkn (:,10)=vortya(1:ny,i)
           wkn (:,11)=vortza(1:ny,i)
+          wkn (:,12)=uw (1:ny,i)
+          wkn (:,13)=vw (1:ny,i)
 
           call MPI_SEND(wknp,4*(ny+1),tipo,0,0,comm,ierr)
-          call MPI_SEND(wkn ,11*ny   ,tipo,0,0,comm,ierr)
+          call MPI_SEND(wkn ,13*ny   ,tipo,0,0,comm,ierr)
        enddo
     endif
 
     ! Initialize everything to zero
     pp=0d0  !pm,ua,va must be initialized later...I'll used it for budgets
-    us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0
+    us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0;uw=0d0;vw=0d0;
     vortx=0d0;vorty=0d0;vortz=0d0;vortxa= 0d0;vortya= 0d0;vortza= 0d0
 
     deallocate(wkn,wknp) 
@@ -589,9 +597,9 @@
     end if
 
 #ifdef INFOINTER 
-   nbud=27+9
+   nbud=21+9
 #else    
-   nbud=27
+   nbud=21
 #endif
 
     allocate(buf_bud(ny,nbud),buf_bud2(ny+1,2))
@@ -616,27 +624,21 @@
           buf_bud(:,15)=w2v   (1:ny,i)
           !K=0 MODE VARIABLES
           buf_bud(:,16)=dudx0 (1:ny,i)
-          buf_bud(:,17)=dudy0 (1:ny,i)
-          buf_bud(:,18)=dudz0 (1:ny,i)
-          buf_bud(:,19)=dvdx0 (1:ny,i)
-          buf_bud(:,20)=dvdy0 (1:ny,i)
-          buf_bud(:,21)=dvdz0 (1:ny,i)
-          buf_bud(:,22)=dwdx0 (1:ny,i)
-          buf_bud(:,23)=dwdy0 (1:ny,i)
-          buf_bud(:,24)=dwdz0 (1:ny,i)
-          buf_bud(:,25)=pm    (1:ny,i)
-          buf_bud(:,26)=ua    (1:ny,i)
-          buf_bud(:,27)=va    (1:ny,i)
+          buf_bud(:,17)=dudy0 (1:ny,i)          
+          buf_bud(:,18)=dvdx0 (1:ny,i)
+          buf_bud(:,19)=dvdy0 (1:ny,i)          
+          buf_bud(:,20)=dwdx0 (1:ny,i)
+          buf_bud(:,21)=dwdy0 (1:ny,i)                    
 #ifdef INFOINTER 
-         buf_bud(:,28)=v_0    (1:ny,i)
-         buf_bud(:,29)=u_x0   (1:ny,i)
-         buf_bud(:,30)=u_xy0  (1:ny,i)
-         buf_bud(:,31)=w_0    (1:ny,i)
-         buf_bud(:,32)=w_y0   (1:ny,i)
-         buf_bud(:,33)=dwdx_0 (1:ny,i)
-         buf_bud(:,34)=dudz_x0(1:ny,i) 
-         buf_bud(:,35)=v_y0   (1:ny,i)         
-         buf_bud(:,36)=dudx_0 (1:ny,i)            
+         buf_bud(:,22)=v_0    (1:ny,i)
+         buf_bud(:,23)=u_x0   (1:ny,i)
+         buf_bud(:,24)=u_xy0  (1:ny,i)
+         buf_bud(:,25)=w_0    (1:ny,i)
+         buf_bud(:,26)=w_y0   (1:ny,i)
+         buf_bud(:,27)=dwdx_0 (1:ny,i)
+         buf_bud(:,28)=dudz_x0(1:ny,i) 
+         buf_bud(:,29)=v_y0   (1:ny,i)         
+         buf_bud(:,30)=dudx_0 (1:ny,i)            
 #endif          
           !NY+1 size Buffers
           buf_bud2(:,1)=u3    (1:ny+1,i)
@@ -651,8 +653,8 @@
              write(55) buf_bud(1:ny,1:nbud),buf_bud2(1:ny+1,1:2)                           
           enddo
        enddo
-       call flush(55)
-       close(55)   
+       call flush(50)
+       close(50)   
     else
        do i=ib,ie
           !NY size Buffers            
@@ -673,28 +675,22 @@
           buf_bud(:,15)=w2v   (1:ny,i)
           !K=0 MODE VARIABLES
           buf_bud(:,16)=dudx0 (1:ny,i)
-          buf_bud(:,17)=dudy0 (1:ny,i)
-          buf_bud(:,18)=dudz0 (1:ny,i)
-          buf_bud(:,19)=dvdx0 (1:ny,i)
-          buf_bud(:,20)=dvdy0 (1:ny,i)
-          buf_bud(:,21)=dvdz0 (1:ny,i)
-          buf_bud(:,22)=dwdx0 (1:ny,i)
-          buf_bud(:,23)=dwdy0 (1:ny,i)
-          buf_bud(:,24)=dwdz0 (1:ny,i)
-          buf_bud(:,25)=pm    (1:ny,i)
-          buf_bud(:,26)=ua    (1:ny,i)
-          buf_bud(:,27)=va    (1:ny,i)
+          buf_bud(:,17)=dudy0 (1:ny,i)          
+          buf_bud(:,18)=dvdx0 (1:ny,i)
+          buf_bud(:,19)=dvdy0 (1:ny,i)          
+          buf_bud(:,20)=dwdx0 (1:ny,i)
+          buf_bud(:,21)=dwdy0 (1:ny,i)                    
 #ifdef INFOINTER 
-         buf_bud(:,28)=v_0    (1:ny,i)
-         buf_bud(:,29)=u_x0   (1:ny,i)
-         buf_bud(:,30)=u_xy0  (1:ny,i)
-         buf_bud(:,31)=w_0    (1:ny,i)
-         buf_bud(:,32)=w_y0   (1:ny,i)
-         buf_bud(:,33)=dwdx_0 (1:ny,i)
-         buf_bud(:,34)=dudz_x0(1:ny,i) 
-         buf_bud(:,35)=v_y0   (1:ny,i)         
-         buf_bud(:,36)=dudx_0 (1:ny,i)            
-#endif           
+         buf_bud(:,22)=v_0    (1:ny,i)
+         buf_bud(:,23)=u_x0   (1:ny,i)
+         buf_bud(:,24)=u_xy0  (1:ny,i)
+         buf_bud(:,25)=w_0    (1:ny,i)
+         buf_bud(:,26)=w_y0   (1:ny,i)
+         buf_bud(:,27)=dwdx_0 (1:ny,i)
+         buf_bud(:,28)=dudz_x0(1:ny,i) 
+         buf_bud(:,29)=v_y0   (1:ny,i)         
+         buf_bud(:,30)=dudx_0 (1:ny,i)            
+#endif          
           !NY+1 size Buffers
           buf_bud2(:,1)=u3    (1:ny+1,i)
           buf_bud2(:,2)=w2u   (1:ny+1,i)                                                          
@@ -708,9 +704,9 @@
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
     pdvdy=0d0;pdwdz=0d0
     u3=0d0;v3=0d0;u2v=0d0;v2u=0d0;w2v=0d0;w2u=0d0
-    dudx0=0d0;dudy0=0d0;dudz0=0d0;
-    dvdx0=0d0;dvdy0=0d0;dvdz0=0d0;
-    dwdx0=0d0;dwdy0=0d0;dwdz0=0d0; 
+    dudx0=0d0;dudy0=0d0;
+    dvdx0=0d0;dvdy0=0d0;
+    dwdx0=0d0;dwdy0=0d0; 
 
 #ifdef INFOINTER 
     v_0=0d0;u_x0=0d0;u_xy0=0d0;w_0=0d0;w_y0=0d0;
@@ -718,6 +714,7 @@
 #endif 
     deallocate(buf_bud,buf_bud2)
 #endif
+
 
 #ifndef NOCORR
     !===================CORRELATIONS=======================    
