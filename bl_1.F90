@@ -85,7 +85,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
 
 #ifndef NOINFOSTEP
 !Genflu info:
-if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
+if(mpiid.eq.0) open(62,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
 #endif
 
 #ifdef TRACE
