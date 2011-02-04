@@ -91,7 +91,7 @@ subroutine statsp(u_x,u,v,w,p, &
      do k = 0,nz2
         buf5(k,ny+1) = buf5(k,ny) !copying the last point ny-->ny+1 
      enddo
-     if(i.eq.1000) write(*,*) 'valor de la presion interpolada p(k=0,1:10):',buf5(0,1:10)     
+          
      !================Statistics for Reynolds stresses: uu,vv,ww and uv    
      call interpyy(u_x(0,1,i),buf1(0,1)  ,inyu,cofiuy,inby,ny+1,0,nz1,nz1)   !buf1=(u_x)_y          
      call interpyy(w(0,1,i)   ,buf2(0,1)  ,inyu,cofiuy,inby,ny+1,0,nz1,nz1)   !buf2=w_y 

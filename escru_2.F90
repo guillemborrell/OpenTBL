@@ -485,7 +485,7 @@
        do dot = 1,nummpi-1
           do i=ibeg(dot),iend(dot)          
              call MPI_RECV(wknp,4*(ny+1),tipo,dot,0,comm,status,ierr)
-             call MPI_RECV(wkn ,11*ny   ,tipo,dot,0,comm,status,ierr)
+             call MPI_RECV(wkn ,13*ny   ,tipo,dot,0,comm,status,ierr)
 
              write(39) (wknp(j,1),j=1,ny+1),&
                   &    (wkn (j,1),j=1,ny  ),&
