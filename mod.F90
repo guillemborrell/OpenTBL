@@ -153,6 +153,8 @@ module  alloc_dns
   real*8::x     (0:nx+1)
   real*8::xr    (0:nx+1)
   real*8::y     (0:ny+1)
+  real*8:: l_weight(5,0:ny+1)
+  real*8:: ldyy(5)
 
   real*8::dy    (0:ny)
   real*8::dx    (0:nx)
@@ -470,6 +472,8 @@ module  alloc_dns_2
   real*8::x     (0:nx+1)
   real*8::xr    (0:nx+1)
   real*8::y     (0:ny+1)
+  real*8:: l_weight(5,0:ny+1)
+  real*8:: ldyy(5)
 
   real*8::dy    (0:ny)
   real*8::dx    (0:nx)

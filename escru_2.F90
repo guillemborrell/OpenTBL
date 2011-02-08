@@ -484,8 +484,8 @@
 
        do dot = 1,nummpi-1
           do i=ibeg(dot),iend(dot)          
-             call MPI_RECV(wknp,4*(ny+1),tipo,dot,0,comm,status,ierr)
-             call MPI_RECV(wkn ,13*ny   ,tipo,dot,0,comm,status,ierr)
+                   call MPI_RECV(wknp,size(wknp),tipo,dot,0,comm,status,ierr)
+                   call MPI_RECV(wkn ,size(wkn) ,tipo,dot,0,comm,status,ierr)
 
              write(39) (wknp(j,1),j=1,ny+1),&
                   &    (wkn (j,1),j=1,ny  ),&
@@ -530,13 +530,13 @@
           wkn (:,12)=uw (1:ny,i)
           wkn (:,13)=vw (1:ny,i)
 
-          call MPI_SEND(wknp,4*(ny+1),tipo,0,0,comm,ierr)
-          call MPI_SEND(wkn ,13*ny   ,tipo,0,0,comm,ierr)
+          call MPI_SEND(wknp,size(wknp),tipo,0,0,comm,ierr)
+          call MPI_SEND(wkn ,size(wkn),tipo,0,0,comm,ierr)
        enddo
     endif
 
     ! Initialize everything to zero
-    pp=0d0  !pm,ua,va must be initialized later...I'll used it for budgets
+    pp=0d0;pm=0d0;ua=0d0;va=0d0 
     us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0;uw=0d0;vw=0d0;
     vortx=0d0;vorty=0d0;vortz=0d0;vortxa= 0d0;vortya= 0d0;vortza= 0d0
 
@@ -699,7 +699,7 @@
        enddo
     endif
     ! Initialize everything to zero
-    pm=0d0;ua=0d0;va=0d0 !must be intialized here!!
+    
     dispu=0d0;dispv=0d0;dispw=0d0;dispuv=0d0;
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
     pdvdy=0d0;pdwdz=0d0

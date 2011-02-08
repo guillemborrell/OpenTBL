@@ -483,8 +483,8 @@
 
        do dot = 1,nummpi-1
           do i=ibeg(dot),iend(dot)          
-             call MPI_RECV(wknp,4*(ny+1),tipo,dot,0,comm,status,ierr)
-             call MPI_RECV(wkn ,13*ny   ,tipo,dot,0,comm,status,ierr)
+             call MPI_RECV(wknp,size(wknp),tipo,dot,0,comm,status,ierr)
+             call MPI_RECV(wkn ,size(wkn) ,tipo,dot,0,comm,status,ierr)
 
              write(29) (wknp(j,1),j=1,ny+1),&
                   &    (wkn (j,1),j=1,ny  ),&
@@ -529,13 +529,13 @@
           wkn (:,12)=uw (1:ny,i)
           wkn (:,13)=vw (1:ny,i)
 
-          call MPI_SEND(wknp,4*(ny+1),tipo,0,0,comm,ierr)
-          call MPI_SEND(wkn ,13*ny   ,tipo,0,0,comm,ierr)
+          call MPI_SEND(wknp,size(wknp),tipo,0,0,comm,ierr)
+          call MPI_SEND(wkn ,size(wkn),tipo,0,0,comm,ierr)
        enddo
     endif
 
     ! Initialize everything to zero
-    pp=0d0  !pm,ua,va must be initialized later...I'll used it for budgets
+    pp=0d0;pm=0d0;ua=0d0;va=0d0 
     us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0;uw=0d0;vw=0d0;
     vortx=0d0;vorty=0d0;vortz=0d0;vortxa= 0d0;vortya= 0d0;vortza= 0d0
 
@@ -698,7 +698,7 @@
        enddo
     endif
     ! Initialize everything to zero
-    pm=0d0;ua=0d0;va=0d0 !must be intialized here!!
+
     dispu=0d0;dispv=0d0;dispw=0d0;dispuv=0d0;
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
     pdvdy=0d0;pdwdz=0d0
@@ -735,14 +735,14 @@
 
 #ifdef PLANESPECTRA
      if (mpiid.eq.0) then
-       open(43,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(43)
+       open(48,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(43)
        write(*,*) 'writing in==============  ',spectraplane
-       write(43) ical(1:7)
+       write(48) ical(1:7)
      endif
 
      if (mpiid.eq.0) then
         do i=ib,ie
-           write(43) plane_specu(0:nz2,1:7,i),plane_specv(0:nz2,1:7,i),plane_specw(0:nz2,1:7,i)
+           write(48) plane_specu(0:nz2,1:7,i),plane_specv(0:nz2,1:7,i),plane_specw(0:nz2,1:7,i)
         enddo
         
         do dot = 1,nummpi-1
@@ -750,11 +750,11 @@
              call MPI_RECV(plane_specu,(nz2+1)*7,tipo,dot,0,comm,status,ierr)
              call MPI_RECV(plane_specv,(nz2+1)*7,tipo,dot,1,comm,status,ierr)
              call MPI_RECV(plane_specw,(nz2+1)*7,tipo,dot,2,comm,status,ierr)
-             write(43) plane_specu(0:nz2,1:7,1),plane_specv(0:nz2,1:7,1),plane_specw(0:nz2,1:7,1)
+             write(48) plane_specu(0:nz2,1:7,1),plane_specv(0:nz2,1:7,1),plane_specw(0:nz2,1:7,1)
           enddo
        enddo
-       call flush(43)
-       close(43)
+       call flush(48)
+       close(48)
      else
        do i=ib,ie
        call MPI_SEND(plane_specu(0,1,i),(nz2+1)*7,tipo,0,0,comm,ierr)
@@ -771,24 +771,24 @@
 tipo=MPI_DOUBLE_COMPLEX
 
      if (mpiid.eq.0) then
-       open(44,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(44)
+       open(84,file=spectraplane,status='unknown',form='unformatted',convert='Big_endian');rewind(44)
        write(*,*) 'writing in (PLANESPECTRA2)==============  ',spectraplane
-       write(44) ss
+       write(84) ss
      endif
 
      if (mpiid.eq.0) then
         do i=ib,ie
-           write(44) planesv(0:nz2,1:500,i)
+           write(84) planesv(0:nz2,1:500,i)
         enddo
         
         do dot = 1,nummpi-1
           do i=ibeg(dot),iend(dot)    
              call MPI_RECV(planesv,(nz2+1)*500,tipo,dot,0,comm,status,ierr)            
-             write(44) planesv(0:nz2,1:500,1)
+             write(84) planesv(0:nz2,1:500,1)
           enddo
        enddo
-       call flush(44)
-       close(44)
+       call flush(84)
+       close(84)
      else
        do i=ib,ie
           call MPI_SEND(planesv(0,1,i),(nz2+1)*500,tipo,0,0,comm,ierr)    

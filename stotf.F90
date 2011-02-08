@@ -85,7 +85,7 @@ subroutine statsp(u_x,u,v,w,p, &
   integer:: i,j,k,jj,i3,ii
 
   do i=ib,ie             
-     call interp_pressure(p(0,1,i),buf5(0,1),ny) !buf5=p(...,i) [outside parallel region!]
+     call interp_pressure(p(0,1,i),buf5(0,1),ny,v(0,1,i)) !buf5=p(...,i) [outside parallel region!]
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k,cte,jj) 
      !$OMP DO SCHEDULE(STATIC)
      do k = 0,nz2
@@ -387,7 +387,7 @@ subroutine statsp(u_x,u,v,w,p, &
   !==============================================================================
    
   do i=ib,ie
-     call interp_pressure(p(0,1,i),buf1(0,1),ny) !buf1=p(...,i) [outside parallel region!]
+     call interp_pressure(p(0,1,i),buf1(0,1),ny,v(0,1,i)) !buf1=p(...,i) [outside parallel region!]
 
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k,cte)
      !$OMP DO SCHEDULE(STATIC)
