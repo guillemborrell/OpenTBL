@@ -5,10 +5,6 @@
   ! ----------------------------------------------------------------------! 
   !----------------------------------------------------------------------*
   
-#define MB *1024*1024
-#define MAXPE 64*1024
-#define MAXCHARLEN 250
-  
   subroutine escribezy_2(u,v,w,p,dt,mpiid,communicator)
     !----------------------------------------------------------------------*
     ! escribe campos de u,v,w,p
@@ -18,6 +14,12 @@
     use genmod_2
     use alloc_dns_2
     use ctesp_2
+
+
+#ifdef WPARALLEL
+    use hdf5
+#endif
+
     implicit none
     include 'mpif.h'
     integer,intent(in):: communicator
@@ -32,6 +34,15 @@
     integer:: nxr3,nyr3,nzr3,comm,tipo,chunkfbs,nfile,sidio,mpiw1,mpiw2,mpiw3,mpiw4
     integer*8:: chunks1,chunks2,chunksM1,chunksM2
 
+#ifdef WPARALLEL
+    ! ------------------------- HDF5 -------------------------------
+    
+    integer:: info
+    integer(hid_t):: fid,pid
+    integer:: h5err
+    integer(hsize_t),dimension(3)::dims
+#endif
+
     ! ------------------------- Program ----------------------------  
     pi=4d0*atan(1d0)
     dum=0d0
@@ -45,76 +56,104 @@
     fil4=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'p'
 
 
+    call MPI_INFO_CREATE(info,ierr)
+
 #ifdef WPARALLEL
-    !PARALLEL WRITTER ==================================================================
+    !PARALLEL WRITER ==================================================================
     !First the header and last the field
-    if (mpiid.eq.0) t0=MPI_Wtime()
+    if (mpiid.eq.0) then 
+       write(*,*) 'Escribiendo el fichero'
+       write(*,*) fil1   
+       t0=MPI_Wtime()  
+    end if
+        
+    !U and w
+    dims =(/ nz1, ny+1, ie-ib+1 /)
+    allocate (resu(nz1,ny+1,ie-ib+1),stat=ierr)
+    resu=0.0 !R4 buffer to convert R8 variables
+    
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+    call h5pclose_f(pid,h5err)
 
-    nfile=1			    !Number of files for parallel IO
-    chunkfbs=2*1024*1024            !File block system 2Mb
-    chunks1 =nz1*(ny+1)*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunks2 =nz1*(ny  )*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunksM1=nz1*(ny+1)*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
-    chunksM2=nz1*(ny  )*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
-    if(mpiid.eq.0) then      
-       write(*,*) '-------------------------CHUNK (Mb)---------------------------------------------------'
-       write(*,*) '              chunks1          chunks2         chunksM1          chunksM2         chunkfbs'
-       write(*,'(5F18.3)') 1.0*chunks1/1024/1024,1.0*chunks2/1024/1024,1.0*chunksM1/1024/1024,1.0*chunksM2/1024/1024,1.0*chunkfbs/1024/1024
-       write(*,*) '----------------------------------------------------------------------------------'
-    endif
+    !Dump the data to the allocated array and save to the disk
+    resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
+    call MPI_BARRIER(commu,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
 
-    if(mpiid.ne.0) then       
-       allocate (resu(nz1,ny+1,ie-ib+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"       
-       !Writting u:
-       resu=real(u,kind=4)       
-       call blockwrite_2(fil1,comm,resu,chunks1,nfile,mpiid,sidio)     
-       !Writting v:
-       resu(:,1:ny,:)=real(v,kind=4)         
-       call blockwrite_2(fil2,comm,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)     
-       !Writting w:
-       resu=real(w,kind=4)   
-       call blockwrite_2 (fil3,comm,resu,chunks1,nfile,mpiid,sidio)   
-       !Writting p:
-       resu(:,1:ny,:)=real(p,kind=4)    
-       call blockwrite_2 (fil4,comm,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)      
-       deallocate (resu)  
-       ifile=ifile+1 
-    else      
-       allocate (resu(nz1,ny+1,(ie-ib+1)+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"
-       write(*,*)
-       write(*,'(a75,f10.4,a3)') 'Size of the allocated buffer in order to write:',size(resu)*4.0/1024/1024,'Mb'              
-       !Writting u:
-       resu(:,:,2:)=real(u,kind=4)
-       call blockwrite_2 (fil1,comm,resu,chunksM1,nfile,mpiid,sidio)       
-       call writeheader_2(fil1,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
-       !Writting v:
-       resu(:,1:ny,2:)=real(v,kind=4)  
-       call blockwrite_2 (fil2,comm,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
-       call writeheader_2(fil2,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
-       !Writting w:
-       resu(:,:,2:)=real(w,kind=4)           
-       call blockwrite_2 (fil3,comm,resu,chunksM1,nfile,mpiid,sidio)      
-       call writeheader_2(fil3,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
-       !Writting p:
-       resu(:,1:ny,2:)=real(p,kind=4)           
-       call blockwrite_2 (fil4,comm,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)      
-       call writeheader_2(fil4,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,xout,timeinit,dt,y,um,nummpi)
-       deallocate (resu)  
-       ifile=ifile+1        
-    endif
+    if (mpiid == 0) write(*,*) "File for U successfully closed"
 
-    call MPI_BARRIER(comm,ierr)
+    resu=0.0
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+    call h5pclose_f(pid,h5err)
 
+    resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
+    call MPI_BARRIER(commu,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+    deallocate (resu)
+
+    !Now the v and p
+    dims =(/ nz1, ny, ie-ib+1 /)
+    allocate (resu(nz1,ny,ie-ib+1),stat=ierr)
+    resu=0.0 !R4 buffer to convert R8 variables
+    
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+    call h5pclose_f(pid,h5err)
+
+    resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
+    call MPI_BARRIER(commu,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    resu=0.0
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+    call h5pclose_f(pid,h5err)
+
+    resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
+    call MPI_BARRIER(commu,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    deallocate (resu)
+
+    !! Writing the Headers
+    if (mpiid == 0) then
+       write(*,*) "Writing the headers"
+       write(*,*) "Data dimensions ", dims(1), dims(2), dims(3)
+       write(*,*) "                ", nz1, ny+1, ie-ib+1
+       write(*,*) "Write ",dims(1)*dims(2)*dims(3)*4/1024/1024*nummpi," Mbytes per field"
+       call writeheader(fil1,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call writeheader(fil2,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call writeheader(fil3,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call writeheader(fil4,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+    end if
+  
+    ifile=ifile+1        
+
+    call MPI_BARRIER(commu,ierr)
+ 
     if (mpiid.eq.0) then 
        t0=MPI_Wtime()-t0
        write(*,*)
-       write(*,*) '=========================================================================='
-       write(*,*) 'Done writting', chfile(1:index(chfile,' ')-1)//'.'//ext1,' fields'
-       write(*,*) '=========================================================================='    
+       write(*,*) '===================================================================='
+       write(*,*) 'Done writting fields'
+       write(*,*) '===================================================================='    
        write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
-       write(*,*)   '--------------------------------------------------------------------------'
+       write(*,*)   '------------------------------------------------------------------'
     endif
 #endif
 

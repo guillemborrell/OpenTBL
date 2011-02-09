@@ -39,11 +39,20 @@
 
 program capalimite
   use num_nodes
+
+#ifdef RPARALLEL
+  use hdf5
+#endif
+
   implicit none
   include "mpif.h"
 
   integer ierr,mpiid_global,numprocs_total,i,j,k,new_mpiid      
   integer orig_group, new_group, new_comm
+
+#ifdef RPARALLEL
+  integer h5err
+#endif
 
   !----------------------------------------------------------------------*
   !       el proceso maestro llama a las rut. de inic. del codigo
@@ -51,6 +60,11 @@ program capalimite
  
   !       /*   initializes everything    */
   call MPI_INIT(ierr)
+
+#ifdef RPARALLEL
+  call h5open_f(h5err)
+#endif
+
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid_global,ierr)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr) !Total number of nodes for the 2 BLs
 
@@ -121,6 +135,10 @@ endif
      write (*,*) 'FINALIZING ALL THE PROCESSES: PROGRAM DONE'
      write (*,*) '=============================================='
   endif
+
+#ifdef RPARALLEL
+  call h5close_f(h5err)
+#endif
   
   call MPI_FINALIZE(ierr)
   stop

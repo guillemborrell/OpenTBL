@@ -12,18 +12,7 @@
   !       ACHTUNG!!    allocates one input plane, check there is space
   !==========================================================================
   
-  
 
-#ifdef X86
-#define RECL_MULT 1 !storage units of 4bytes X86 intel architecture
-#else
-#define RECL_MULT 4 !size in bytes BG IBM
-#endif
-
-#define MB *1024*1024
-#define MAXPE 64*1024
-#define MAXCHARLEN 250
-  
   subroutine getstartzy_2(u,v,w,p,dt,mpiid,communicator)
     use alloc_dns_2
     use statistics_2
@@ -31,6 +20,12 @@
     use point_2
     use genmod_2
     use ctesp_2
+
+#ifdef RPARALLEL
+    use hdf5
+    use h5lt
+#endif
+
     implicit none
     include "mpif.h"
     integer,intent(in):: communicator
@@ -46,91 +41,145 @@
     integer*8:: chunks1,chunks2,chunksM1,chunksM2,chunkfbs
     real(8) jk,dt,dum(20)
     character text*99, uchar*1
-    character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
+    character(len=128):: fil1,fil2,fil3,fil4
 
-    ! --------------------------  Programa  ----------------------------------!
+#ifdef RPARALLEL
+    ! -------------------------- HDF5 ------------------------------------!
+    integer(hid_t):: fid,pid
+    integer:: h5err
+    integer:: info
+    integer(hsize_t), dimension(3):: dims
+    integer(HSIZE_T), dimension(1):: hdims
+#endif 
+
+   ! --------------------------  Programa  ----------------------------------!
     commu=communicator
     tipo=MPI_real4
 
-    fil1=chinit(1:index(chinit,' ')-1)//'.'//'u'
-    fil2=chinit(1:index(chinit,' ')-1)//'.'//'v'
-    fil3=chinit(1:index(chinit,' ')-1)//'.'//'w'
-    fil4=chinit(1:index(chinit,' ')-1)//'.'//'p'
+    fil1=trim(chinit)//'.u'
+    fil2=trim(chinit)//'.v'
+    fil3=trim(chinit)//'.w'
+    fil4=trim(chinit)//'.p'
 
-    if(mpiid.eq.0) then
-    write(*,*) '**************FILE=',fil1
-    write(*,*) '**************FILE=',fil2
-    write(*,*) '**************FILE=',fil3
-    write(*,*) '**************FILE=',fil4
-    endif
+    call MPI_INFO_CREATE(info,ierr)
+
 
 #ifdef RPARALLEL
-    nfile=1			    !Number of files for parallel IO
-    chunkfbs=2*1024*1024            !File block system 2Mb
-    chunks1 =nz1*(ny+1)*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunks2 =nz1*(ny  )*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunksM1=nz1*(ny+1)*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
-    chunksM2=nz1*(ny  )*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
 
-    if(mpiid.eq.0) then      
-       write(*,*) '-------------------------CHUNKS (Mb)---------------------------------------------------'
-       write(*,*) '              chunks1          chunks2         chunksM1          chunksM2         chunkfbs'
-       write(*,'(5F18.3)') 1.0*chunks1/1024/1024,1.0*chunks2/1024/1024,1.0*chunksM1/1024/1024,1.0*chunksM2/1024/1024,1.0*chunkfbs/1024/1024
-       write(*,*) '----------------------------------------------------------------------------------'
+    !       lee el fichero 
+    if (mpiid.eq.0) then
+       write(*,*) 'Leyendo del fichero'
+       write(*,*) fil1     
+       call readheader(fil1,nxr,nyr,nzr)
     endif
-    !PARALLEL WRITTER ==================================================================
-    !First the header and last the field
-    if(mpiid.ne.0) then       
-       allocate (resu(nz1,ny+1,ie-ib+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"       
-       !Reading u:              
-       call blockread_2(fil1,commu,resu,chunks1,nfile,mpiid,sidio)     
-       u=real(resu,kind=8)      
-       !Reading v:           
-       call blockread_2 (fil2,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)    
-       v=real(resu(:,1:ny,:),kind=8)    
-       !Reading w:       
-       call blockread_2 (fil3,commu,resu,chunks1,nfile,mpiid,sidio) 
-       w=real(resu,kind=8)    
-       !Reading p:         
-       call blockread_2 (fil4,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)  
-       p=real(resu(:,1:ny,:),kind=8)       
-       deallocate (resu)        
-    else      
-       allocate (resu(nz1,ny+1,(ie-ib+1)+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"      
-       write(*,'(a75,f10.4,a3)') 'Size of the allocated buffer in order to read:',size(resu)*4.0/1024/1024,'Mb'           
-       !Reading u:    
-       call readheader_2(fil1)        
-       call blockread_2 (fil1,commu,resu,chunksM1,nfile,mpiid,sidio)     
-       u =real(resu(:,:,2:),kind=8)
-       u0=real(resu(1,:,2 ),kind=8)              
-       !         write(*,*) 'Reading from file u0-Nagib:'
-       !         open (110,file='u0-nagib',form='unformatted',status='old')
-       !         read(110) u0(1:ny+1)
-       !         close(110)    
 
-       !Reading v:       
-       call blockread_2 (fil2,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)             
-       v= real(resu(:,1:ny,2:),kind=8)
-       v0=real(resu(1,1:ny,2 ),kind=8)
-       !          write(*,*) 'Reading from file V0-Nagib:'
-       !          open (110,file='v0-nagib',form='unformatted',status='old')
-       !          read(110) v0(1:ny)
-       !          close(110) 
+    call MPI_BCAST(nxr,1,mpi_integer,0,commu,ierr)
+    call MPI_BCAST(nzr,1,mpi_integer,0,commu,ierr)
+    call MPI_BCAST(nyr,1,mpi_integer,0,commu,ierr)
 
-       !Reading w:         
-       call blockread_2 (fil3,commu,resu,chunksM1,nfile,mpiid,sidio)      
-       w=real(resu(:,:,2:),kind=8)  
-       !Reading p:       
-       call blockread_2 (fil4,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)             
-       p=real(resu(:,1:ny,2:),kind=8) 
-       deallocate (resu)            
-       write(*,*)
-       write(*,*) '=========================================================================='
-       write(*,*) 'Done Reading', trim(chinit),' fields'
-       write(*,*) '=========================================================================='
+    if (ny.ne.nyr) then
+       if (mpiid==0) write(*,*) 'changing the y grid has to be done separately'
+       if (mpiid==0) write(*,*) 'ny=',ny,'nyr',nyr
+       stop
+    elseif (nx.ne.nxr) then
+       if (mpiid==0) write(*,*) 'changing the x grid has to be done separately'
+       if (mpiid==0) write(*,*) 'nx=',nx,'nxr',nxr
     endif
+
+    u = 0d0
+    v = 0d0
+    w = 0d0
+    p = 0d0
+    nz1r = 2*(nzr+1)
+    nzz = min(nz1r,nz1)
+
+    !Allocate the temporary array to read U and W.
+    dims = (/ nz1r, nyr+1, ie-ib+1 /)
+    allocate(resu(nz1r,nyr+1,ie-ib+1))
+
+    !Collective call to the properties list creator
+
+    timer = MPI_WTIME()
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+
+    !Load the data to the allocated array and close the file
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    !Close the file
+    call h5fclose_f(fid,h5err)
+
+    if(mpiid == 0) then
+       write(*,*) "Read ", nz1r*(nyr+1)*(nxr)*4/1024/1024, "MiB in ", MPI_WTIME()-timer
+    end if
+
+    !Copy the data to the variable preserving the layout
+    call MPI_BARRIER(commu,ierr)
+    u(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    !Read the rest of the variables.
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    call MPI_BARRIER(commu,ierr)
+    w(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    ! No more variables with ny+1
+    deallocate(resu)
+
+    !Allocate the temporary array to read V and P.
+    dims = (/ nz1r, nyr, ie-ib+1 /)
+    allocate(resu(nz1r,nyr,ie-ib+1))
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    call MPI_BARRIER(commu,ierr)
+    v(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr,1:ie-ib+1),kind=8)
+
+    !!!RESET THE V0 VALUE AT THE INFLOW
+    ! if (mpiid == 0) then
+    !    call h5fopen_f("./v0.h5",H5F_ACC_RDONLY_F,fid,h5err,H5P_DEFAULT_F)
+    !    hdims = (/ ny /)
+    !    call H5LTread_dataset_double_f_1(fid,"v",v0,hdims,h5err)
+    !    call h5fclose_f(fid,h5err)
+    !    v(1,1:ny,1)=v0
+    !    write(*,*) "WARNING: SUCCESSFULLY UPDATED V0 AT THE INFLOW"
+    ! end if
+
+    call MPI_BARRIER(commu,ierr)
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+    
+    call MPI_BARRIER(commu,ierr)
+    p(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    deallocate(resu)
+
+    if(mpiid == 0) then
+       u0=u(1,1:ny+1,1)
+       v0=v(1,1:ny,1)
+    end if
+
+!    write(*,*) mpiid, "File read successfully from ", ib, "to ", ie
 #endif
 
 
@@ -509,7 +558,7 @@ end subroutine getstartzy_2
 #ifdef BG
        include 'mpif.h'
 #endif
-       character(len=MAXCHARLEN),intent(in):: filename
+       character(len=128),intent(in):: filename
        integer,intent(in):: comm
        integer*8,intent(in):: chunksize
        character,dimension(chunksize),intent(in):: localbuffer
@@ -517,7 +566,7 @@ end subroutine getstartzy_2
        integer,intent(in):: rank
        integer,intent(out):: sid
 
-       character(len=MAXCHARLEN) :: newfname = 'newfile'
+       character(len=128) :: newfname = 'newfile'
        integer:: lcomm,ierr,rankl
 
        integer*8:: btoread,bread,feof
@@ -607,7 +656,7 @@ end subroutine getstartzy_2
        use alloc_dns_2,only: tiempo,y
        use genmod_2,only:um,timeinit
        implicit none
-       character(len = MAXCHARLEN), intent(in):: filename
+       character(len = 128), intent(in):: filename
 
        real(kind = 8):: cfl,re,dt
        real(kind = 8):: lx,ly,lz
