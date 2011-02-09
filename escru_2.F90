@@ -28,7 +28,7 @@
     real*4,dimension(:,:,:),allocatable::resu
     integer i,j,k,l,irec
     integer status(MPI_STATUS_SIZE),ierr,t_size,t_size1,t_size2,dot,mpiid,lim1,lim2
-    character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
+    character(len=128):: fil1,fil2,fil3,fil4
     character:: ext1*3,uchar*1
     real*8    dt,dum(20),jk,t0
     integer:: nxr3,nyr3,nzr3,comm,tipo,chunkfbs,nfile,sidio,mpiw1,mpiw2,mpiw3,mpiw4
@@ -73,27 +73,27 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     !Dump the data to the allocated array and save to the disk
     resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     if (mpiid == 0) write(*,*) "File for U successfully closed"
 
     resu=0.0
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
     deallocate (resu)
 
@@ -103,25 +103,25 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     resu=0.0
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     deallocate (resu)
@@ -144,7 +144,7 @@
   
     ifile=ifile+1        
 
-    call MPI_BARRIER(commu,ierr)
+    call MPI_BARRIER(comm,ierr)
  
     if (mpiid.eq.0) then 
        t0=MPI_Wtime()-t0
@@ -910,174 +910,3 @@ allocate(buf_cor(1:nx,8)) !8 Correlations
  deallocate(buf_cor)
 endsubroutine escr_corr_2
 
-#ifdef WPARALLEL
-  ! -------------------------------------------------------------------! 
-  ! -------------------------------------------------------------------! 
-  ! -------------------------------------------------------------------! 
-  ! ------------ PARALLEL WRITTING SUBROUTINES ------------------------! 
-  ! -------------------------------------------------------------------! 
-  ! -------------------------------------------------------------------! 
-  ! -------------------------------------------------------------------! 
-  subroutine blockwrite_2(filename,comm,localbuffer,chunksize,&
-       & nfiles,rank,sid)
-
-    !  Write a buffer localbuffer to a single file concurrently using all
-    !  the MPI processes
-    ! Input arguments:
-    !  
-    !  filename: String. Name of the file
-    !  comm: MPI communicator
-    !  localbuffer: Buffer to be written
-    !  chunksize: Amount of **bytes** written from localbuffer.  Please, do not
-    !             play weird games and use the same size of localbuffer
-    !  fsblksize: File system block size.  GPFS is 2 MB
-    !  nfiles: Put a variable that contains 1 here.  Not the literal.  Writing
-    !          files is not supported yet.
-    !  rank: Rank of the MPI process
-    !  sid: File id, different from the OS file and obtained from the parallel
-    !       opening process
-
-#ifndef BG
-    use mpi
-#endif  
-    implicit none
-#ifdef BG
-    include 'mpif.h'
-#endif
-    character(len=MAXCHARLEN),intent(in):: filename
-    integer,intent(in):: comm
-    integer*8,intent(in):: chunksize
-    character,dimension(chunksize),intent(in):: localbuffer
-    integer,intent(in):: nfiles
-    integer,intent(in):: rank
-    integer,intent(out):: sid
-    integer,parameter:: fbsize=2*1024*1024
-    character(len=MAXCHARLEN) :: newfname='newfile'
-    integer:: lcomm,ierr,rankl
-
-    integer*8:: checksum_fp,left,bsumwrote,chunkcnt
-    integer*8:: bwrite,bwrote,sumsize
-
-#ifdef TIMER
-    real*8:: starttime,gstarttime,opentime
-    real*8:: writetime,gwritetime,closetime
-    real*8:: barr1time,barr2time,barr3time
-#endif
-
-#ifdef TIMER
-    starttime=MPI_Wtime()
-#endif
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'OPENING FSION_PARAOPEN-----------------------------------',rank   
-    call fsion_paropen_mpi(trim(filename),'bw',nfiles, comm,&
-         & lcomm,chunksize,fbsize,rank,newfname,sid)
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'OPENING FSION_PARAOPEN	done',rank       
-#ifdef TIMER
-    opentime = MPI_Wtime() - starttime
-#endif
-    call MPI_COMM_RANK(lcomm, rankl, ierr)
-#ifdef TIMER
-    starttime = MPI_Wtime()
-    call barrier_after_open(lcomm)
-    barr1time = MPI_Wtime()-starttime
-#endif
-    checksum_fp = 0
-    left = chunksize
-    bsumwrote = 0
-    chunkcnt = 0
-#ifdef TIMER
-    starttime = MPI_Wtime()
-    gstarttime = starttime
-#endif
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'bucle-----------------------------------',rank   
-    ! Fortran 90 specific!
-    do while(left > 0)
-       bwrite = chunksize
-       if (bwrite > left) bwrite = left
-
-       call fsion_ensure_free_space(sid,bwrite,ierr)
-       call fsion_write(localbuffer, 1, bwrite, sid, bwrote)
-
-#ifdef CHECKSUM
-       do i=1,bwrote
-          checksum_fp = checksum_fp + real(IACHAR(localbuffer(i)))
-       end do
-#endif
-       left = left - bwrote
-       bsumwrote = bsumwrote + bwrote
-       chunkcnt = chunkcnt + 1
-    end do
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'bucle		done',rank  
-#ifdef TIMER
-    writetime = MPI_Wtime() - starttime
-    starttime = MPI_Wtime()
-    call barrier_after_write(lcomm)
-    barr2time = MPI_Wtime() - starttime
-    gwritetime = MPI_Wtime() - gstarttime
-    starttime = MPI_Wtime()
-#endif
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'fsion_parclose-----------------------------------',rank  
-    call fsion_parclose_mpi(sid,ierr)
-    ! if(rank.eq.0.or.rank.eq.10) write(*,*) 'fsion_parclose		done',rank 
-#ifdef TIMER
-    call barrier_after_close(lcomm)
-    barr3time = MPI_Wtime()-starttime
-    closetime = MPI_Wtime() - starttime
-    starttime = MPI_Wtime()
-
-
-    if (writetime == 0) writetime = -1
-#endif
-    call MPI_REDUCE(bsumwrote, sumsize, 1, MPI_INTEGER8, MPI_SUM, 0, comm, ierr)
-    call MPI_BARRIER(comm,ierr)
-#ifdef TIMER
-    if (rank == 0) then       
-       write(*,'(A)') "-----------------------------------------------------------------------"
-       write(*,*) 'File written:',trim(filename)
-       write(*,'(a20,f10.4,a3)') 'File Size:',1.0*sumsize/1024/1024/1024,'Gb'
-       write(*,'(a20,f10.4)') 'T.Time Master Node:',gwritetime
-       write(*,'(a20,f10.4,a7)') 'BandWidth:',1.0*sumsize/1024/1024/1024/gwritetime,'Gb/sec'                 
-    end if
-#endif
-  end subroutine blockwrite_2
-
-
-  subroutine writeheader_2(filename,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
-       & xout,timein,dt,y,um,procs)
-    implicit none
-    character(len = MAXCHARLEN), intent(in):: filename
-    character(len=1),intent(in):: field
-    real(kind = 8), intent(in):: tiempo,cfl,re  !after 8k nods..make it R8 
-    real(kind = 8), intent(in):: lx,ly,lz  
-    integer, intent(in):: nx,ny,nz2
-    integer, intent(in):: xout
-    integer,parameter:: fbsize=2*1024*1024
-    real(kind = 8),intent(in):: timein,dt
-    real(kind = 8),dimension(ny+1),intent(in):: um
-    real(kind = 8),dimension(0:ny+1),intent(in)::y
-    integer,intent(in):: procs
-    integer*8:: cursor,i
-
-    open(unit = 91,file=trim(filename), status = "unknown", access="stream")
-    cursor = fbsize+1
-    write(91,pos=cursor) field 
-    write(91) tiempo
-    write(91) cfl
-    write(91) re
-    write(91) lx
-    write(91) ly
-    write(91) lz
-    write(91) nx
-    write(91) ny
-    write(91) nz2
-    write(91) xout
-    write(91) timein
-    write(91) dt
-    write(91) (y(i), i =0,ny+1)
-    write(91) (um(i), i = 1,ny+1)
-    write(91) procs
-    close(91)
-    !     write(*,*) 'VALORES ESCRITOS HEADER:====================='
-    !     WRITE(*,*) field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,xout,timein,dt,procs
-  end subroutine writeheader_2
-
-#endif

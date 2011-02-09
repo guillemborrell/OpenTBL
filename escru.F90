@@ -70,27 +70,27 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     !Dump the data to the allocated array and save to the disk
     resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     if (mpiid == 0) write(*,*) "File for U successfully closed"
 
     resu=0.0
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
     deallocate (resu)
 
@@ -100,25 +100,25 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     resu=0.0
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,commu,info,h5err)
+    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
-    call MPI_BARRIER(commu,ierr)
-    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    call h5dump_parallel(fid,"value",3,dims,mpiid,nummpi,comm,info,resu,h5err)
     call h5fclose_f(fid,h5err)
 
     deallocate (resu)
@@ -141,7 +141,7 @@
   
     ifile=ifile+1        
 
-    call MPI_BARRIER(commu,ierr)
+    call MPI_BARRIER(comm,ierr)
  
     if (mpiid.eq.0) then 
        t0=MPI_Wtime()-t0

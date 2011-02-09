@@ -2,11 +2,12 @@
 #           Makefile for BOUNDARY LAYER CODE
 ###################################################################
 
+F77 =h5pfc
+F90 =h5pfc
 
 
-
-F77 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r  
-F90 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r
+#F77 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r  
+#F90 =/bgsys/drivers/ppcfloor/comm/fast/bin/mpixlf90_r
 
 #F77 =mpixlf90_r 
 #F90 =mpixlf90_r

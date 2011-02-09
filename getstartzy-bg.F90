@@ -46,7 +46,7 @@
     ! -------------------------- Work ----------------------------------------!
     integer status(MPI_STATUS_SIZE),ierr,mpiid,commu,tipo,nfile,mpiw1,mpiw2,mpiw3,mpiw4
     integer nxr,nyr,nzr,nz1r,nzz,j,i,k,l,dot,lim2,rsize,irec,rsize1,rsize2,ji
-    real(8) jk,dt,dum(20)
+    real(8) jk,dt,dum(20),timer
     character text*99, uchar*1
     character(len=128):: fil1,fil2,fil3,fil4
 
