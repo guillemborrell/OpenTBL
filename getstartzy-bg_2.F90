@@ -41,7 +41,7 @@
     integer*8:: chunks1,chunks2,chunksM1,chunksM2,chunkfbs
     real(8) jk,dt,dum(20),timer
     character text*99, uchar*1
-    character(len=128):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4
 
 #ifdef RPARALLEL
     ! -------------------------- HDF5 ------------------------------------!
@@ -61,16 +61,17 @@
     fil3=trim(chinit)//'.w'
     fil4=trim(chinit)//'.p'
 
-    call MPI_INFO_CREATE(info,ierr)
+
 
 
 #ifdef RPARALLEL
 
+    call MPI_INFO_CREATE(info,ierr)
     !       lee el fichero 
     if (mpiid.eq.0) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       call readheader(fil1,nxr,nyr,nzr)
+       call readheader_2(fil1,nxr,nyr,nzr)
     endif
 
     call MPI_BCAST(nxr,1,mpi_integer,0,commu,ierr)
@@ -524,6 +525,100 @@
 end subroutine getstartzy_2
 
 
+#ifdef RPARALLEL
+
+  subroutine readheader_2(filename, nx, ny, nz2)    
+    use alloc_dns_2,only: tiempo,y
+    use genmod_2,only:um,timeinit
+    
+    use h5lt
+       
+    implicit none
+    character(len = 256), intent(in):: filename
+    
+    real(kind = 8):: cfl,re,dt
+    real(kind = 8):: lx,ly,lz
+    !     integer, intent(out):: lx,ly,lz
+    integer, intent(out):: nx,ny,nz2
+    integer:: xout    
+    integer:: procs
+    integer*8:: cursor,i
+    character(len=1):: field
+    
+    integer:: h5err
+    integer(HID_T):: fid
+    integer(HSIZE_T), dimension(1):: hdims
+    real(kind=8), dimension(1):: aux
+    integer, dimension(1):: iaux
+    
+    
+    call H5Fopen_f(trim(filename)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+    
+    call H5LTread_dataset_string_f(fid,"Variable",field,h5err)
+    hdims = (/ 1 /)
+    call H5LTread_dataset_double_f_1(fid,"tiempo",aux,hdims,h5err)
+    tiempo = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"cfl",aux,hdims,h5err)
+    cfl = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"Re",aux,hdims,h5err)
+    re = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"lx",aux,hdims,h5err)
+    lx = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"ly",aux,hdims,h5err)
+    ly = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"lz",aux,hdims,h5err)
+    lz = aux(1)
+       
+    call H5LTread_dataset_int_f_1(fid,"nx",iaux,hdims,h5err)
+    nx = iaux(1)
+     
+    call H5LTread_dataset_int_f_1(fid,"ny",iaux,hdims,h5err)
+    ny = iaux(1)
+     
+    call H5LTread_dataset_int_f_1(fid,"nz2",iaux,hdims,h5err)
+    nz2 = iaux(1)
+       
+    call H5LTread_dataset_int_f_1(fid,"xout",iaux,hdims,h5err)
+    xout = iaux(1)
+     
+    call H5LTread_dataset_double_f_1(fid,"timeinit",aux,hdims,h5err)
+    timeinit = aux(1)
+       
+    call H5LTread_dataset_double_f_1(fid,"dt",aux,hdims,h5err)
+    dt = aux(1)
+       
+    hdims = (/ ny+2 /)
+    call H5LTread_dataset_double_f_1(fid,"y",y,hdims,h5err)
+    hdims = (/ ny+1 /)
+    call H5LTread_dataset_double_f_1(fid,"um",um,hdims,h5err)
+    
+    call H5Fclose_f(fid,h5err)
+
+
+    write(*,*) "field ", field
+    write(*,*) "tiempo", tiempo
+    write(*,*) "cfl", cfl
+    write(*,*) "re", re
+    write(*,*) "lx", lx
+    write(*,*) "ly", ly
+    write(*,*) "lz", lz
+    write(*,*) "nxr", nx
+    write(*,*) "nyr", ny
+    write(*,*) "nz2r", nz2
+    write(*,*) "xout", xout
+    write(*,*) "timeinit", timeinit
+    write(*,*) "dt", dt
+    write(*,*) "y", y(1:3), "...", y(ny:ny+2)
+    write(*,*) "um", um(1:3), "...", um(ny-1:ny+1)
+
+
+  end subroutine readheader_2
+#endif
 
 
 !============================================================

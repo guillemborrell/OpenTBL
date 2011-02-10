@@ -48,7 +48,7 @@
     integer nxr,nyr,nzr,nz1r,nzz,j,i,k,l,dot,lim2,rsize,irec,rsize1,rsize2,ji
     real(8) jk,dt,dum(20),timer
     character text*99, uchar*1
-    character(len=128):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4
 
 #ifdef RPARALLEL
     ! -------------------------- HDF5 ------------------------------------!
@@ -68,9 +68,11 @@
     fil3=trim(chinit)//'.w'
     fil4=trim(chinit)//'.p'
 
-    call MPI_INFO_CREATE(info,ierr)
+
 
 #ifdef RPARALLEL
+
+    call MPI_INFO_CREATE(info,ierr)
     !       lee el fichero 
     if (mpiid.eq.0) then
        write(*,*) 'Leyendo del fichero'
@@ -592,10 +594,17 @@ end subroutine getstartzy
     !Select the hyperslab in the global dataset
     start(ndims) = sum(lastdims(1:rank+1))-lastdims(rank+1)
     call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,start,dims,ierr)
+
+    !Create data transfer mode property list                                                                                                                          
+    call h5pcreate_f(H5P_DATASET_XFER_F,plist_id,ierr)
+    call h5pset_dxpl_mpio_f(plist_id,H5FD_MPIO_COLLECTIVE_F,ierr)
     
     !Commit the memspace to the disk
     call h5dread_f(dset,H5T_NATIVE_REAL,data,dims,ierr,mspace,dspace,plist_id)
     
+    !Close property list                                                                                                                                              
+    call h5pclose_f(plist_id,ierr)
+
     !Close datasets and dataspaces
     call h5sclose_f(mspace,ierr)
     call h5dclose_f(dset,ierr)   
@@ -629,7 +638,8 @@ end subroutine getstartzy
     real(kind=8), dimension(1):: aux
     integer, dimension(1):: iaux
     
-    
+    write(*,*) 'LEYENDO DE.............', trim(filename)//".h5"
+
     call H5Fopen_f(trim(filename)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
     
     call H5LTread_dataset_string_f(fid,"Variable",field,h5err)

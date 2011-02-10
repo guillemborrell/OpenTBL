@@ -28,7 +28,7 @@
     real*4,dimension(:,:,:),allocatable::resu
     integer i,j,k,l,irec
     integer status(MPI_STATUS_SIZE),ierr,t_size,t_size1,t_size2,dot,mpiid,lim1,lim2
-    character(len=128):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4
     character:: ext1*3,uchar*1
     real*8    dt,dum(20),jk,t0
     integer:: nxr3,nyr3,nzr3,comm,tipo,nfile,mpiw1,mpiw2,mpiw3,mpiw4
@@ -962,9 +962,16 @@ subroutine h5dump_parallel(fid,name,ndims,dims,rank,size,comm,info,data,ierr)
   !Select the hyperslab in the global dataset
   start(ndims) = sum(lastdims(1:rank+1))-lastdims(rank+1)
   call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,start,dims,ierr)
-     
+
+  !Create data transfer mode property list                                                                                                                          
+  call h5pcreate_f(H5P_DATASET_XFER_F,plist_id,ierr)
+  call h5pset_dxpl_mpio_f(plist_id,H5FD_MPIO_COLLECTIVE_F,ierr)   
+   
   !Commit the memspace to the disk
   call h5dwrite_f(dset,H5T_NATIVE_REAL,data,dims,ierr,mspace,dspace,plist_id)
+    
+  !Close property list                                                                                                                                              
+  call h5pclose_f(plist_id,ierr)
 
   !Close datasets and dataspaces
   call h5sclose_f(mspace,ierr)

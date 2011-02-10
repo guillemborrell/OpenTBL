@@ -1,4 +1,4 @@
-  ! ----------------------------------------------------------------------! 
+ ! ----------------------------------------------------------------------! 
   !
   ! Writing Subroutines Package
   !
@@ -28,7 +28,7 @@
     real*4,dimension(:,:,:),allocatable::resu
     integer i,j,k,l,irec
     integer status(MPI_STATUS_SIZE),ierr,t_size,t_size1,t_size2,dot,mpiid,lim1,lim2
-    character(len=128):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4
     character:: ext1*3,uchar*1
     real*8    dt,dum(20),jk,t0
     integer:: nxr3,nyr3,nzr3,comm,tipo,chunkfbs,nfile,sidio,mpiw1,mpiw2,mpiw3,mpiw4
