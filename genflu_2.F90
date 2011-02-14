@@ -281,8 +281,8 @@ if(mpiid.eq.0) then
            call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,communicator,istat,ierr) 
            u_inf(i)=buffer(1);u_tau(i)=buffer(2);d_out(i)=buffer(3);r_thout(i)=buffer(4);x_plane(i)=buffer(5)                             
         enddo                                
-        write(36,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
-        call flush(36)
+        write(81,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
+        call flush(81)
 !         write(*,*) 'tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop----------------------------'
 !         write(*,*) tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop
 !         write(*,*) 'u_inf...u_tau...d_out...r_thout en filas'
@@ -465,8 +465,8 @@ subroutine genflu_2(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      enddo
      cfinfo=cfinfo*den     
      if(mpiid==0) then        
-        write(360,'(14(d22.14))') tiempo,rthout,utauout,gamma(1),dout,cfinfo    
-        call flush(360)
+        write(81,'(14(d22.14))') tiempo,rthout,utauout,gamma(1),dout,cfinfo    
+        call flush(81)
      endif
   endif
 #endif

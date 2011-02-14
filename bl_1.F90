@@ -20,7 +20,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   real*8 dt,vardt
   integer isubstp,istep,ical,ierr
   logical:: vcontrol
-  character*60:: newfile
+  character:: newfile*60,ext*3
 
   vcontrol=.false. !just checking correct time step
   
@@ -45,7 +45,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
   call MPI_BCAST(mpi_inlet,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
   
   
-  if(mpiid.eq.0) write(*,*) 'BL1********* GLOBAL MPIID mpiid2',mpiid_2,'mpi_inlet',mpi_inlet
+!  if(mpiid.eq.0) write(*,*) 'BL1********* GLOBAL MPIID mpiid2',mpiid_2,'mpi_inlet',mpi_inlet
   
 
   ! reads/generates inlet conditions initiates arrays (just in case)
@@ -85,7 +85,7 @@ subroutine bl_1(mpiid,mpiid_global,comm_global,comm_local)
 
 #ifndef NOINFOSTEP
 !Genflu info:
-if(mpiid.eq.0) open(36,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
+if(mpiid.eq.0) open(62,file=chinfoext,form='formatted',status='unknown',convert='BIG_ENDIAN')
 #endif
 
 #ifdef TRACE
@@ -93,6 +93,14 @@ write(newfile,'("Uflow.",i4.4)') mpiid
 open(987,file=trim(chfile)//newfile,form='unformatted')
 write(987) ib,ie,ny
 #endif
+
+
+!Info File with some energies:
+if(mpiid.eq.0) then
+	write(ext,'(i3.3)') ifile
+	open(32,file=trim(chfile)//'.'//ext//'.dat',form='formatted',status='unknown')
+endif
+
 
   do istep = 1,nsteps
      if(mpiid.eq.0) then

@@ -223,13 +223,13 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 ! 	write(*,*) 'dt1  ',dt1
 ! 	write(*,*) 'dt2  ',dt2
 ! 	write(*,*) 'dt3  ',dt3
-	write(*,*) 'dtloc 				BL1',dtloc
+!	write(*,*) 'dtloc 				BL1',dtloc
 ! 	write(*,*) '******************************************'
       endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
-     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+!     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
         tmp20 = tmp20 + abs(tm2-tm1)
@@ -264,12 +264,14 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   !Sending Plane to the Big BL (Second BL)
   if(mpiid.eq.mpi_inlet) then
+ 
      call MPI_SEND(ut(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&
           &mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
      call MPI_SEND(wt(:,:,x_inlet),(nz2+1)*(ny+1),MPI_COMPLEX16,&
           &mpiid_2(0),2,MPI_COMM_WORLD,istat,ierr)
      call MPI_SEND(vt(:,:,x_inlet),(nz2+1)*ny    ,MPI_COMPLEX16,&
           &mpiid_2(0),3,MPI_COMM_WORLD,istat,ierr)
+
   endif
 
   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -430,8 +432,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 	rhsut(k,1,i)= -1d0/inby(2,1)*(inby(2,2)*rhsut(k,2,i)+inby(2,3)*rhsut(k,3,i)+inby(2,4)*rhsut(k,4,i))   
 	rhswt(k,1,i)= -1d0/inby(2,1)*(inby(2,2)*rhswt(k,2,i)+inby(2,3)*rhswt(k,3,i)+inby(2,4)*rhswt(k,4,i))
 
-	rhsut(k,ny+1,i)= -1d0/ccon(1,1)*(ccon(1,2)*rhsut(k,ny,i)+ccon(1,3)*rhsut(k,ny-1,i)+ccon(1,4)*rhsut(k,ny-2,i))   
-	rhswt(k,ny+1,i)= -1d0/ccon(1,1)*(ccon(1,2)*rhswt(k,ny,i)+ccon(1,3)*rhswt(k,ny-1,i)+ccon(1,4)*rhswt(k,ny-2,i))
+	rhsut(k,ny+1,i)=0d0 
+	rhswt(k,ny+1,i)=0d0
       enddo
     enddo
   enddo

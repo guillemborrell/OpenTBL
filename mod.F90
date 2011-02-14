@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=4,numnodes_2=12,x_inlet=225
+	integer,parameter:: numnodes_1=2048,numnodes_2=6*1024,x_inlet=3504 !!this for Re_theta=2800.from statistics
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -33,17 +33,12 @@ module ctesp
   real*8 totmem
 
 ! Parameters for genflu and getstart!
-#ifdef BLGRANDE
+
 !====================================================
- parameter ( nx =8193,   ny =711, nz=4096)
- parameter ( xin = 1 , xout =3671*2/2) !50d99-Re2500
+parameter ( nx =4097,   ny =386, nz=2880) !2880
+parameter ( xin = 1 , xout =2480) !50d99
 !====================================================
-#else
-!====================================================
- parameter ( nx =257,   ny =165, nz=384)
- parameter ( xin = 1 , xout =225) !50d99-Re2500
-!====================================================
-#endif
+
 
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
   parameter ( nplanes = nz/3)
@@ -70,20 +65,15 @@ module ctesp
   ! Points for spectra and correlations
   integer nspec,ltot,lxp,ncorr,tots,lxcorr
   integer xci,xco 
-  parameter(nspec=20,xci=1,xco=nx)
+  parameter(nspec=25,xci=1,xco=nx)
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-#ifdef BLGRANDE
-  data xpoint /6912,10542,14171/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /6912,10542,14171/
-#else
-  data xpoint /200,600,1200/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /200,600,1200/
-#endif
-  data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
+  data xpoint /1915,2935,3955/ 
+  data xcorpoint /1915,2935,3955/
+  data nxp /38,44,52/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
@@ -163,6 +153,8 @@ module  alloc_dns
   real*8::x     (0:nx+1)
   real*8::xr    (0:nx+1)
   real*8::y     (0:ny+1)
+  real*8:: l_weight(5,0:ny+1)
+  real*8:: ldyy(5)
 
   real*8::dy    (0:ny)
   real*8::dx    (0:nx)
@@ -270,7 +262,7 @@ module statistics
   use ctesp,only: nx,ny,nz,nz2
   implicit none
 
-  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,vortx,vorty,vortz,&
+  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,uw,vw,vortx,vorty,vortz,&
        &vortxa,vortya,vortza,oxp,oyp,ozp,&
        &u3,v3,u2v,v2u,w2v,w2u,dispu,dispv,dispw,dispuv,&
        &pp,pm,pup,pvp,pdudx,pdvdy,pdudy,pdvdx,pdwdz,&
@@ -356,20 +348,15 @@ module ctesp_2
   real*8 totmem
 
 ! Parameters for genflu and getstart!
-#ifdef BLGRANDE
-!====================================================
- parameter ( nx =8193,   ny =711, nz=4096)
- parameter ( xin = 1 , xout =3671*2/2) !50d99-Re2500
-!====================================================
-#else
-!====================================================
- parameter ( nx =769,   ny =331, nz=768)
- parameter ( xin = 1 , xout =100) !50d99-Re2500
-!====================================================
-#endif
 
- parameter ( ny_1 = 165 )
- parameter ( nz_1 = 384 )
+!====================================================
+parameter ( nx =6145, ny =711, nz=2880)
+parameter ( xin = 1 , xout =3410) !50d99
+!====================================================
+
+
+ parameter ( ny_1 = 386 )  !Values of the other BL1!!! (It should be communicated, instead)
+ parameter ( nz_1 = 2880 )
  parameter ( nz1_1 = 2*(nz_1/3), nz2_1=nz1_1/2-1 )
 
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
@@ -397,20 +384,15 @@ module ctesp_2
   ! Points for spectra and correlations
   integer nspec,ltot,lxp,ncorr,tots,lxcorr
   integer xci,xco 
-  parameter(nspec=20,xci=1,xco=nx)
+  parameter(nspec=25,xci=1,xco=nx)
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-#ifdef BLGRANDE
-  data xpoint /6912,10542,14171/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /6912,10542,14171/
-#else
-  data xpoint /200,600,1200/ !Location=50d99;(50d99+XRtau2000)/2;XRtau2000
-  data xcorpoint /200,600,1200/
-#endif
-  data nxp /62,72,82/    !delta/4 at each X. Averaged Spectra (X-d/4)<X<(X+d/4)
+  data xpoint /2604,3944,5324/
+  data xcorpoint /2604,3944,5324/
+  data nxp /50,58,68/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
@@ -490,6 +472,8 @@ module  alloc_dns_2
   real*8::x     (0:nx+1)
   real*8::xr    (0:nx+1)
   real*8::y     (0:ny+1)
+  real*8:: l_weight(5,0:ny+1)
+  real*8:: ldyy(5)
 
   real*8::dy    (0:ny)
   real*8::dx    (0:nx)
@@ -584,19 +568,22 @@ module mod_interpout
 
     end function interpout_plan
 
-    function dinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
-      integer:: ny,ny1,nz,nz1
+
+
+  function dinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
+      integer:: ny,ny1,nz,nz1,nzz
       type(plan_interpout):: plan
       real(kind=8), dimension(nz1,ny1):: u
       real(kind=8), dimension(ny):: y
       real(kind=8), dimension(nz,ny):: ui
       
       integer:: j
+      nzz=min(nz,nz1)
 
-      !$OMP PARALLEL DO
+      !$OMP PARALLEL DO 
       do j = 1,ny
-         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
-              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+         ui(1:nzz,j) = u(1:nzz,plan%id(j)) + &
+              & (u(1:nzz,plan%id(j)+1)-u(1:nzz,plan%id(j)))*&
               & (plan%c1(j)*y(j)-plan%c0(j))
       end do
       !$OMP END PARALLEL DO
@@ -604,24 +591,27 @@ module mod_interpout
     end function dinterpout
 
     function zinterpout(y,u,plan,nz,ny,nz1,ny1) result(ui)
-      integer:: ny,ny1,nz,nz1
+      integer:: ny,ny1,nz,nz1,nzz
       type(plan_interpout):: plan
       complex(kind=8), dimension(nz1,ny1):: u
       real(kind=8), dimension(ny):: y
       complex(kind=8), dimension(nz,ny):: ui
-      
-      integer:: j
 
+      integer:: j
+      nzz=min(nz,nz1)
       !$OMP PARALLEL DO
       do j = 1,ny
-         ui(1:nz,j) = u(1:nz,plan%id(j)) + &
-              & (u(1:nz,plan%id(j)+1)-u(1:nz,plan%id(j)))*&
+         ui(1:nzz,j) = u(1:nzz,plan%id(j)) + &
+              & (u(1:nzz,plan%id(j)+1)-u(1:nzz,plan%id(j)))*&
               & (plan%c1(j)*y(j)-plan%c0(j))
-      end do
+      end do 
       !$OMP END PARALLEL DO
       
     end function zinterpout
 end module mod_interpout
+
+
+
 
 module shared_mem_2
   implicit none
@@ -684,7 +674,7 @@ module statistics_2
   use ctesp_2,only: nx,ny,nz,nz2
   implicit none
 
-  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,vortx,vorty,vortz,&
+  real*8,dimension(:,:),allocatable:: us,vs,ws,ua,va,wa,uv,uw,vw,vortx,vorty,vortz,&
        &vortxa,vortya,vortza,oxp,oyp,ozp,&
        &u3,v3,u2v,v2u,w2v,w2u,dispu,dispv,dispw,dispuv,&
        &pp,pm,pup,pvp,pdudx,pdvdy,pdudy,pdvdx,pdwdz,&
