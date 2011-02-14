@@ -218,7 +218,7 @@ subroutine iniciap_1(mpiid,communicator)
   !----------------------------------------------------------------------!
 
   if (mpiid .eq. 0) then
-     open(19,file='hrem.dat',status='old')   
+     open(19,file='hrem_1.dat',status='old')   
      call avanza(text,19)
      !                  Re    ,ax    ,ay    ,az    ,r  
      read(text,*) dat(1),dat(2),dat(3),dat(4),dat(5) 
@@ -348,7 +348,8 @@ subroutine iniciap_1(mpiid,communicator)
   allocate(jspecy(nspec,lxp))
   !Readint table of spectra from file:
   if(mpiid.eq.0) then
-     open(100,file='tablespectra',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+     open(100,file='tablespectra_1',form='unformatted',status='unknown',&
+          & convert='BIG_ENDIAN')
      do j=1,nspec
         read(100) jspecy(j,1:lxp)
      enddo

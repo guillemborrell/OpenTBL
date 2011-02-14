@@ -167,8 +167,8 @@
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
 
        do i=ib,ie
-          if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx        
-          irec = irec+1
+          if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
+          irec = i+1
           write(40,rec=irec) real(u(:,:,i),kind=4)
           write(41,rec=irec) real(v(:,:,i),kind=4)
           write(42,rec=irec) real(w(:,:,i),kind=4)
@@ -178,11 +178,11 @@
 
        do dot = 1,nummpi-1   !recibe la informacion de cada procesador
           do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx         
-             irec = irec+1     
+             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
+             irec = i+1     
              call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(40,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
              write(41,rec=irec) resu(:,1:ny,1)
              call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
              write(42,rec=irec) resu(:,:,1)
@@ -243,7 +243,7 @@
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
 
        do i=ib,ie             
-          irec = irec+1
+          irec = i+1
           write(40,rec=irec) real(u(:,:,i),kind=4)      
           call flush(40)
        enddo
@@ -251,7 +251,7 @@
        do dot = 1,nummpi-1   !recibe la informacion de cada procesador
           do i= ibeg(dot),iend(dot)
              if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE U'         
-             irec = irec+1     
+             irec = i+1     
              call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(40,rec=irec) resu(:,:,1)         
              call flush(40)
@@ -275,7 +275,7 @@
        write(41,rec=irec) 'v',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
        do i=ib,ie               
-          irec = irec+1      
+          irec = i+1      
           write(41,rec=irec) real(v(:,:,i),kind=4)      
           call flush(41)
        enddo
@@ -283,8 +283,8 @@
           if(dot.ne.mpiw2) then
              do i= ibeg(dot),iend(dot)
                 if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE V'         
-                irec = irec+1             
-                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+                irec = i+1
+                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
                 write(41,rec=irec) resu(:,1:ny,1)       
                 call flush(41)
              enddo
@@ -308,7 +308,7 @@
        write(42,rec=irec) 'w',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
        do i=ib,ie
-          irec = irec+1       
+          irec = i+1       
           write(42,rec=irec) real(w(:,:,i),kind=4)       
           call flush(12)
        enddo
@@ -316,8 +316,8 @@
           if(dot.ne.mpiw3) then
              do i= ibeg(dot),iend(dot)
                 if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE W'         
-                irec = irec+1             
-                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
+                irec = i+1             
+                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)
                 write(42,rec=irec) resu(:,:,1)
                 call flush(42)
              enddo
@@ -341,7 +341,7 @@
        write(43,rec=irec)  'p',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
        do i=ib,ie
-          irec = irec+1      
+          irec = i+1      
           write(43,rec=irec) real(p(:,:,i),kind=4)
           call flush(43)
        enddo
@@ -349,7 +349,7 @@
           if(dot.ne.mpiw4) then
              do i= ibeg(dot),iend(dot)
                 if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE P'         
-                irec = irec+1            
+                irec = i+1            
                 call MPI_RECV(resu,t_size2,tipo,dot,4,comm,status,ierr)  
                 write(43,rec=irec) resu(:,1:ny,1)
                 call flush(43)

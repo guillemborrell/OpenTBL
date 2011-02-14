@@ -52,7 +52,8 @@ program capalimite
   !       /*   initializes everything    */
   call MPI_INIT(ierr)
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid_global,ierr)
-  call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr) !Total number of cores for the 2 BLs
+  !Total number of nodes for the 2 BLs
+  call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr)
 
   if(numprocs_total.ne.numnodes_1+numnodes_2) then
     if(mpiid_global.eq.0) then
@@ -101,8 +102,7 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
-write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
-
+!write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
 
 !Call the 2 BLs:
 if (mpiid_global .lt. size(mpiid_1)) then

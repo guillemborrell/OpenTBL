@@ -546,4 +546,3 @@ subroutine energies_2(ut,vt,wt,hy,ener,communicator)
 
 end subroutine energies_2
 
-

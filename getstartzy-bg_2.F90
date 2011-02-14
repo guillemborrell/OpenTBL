@@ -223,7 +223,7 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1
+          irec = i+1
           read(40,rec=irec) resu(1:nzz,1:ny+1,1)
           read(41,rec=irec) resu(1:nzz,1:ny,2)
           read(42,rec=irec) resu(1:nzz,1:ny+1,3)
@@ -243,12 +243,12 @@
        do dot = 1,nummpi-1   ! -- read for the other nodes 
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'Read & Send up to:',i         
-             irec = irec+1
+             irec = i+1
              read(40,rec=irec) resu(1:nzz,1:ny+1,1)
              read(41,rec=irec) resu(1:nzz,1:ny,2)
              read(42,rec=irec) resu(1:nzz,1:ny+1,3)
              read(43,rec=irec) resu(1:nzz,1:ny,4)
-             call MPI_SEND(resu,rsize,tipo,dot,1,commu,ierr)                    
+             call MPI_SEND(resu,rsize,tipo,dot,1,commu,ierr)
           enddo
        enddo
        close(40);close(41);close(42);close(43)
@@ -335,7 +335,7 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1
+          irec = i+1
           read(10,rec=irec) resu(1:nzz,1:ny+1,1)         
           u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)        
           if (i==1) then
@@ -345,9 +345,9 @@
        do dot = 1,nummpi-1   ! -- read for the other nodes 
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'U: Read & Send up to:',i         
-             irec = irec+1
+             irec = i+1
              read(40,rec=irec) resu(1:nzz,1:ny+1,1)           
-             call MPI_SEND(resu(:,:,1),rsize1,tipo,dot,1,commu,ierr)                    
+             call MPI_SEND(resu(:,:,1),rsize1,tipo,dot,1,commu,ierr)
           enddo
        enddo
        close(40);
@@ -366,7 +366,7 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1       
+          irec = i+1       
           read(41,rec=irec) resu(1:nzz,1:ny,2)                 
           v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)         
           if (i==1) then
@@ -377,10 +377,10 @@
        do dot = 0,nummpi-1   ! -- read for the other nodes
           if(dot.ne.mpiw2) then 
              do i= ibeg(dot),iend(dot)   
-             if (mod(i,200).eq.0) write(*,*) 'V: Read & Send up to:',i                  
-                irec = irec+1             
+             if (mod(i,200).eq.0) write(*,*) 'V: Read & Send up to:',i
+                irec = i+1             
                 read(41,rec=irec) resu(1:nzz,1:ny,2)           
-                call MPI_SEND(resu(:,:,2),rsize1,tipo,dot,2,commu,ierr)                    
+                call MPI_SEND(resu(:,:,2),rsize1,tipo,dot,2,commu,ierr)
              enddo
           endif
        enddo
@@ -398,17 +398,17 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1         
+          irec = i+1         
           read(42,rec=irec) resu(1:nzz,1:ny+1,3)                  
           w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)               
        enddo
        do dot = 0,nummpi-1  
           if(dot.ne.mpiw3) then
              do i= ibeg(dot),iend(dot) 
-             if (mod(i,200).eq.0) write(*,*) 'W: Read & Send up to:',i                   
-                irec = irec+1          
+             if (mod(i,200).eq.0) write(*,*) 'W: Read & Send up to:',i
+                irec = i+1          
                 read(42,rec=irec) resu(1:nzz,1:ny+1,3)            
-                call MPI_SEND(resu(:,:,3),rsize1,tipo,dot,3,commu,ierr)                    
+                call MPI_SEND(resu(:,:,3),rsize1,tipo,dot,3,commu,ierr)
              enddo
           endif
        enddo
@@ -425,7 +425,7 @@
             & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
        irec=1      
        do i=ib,ie                
-          irec = irec+1         
+          irec = i+1         
           read(43,rec=irec) resu(1:nzz,1:ny,4)         
           p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
        enddo
@@ -433,10 +433,10 @@
           do dot = 0,nummpi-1 
              if(dot.ne.mpiw4) then 
                 do i= ibeg(dot),iend(dot)
-                if (mod(i,200).eq.0) write(*,*) 'UV: Read & Send up to:',i                            
-                   irec = irec+1             
+                if (mod(i,200).eq.0) write(*,*) 'UV: Read & Send up to:',i
+                   irec = i+1             
                    read(43,rec=irec) resu(1:nzz,1:ny,4)
-                   call MPI_SEND(resu(:,:,4),rsize1,tipo,dot,4,commu,ierr)                    
+                   call MPI_SEND(resu(:,:,4),rsize1,tipo,dot,4,commu,ierr)
                 enddo
              endif
           enddo

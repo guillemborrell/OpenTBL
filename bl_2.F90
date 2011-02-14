@@ -361,7 +361,8 @@ subroutine iniciap_2(mpiid,communicator)
   allocate(jspecy(nspec,lxp))
   !Readint table of spectra from file:
   if(mpiid.eq.0) then
-     open(108,file='tablespectra',form='unformatted',status='unknown',convert='BIG_ENDIAN')
+     open(108,file='tablespectra_2',form='unformatted',status='unknown',&
+          & convert='BIG_ENDIAN')
      do j=1,nspec
         read(108) jspecy(j,1:lxp)
      enddo
