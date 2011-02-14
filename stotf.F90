@@ -16,7 +16,7 @@
 !   p = pressure (planes)			INTENT IN!
 !   
 !   dvdx = First derivative of v== d(v_x)/dx (@th half cell)
-!   dwdx = First derivative of w== d(u_x)/dx (@th half cell)
+!   dwdx = First derivative of w== d(w_x)/dx (@th half cell)
 !   
 !   ---------BIG BUFFERS----------------------
 !   upencil=u in pencils ==resu			INTENT IN!
@@ -72,8 +72,8 @@ subroutine statsp(u_x,u,v,w,p, &
   real*8,dimension(nx,mp_corr,7,lxcorr):: buf_corp	       !in pencils: mp_corr=total number of pencils for correlation buffers
   
 
-  complex*16, intent(in), dimension(0:nz2,ny,ib:ie):: v,p
-  complex*16, dimension(0:nz2,ny,ib:ie)::dvdx
+  complex*16, intent(in), dimension(0:nz2,ny,ib:ie):: v
+  complex*16, dimension(0:nz2,ny,ib:ie)::dvdx,p
   !-----------Small Buffers (FOURIER plane)
   complex*16, dimension(0:nz2,ny+1):: buf1,buf2,buf3,buf4,buf5
   !-----------Small Buffers (REAL plane:For triple products)
@@ -84,23 +84,17 @@ subroutine statsp(u_x,u,v,w,p, &
   complex*16:: auxc1,auxc2,auxc3
   integer:: i,j,k,jj,i3,ii
 
- 
-
-  do i=ib,ie 
+  do i=ib,ie             
+     call interp_pressure(p(0,1,i),buf5(0,1),ny,v(0,1,i)) !buf5=p(...,i) [outside parallel region!]
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k,cte,jj) 
-     !-(need for pressure statistics)------
-     buf5(0:nz2,jbf2:jef2) = p(0:nz2,jbf2:jef2,i)   !buf5=p(...,i)
-     !$OMP BARRIER     
      !$OMP DO SCHEDULE(STATIC)
      do k = 0,nz2
         buf5(k,ny+1) = buf5(k,ny) !copying the last point ny-->ny+1 
      enddo
-     call interpyy(buf5(0,1),buf5(0,1),inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf5=p_y  !works in place
           
      !================Statistics for Reynolds stresses: uu,vv,ww and uv    
      call interpyy(u_x(0,1,i),buf1(0,1)  ,inyu,cofiuy,inby,ny+1,0,nz1,nz1)   !buf1=(u_x)_y          
      call interpyy(w(0,1,i)   ,buf2(0,1)  ,inyu,cofiuy,inby,ny+1,0,nz1,nz1)   !buf2=w_y 
-
 
 #ifdef INFOINTER 
         !$OMP DO SCHEDULE(STATIC) 
@@ -130,6 +124,8 @@ subroutine statsp(u_x,u,v,w,p, &
            ws(j,i) = ws(j,i) + cte*buf2(k,j)*dconjg(buf2(k,j))
            vs(j,i) = vs(j,i) + cte*v(k,j,i) *dconjg(v(k,j,i ))
            uv(j,i) = uv(j,i) + cte*dreal(buf1(k,j)*dconjg(v(k,j,i)))
+           uw(j,i) = uw(j,i) + cte*dreal(buf1(k,j)*dconjg(buf2(k,j)))
+           vw(j,i) = vw(j,i) + cte*dreal(v(k,j,i)*dconjg(buf2(k,j)))
         end do
      end do
 
@@ -391,16 +387,15 @@ subroutine statsp(u_x,u,v,w,p, &
   !==============================================================================
    
   do i=ib,ie
+     call interp_pressure(p(0,1,i),buf1(0,1),ny,v(0,1,i)) !buf1=p(...,i) [outside parallel region!]
+
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,k,cte)
-     !-(need for pressure statistics)---------------
-     buf1(0:nz2,jbf2:jef2) = p(0:nz2,jbf2:jef2,i)   !buf1=p(...,i)
-     !$OMP BARRIER
      !$OMP DO SCHEDULE(STATIC)
      do k = 0,nz2
         buf1(k,ny+1) = buf1(k,ny) !copying the last point ny-->ny+1 
-     enddo
-     call interpyy(buf1,buf1,inyu,cofiuy,inby,ny+1,0,nz1,nz1) !buf1=p_y  !works in place 
+     enddo    
      !---------------------------------------------
+
      !Case for u: dudx_zy=dudx
 #ifdef INFOINTER 
         !$OMP DO SCHEDULE(STATIC) 

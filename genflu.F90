@@ -16,13 +16,13 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
   integer,intent(in)::communicator
   !------------------------------- I/O -------------------------------!
   real*8  y(0:ny+1)
-  real*8  tiempo,re,dt
+  real*8  tiempo,re,dt,fblend
   real*8, dimension(0:2*nz2+1,ny+1,ib:ie):: ut,wt
   real*8, dimension(0:2*nz2+1,ny,ib:ie)  :: vt
 
   ! ----------------------- Workspace ------------------------------!      
   integer m,k,l,jtop,j,mpiid,kk,i,kll,khh,ii,ntop(2),kl(ny,2)
-  real*8  tloc,den,www1,u99,uinf
+  real*8  tloc,den,www1,u99,uinf,valf
   real*8  fsca(ny,2),ysca(ny),wlwa(ny)
 
   ! --------------------- MPI workspaces -----------------------------!
@@ -50,6 +50,13 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      call MPI_RECV(ut(0,1,1),countu,tipo,mpiout,1,comm,istat,ierr)
      call MPI_RECV(vt(0,1,1),countv,tipo,mpiout,2,comm,istat,ierr)
      call MPI_RECV(wt(0,1,1),countu,tipo,mpiout,3,comm,istat,ierr)
+     
+
+     do j=1,ny+1
+      fblend=0.5*(1-tanh(y(j)-y(110)))
+      ut(2:,j,1)=ut(2:,j,1)*fblend
+      wt(2:,j,1)=wt(2:,j,1)*fblend
+     enddo
 
      if(mpiid2.eq.0) then
         tm4 = MPI_WTIME()
@@ -280,8 +287,8 @@ if(mpiid.eq.0) then
            call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,communicator,istat,ierr) 
            u_inf(i)=buffer(1);u_tau(i)=buffer(2);d_out(i)=buffer(3);r_thout(i)=buffer(4);x_plane(i)=buffer(5)                             
         enddo                                
-        write(36,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
-        call flush(36)
+        write(62,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
+        call flush(62)
 !         write(*,*) 'tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop----------------------------'
 !         write(*,*) tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop
 !         write(*,*) 'u_inf...u_tau...d_out...r_thout en filas'
@@ -464,8 +471,8 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      enddo
      cfinfo=cfinfo*den     
      if(mpiid==0) then        
-        write(36,'(14(d22.14))') tiempo,rthout,utauout,gamma(1),dout,cfinfo    
-        call flush(36)
+        write(62,'(14(d22.14))') tiempo,rthout,utauout,gamma(1),dout,cfinfo    
+        call flush(62)
      endif
   endif
 #endif

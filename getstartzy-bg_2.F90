@@ -12,18 +12,7 @@
   !       ACHTUNG!!    allocates one input plane, check there is space
   !==========================================================================
   
-  
 
-#ifdef X86
-#define RECL_MULT 1 !storage units of 4bytes X86 intel architecture
-#else
-#define RECL_MULT 4 !size in bytes BG IBM
-#endif
-
-#define MB *1024*1024
-#define MAXPE 64*1024
-#define MAXCHARLEN 250
-  
   subroutine getstartzy_2(u,v,w,p,dt,mpiid,communicator)
     use alloc_dns_2
     use statistics_2
@@ -31,6 +20,12 @@
     use point_2
     use genmod_2
     use ctesp_2
+
+#ifdef RPARALLEL
+    use hdf5
+    use h5lt
+#endif
+
     implicit none
     include "mpif.h"
     integer,intent(in):: communicator
@@ -44,93 +39,148 @@
     integer status(MPI_STATUS_SIZE),ierr,mpiid,commu,tipo,sidio,nfile,mpiw1,mpiw2,mpiw3,mpiw4
     integer nxr,nyr,nzr,nz1r,nzz,j,i,k,l,dot,lim2,rsize,irec,rsize1,rsize2,ji
     integer*8:: chunks1,chunks2,chunksM1,chunksM2,chunkfbs
-    real(8) jk,dt,dum(20)
+    real(8) jk,dt,dum(20),timer
     character text*99, uchar*1
-    character(len=MAXCHARLEN):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4
 
-    ! --------------------------  Programa  ----------------------------------!
+#ifdef RPARALLEL
+    ! -------------------------- HDF5 ------------------------------------!
+    integer(hid_t):: fid,pid
+    integer:: h5err
+    integer:: info
+    integer(hsize_t), dimension(3):: dims
+    integer(HSIZE_T), dimension(1):: hdims
+#endif 
+
+   ! --------------------------  Programa  ----------------------------------!
     commu=communicator
     tipo=MPI_real4
 
-    fil1=chinit(1:index(chinit,' ')-1)//'.'//'u'
-    fil2=chinit(1:index(chinit,' ')-1)//'.'//'v'
-    fil3=chinit(1:index(chinit,' ')-1)//'.'//'w'
-    fil4=chinit(1:index(chinit,' ')-1)//'.'//'p'
+    fil1=trim(chinit)//'.u'
+    fil2=trim(chinit)//'.v'
+    fil3=trim(chinit)//'.w'
+    fil4=trim(chinit)//'.p'
 
-    if(mpiid.eq.0) then
-    write(*,*) '**************FILE=',fil1
-    write(*,*) '**************FILE=',fil2
-    write(*,*) '**************FILE=',fil3
-    write(*,*) '**************FILE=',fil4
-    endif
+
+
 
 #ifdef RPARALLEL
-    nfile=1			    !Number of files for parallel IO
-    chunkfbs=2*1024*1024            !File block system 2Mb
-    chunks1 =nz1*(ny+1)*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunks2 =nz1*(ny  )*(ie-ib+1)*4  !Number of bytes in R4 for LocalBuffer
-    chunksM1=nz1*(ny+1)*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
-    chunksM2=nz1*(ny  )*(ie-ib+1+1)*4  !Number of bytes in R4 for the Master Node
 
-    if(mpiid.eq.0) then      
-       write(*,*) '-------------------------CHUNKS (Mb)---------------------------------------------------'
-       write(*,*) '              chunks1          chunks2         chunksM1          chunksM2         chunkfbs'
-       write(*,'(5F18.3)') 1.0*chunks1/1024/1024,1.0*chunks2/1024/1024,1.0*chunksM1/1024/1024,1.0*chunksM2/1024/1024,1.0*chunkfbs/1024/1024
-       write(*,*) '----------------------------------------------------------------------------------'
+    call MPI_INFO_CREATE(info,ierr)
+    !       lee el fichero 
+    if (mpiid.eq.0) then
+       write(*,*) 'Leyendo del fichero'
+       write(*,*) fil1     
+       call readheader_2(fil1,nxr,nyr,nzr)
     endif
-    !PARALLEL WRITTER ==================================================================
-    !First the header and last the field
-    if(mpiid.ne.0) then       
-       allocate (resu(nz1,ny+1,ie-ib+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"       
-       !Reading u:              
-       call blockread_2(fil1,commu,resu,chunks1,nfile,mpiid,sidio)     
-       u=real(resu,kind=8)      
-       !Reading v:           
-       call blockread_2 (fil2,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)    
-       v=real(resu(:,1:ny,:),kind=8)    
-       !Reading w:       
-       call blockread_2 (fil3,commu,resu,chunks1,nfile,mpiid,sidio) 
-       w=real(resu,kind=8)    
-       !Reading p:         
-       call blockread_2 (fil4,commu,resu(:,1:ny,:),chunks2,nfile,mpiid,sidio)  
-       p=real(resu(:,1:ny,:),kind=8)       
-       deallocate (resu)        
-    else      
-       allocate (resu(nz1,ny+1,(ie-ib+1)+1),stat=ierr);resu=0 !R4 buffer to convert R8 variables
-       if(ierr.ne.0) write(*,*) "ERROR ALLOCATING RESU"      
-       write(*,'(a75,f10.4,a3)') 'Size of the allocated buffer in order to read:',size(resu)*4.0/1024/1024,'Mb'           
-       !Reading u:    
-       call readheader_2(fil1)        
-       call blockread_2 (fil1,commu,resu,chunksM1,nfile,mpiid,sidio)     
-       u =real(resu(:,:,2:),kind=8)
-       u0=real(resu(1,:,2 ),kind=8)              
-       !         write(*,*) 'Reading from file u0-Nagib:'
-       !         open (110,file='u0-nagib',form='unformatted',status='old')
-       !         read(110) u0(1:ny+1)
-       !         close(110)    
 
-       !Reading v:       
-       call blockread_2 (fil2,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)             
-       v= real(resu(:,1:ny,2:),kind=8)
-       v0=real(resu(1,1:ny,2 ),kind=8)
-       !          write(*,*) 'Reading from file V0-Nagib:'
-       !          open (110,file='v0-nagib',form='unformatted',status='old')
-       !          read(110) v0(1:ny)
-       !          close(110) 
+    call MPI_BCAST(nxr,1,mpi_integer,0,commu,ierr)
+    call MPI_BCAST(nzr,1,mpi_integer,0,commu,ierr)
+    call MPI_BCAST(nyr,1,mpi_integer,0,commu,ierr)
 
-       !Reading w:         
-       call blockread_2 (fil3,commu,resu,chunksM1,nfile,mpiid,sidio)      
-       w=real(resu(:,:,2:),kind=8)  
-       !Reading p:       
-       call blockread_2 (fil4,commu,resu(:,1:ny,:),chunksM2,nfile,mpiid,sidio)             
-       p=real(resu(:,1:ny,2:),kind=8) 
-       deallocate (resu)            
-       write(*,*)
-       write(*,*) '=========================================================================='
-       write(*,*) 'Done Reading', trim(chinit),' fields'
-       write(*,*) '=========================================================================='
+    if (ny.ne.nyr) then
+       if (mpiid==0) write(*,*) 'changing the y grid has to be done separately'
+       if (mpiid==0) write(*,*) 'ny=',ny,'nyr',nyr
+       stop
+    elseif (nx.ne.nxr) then
+       if (mpiid==0) write(*,*) 'changing the x grid has to be done separately'
+       if (mpiid==0) write(*,*) 'nx=',nx,'nxr',nxr
     endif
+
+    u = 0d0
+    v = 0d0
+    w = 0d0
+    p = 0d0
+    nz1r = 2*(nzr+1)
+    nzz = min(nz1r,nz1)
+
+    !Allocate the temporary array to read U and W.
+    dims = (/ nz1r, nyr+1, ie-ib+1 /)
+    allocate(resu(nz1r,nyr+1,ie-ib+1))
+
+    !Collective call to the properties list creator
+
+    timer = MPI_WTIME()
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+
+    !Load the data to the allocated array and close the file
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    !Close the file
+    call h5fclose_f(fid,h5err)
+
+    if(mpiid == 0) then
+       write(*,*) "Read ", nz1r*(nyr+1)*(nxr)*4/1024/1024, "MiB in ", MPI_WTIME()-timer
+    end if
+
+    !Copy the data to the variable preserving the layout
+    call MPI_BARRIER(commu,ierr)
+    u(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    !Read the rest of the variables.
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    call MPI_BARRIER(commu,ierr)
+    w(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    ! No more variables with ny+1
+    deallocate(resu)
+
+    !Allocate the temporary array to read V and P.
+    dims = (/ nz1r, nyr, ie-ib+1 /)
+    allocate(resu(nz1r,nyr,ie-ib+1))
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+
+    call MPI_BARRIER(commu,ierr)
+    v(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr,1:ie-ib+1),kind=8)
+
+    !!!RESET THE V0 VALUE AT THE INFLOW
+    ! if (mpiid == 0) then
+    !    call h5fopen_f("./v0.h5",H5F_ACC_RDONLY_F,fid,h5err,H5P_DEFAULT_F)
+    !    hdims = (/ ny /)
+    !    call H5LTread_dataset_double_f_1(fid,"v",v0,hdims,h5err)
+    !    call h5fclose_f(fid,h5err)
+    !    v(1,1:ny,1)=v0
+    !    write(*,*) "WARNING: SUCCESSFULLY UPDATED V0 AT THE INFLOW"
+    ! end if
+
+    call MPI_BARRIER(commu,ierr)
+
+    call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
+    call h5pclose_f(pid,h5err)
+    call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
+    call h5fclose_f(fid,h5err)
+    
+    call MPI_BARRIER(commu,ierr)
+    p(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    call MPI_BARRIER(commu,ierr)
+
+    deallocate(resu)
+
+    if(mpiid == 0) then
+       u0=u(1,1:ny+1,1)
+       v0=v(1,1:ny,1)
+    end if
+
+!    write(*,*) mpiid, "File read successfully from ", ib, "to ", ie
 #endif
 
 
@@ -139,7 +189,7 @@
     if (mpiid.eq.0) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*RECL_MULT    
+       rsize=2*nz2*(ny+1)*4    
        open (38,file=fil1,status='old',form='unformatted',access='direct',recl=rsize,convert='BIG_ENDIAN')
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(38,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
@@ -175,14 +225,14 @@
     rsize1 = nz1r*(ny+1)
     rsize2 = nz1r*(ny  )
 
-!     nzz = min(nz1r,nz1)
-    nzz = nz1r !now nz1r can be > than nz1.
+     nzz = min(nz1r,nz1)
+   
     allocate (resu(nz1r,ny+1,4))
 
     if (mpiid.eq.0) then
 
        open (40,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')       
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')       
 
   
 #ifdef OLDHEADER
@@ -207,11 +257,11 @@
        !opening rest of the files: 
 
        open (41,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        open (42,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')
        open (43,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        write(*,*) '----- files OPEN ------'
        write(*,*) fil1
        write(*,*) fil2
@@ -223,16 +273,16 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1
-          read(40,rec=irec) resu(1:nzz,1:ny+1,1)
-          read(41,rec=irec) resu(1:nzz,1:ny,2)
-          read(42,rec=irec) resu(1:nzz,1:ny+1,3)
-          read(43,rec=irec) resu(1:nzz,1:ny,4)
+          irec = i+1
+          read(40,rec=irec) resu(1:nz1r,1:ny+1,1)
+          read(41,rec=irec) resu(1:nz1r,1:ny,2)
+          read(42,rec=irec) resu(1:nz1r,1:ny+1,3)
+          read(43,rec=irec) resu(1:nz1r,1:ny,4)
 
-          u(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,1)
-          v(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,2)
-          w(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,3)
-          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)
+          u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)
+          v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)
+          w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)
+          p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
 
           if (i==1) then
              u0=resu(1,:,1)
@@ -243,12 +293,12 @@
        do dot = 1,nummpi-1   ! -- read for the other nodes 
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'Read & Send up to:',i         
-             irec = irec+1
+             irec = i+1
              read(40,rec=irec) resu(1:nzz,1:ny+1,1)
              read(41,rec=irec) resu(1:nzz,1:ny,2)
              read(42,rec=irec) resu(1:nzz,1:ny+1,3)
              read(43,rec=irec) resu(1:nzz,1:ny,4)
-             call MPI_SEND(resu,rsize,tipo,dot,1,commu,ierr)                    
+             call MPI_SEND(resu,rsize,tipo,dot,1,commu,ierr)
           enddo
        enddo
        close(40);close(41);close(42);close(43)
@@ -261,10 +311,10 @@
     else  !   --- the other nodes receive the information  
        do i=ib,ie       
           call MPI_RECV(resu,rsize,tipo,0,1,commu,status,ierr)
-          u(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,1)
-          v(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,2)
-          w(1:nz1,1:ny+1,i) = resu(1:nz1,1:ny+1,3)
-          p(1:nz1,1:ny,i)   = resu(1:nz1,1:ny,4)
+          u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)
+          v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)
+          w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)
+          p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
           if(i.eq.1024) then
             write(*,*) '==========================================='
             do j=ny-10,ny
@@ -288,7 +338,7 @@
     if (mpiid.eq.mpiw1) then
        write(*,*) 'Leyendo del fichero'
        write(*,*) fil1     
-       rsize=2*nz2*(ny+1)*RECL_MULT    
+       rsize=2*nz2*(ny+1)*4    
        open (40,file=fil1,status='old',form='unformatted',access='direct',recl=rsize)
        write(*,*) 'BG: file open, reading tiempo and dimensions'
        read(40,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr
@@ -323,7 +373,7 @@
 
     if (mpiid.eq.mpiw1) then
        open (40,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN'         
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')         
        read(40,rec=1) uchar,tiempo,jk,jk,jk,jk,jk,nxr,nyr,nzr,ji,timeinit,dt, &
             & (y(i), i=0,nyr+1), (um(i), i=1,nyr+1)
        write(*,*) 'in file    ', uchar,tiempo,nxr,nyr,nzr
@@ -335,8 +385,8 @@
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1
-          read(10,rec=irec) resu(1:nzz,1:ny+1,1)         
+          irec = i+1
+          read(40,rec=irec) resu(1:nz1r,1:ny+1,1)         
           u(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,1)        
           if (i==1) then
              u0=resu(1,:,1)            
@@ -345,9 +395,9 @@
        do dot = 1,nummpi-1   ! -- read for the other nodes 
           do i= ibeg(dot),iend(dot)
              if (mod(i,200).eq.0) write(*,*) 'U: Read & Send up to:',i         
-             irec = irec+1
+             irec = i+1
              read(40,rec=irec) resu(1:nzz,1:ny+1,1)           
-             call MPI_SEND(resu(:,:,1),rsize1,tipo,dot,1,commu,ierr)                    
+             call MPI_SEND(resu(:,:,1),rsize1,tipo,dot,1,commu,ierr)
           enddo
        enddo
        close(40);
@@ -361,26 +411,26 @@
 
     !-----------------------------------
     if (mpiid.eq.mpiw2) then    
-       open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+       open (41,file=fil2,status='unknown', &
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1       
-          read(41,rec=irec) resu(1:nzz,1:ny,2)                 
+          irec = i+1       
+          read(41,rec=irec) resu(1:nz1r,1:ny,2)                 
           v(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,2)         
           if (i==1) then
-             u0=resu(1,:,1)          
+             v0=resu(1,:,1)          
           endif
        enddo
 
        do dot = 0,nummpi-1   ! -- read for the other nodes
           if(dot.ne.mpiw2) then 
              do i= ibeg(dot),iend(dot)   
-             if (mod(i,200).eq.0) write(*,*) 'V: Read & Send up to:',i                  
-                irec = irec+1             
+             if (mod(i,200).eq.0) write(*,*) 'V: Read & Send up to:',i
+                irec = i+1             
                 read(41,rec=irec) resu(1:nzz,1:ny,2)           
-                call MPI_SEND(resu(:,:,2),rsize1,tipo,dot,2,commu,ierr)                    
+                call MPI_SEND(resu(:,:,2),rsize1,tipo,dot,2,commu,ierr)
              enddo
           endif
        enddo
@@ -394,21 +444,21 @@
     !-----------------------------------
     if (mpiid.eq.mpiw3) then
        open (42,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize1*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize1*4,convert='BIG_ENDIAN')
        irec=1
        !!  start reading the flow field  
        do i=ib,ie                
-          irec = irec+1         
-          read(42,rec=irec) resu(1:nzz,1:ny+1,3)                  
+          irec = i+1         
+          read(42,rec=irec) resu(1:nz1r,1:ny+1,3)                  
           w(1:nzz,1:ny+1,i) = resu(1:nzz,1:ny+1,3)               
        enddo
        do dot = 0,nummpi-1  
           if(dot.ne.mpiw3) then
              do i= ibeg(dot),iend(dot) 
-             if (mod(i,200).eq.0) write(*,*) 'W: Read & Send up to:',i                   
-                irec = irec+1          
+             if (mod(i,200).eq.0) write(*,*) 'W: Read & Send up to:',i
+                irec = i+1          
                 read(42,rec=irec) resu(1:nzz,1:ny+1,3)            
-                call MPI_SEND(resu(:,:,3),rsize1,tipo,dot,3,commu,ierr)                    
+                call MPI_SEND(resu(:,:,3),rsize1,tipo,dot,3,commu,ierr)
              enddo
           endif
        enddo
@@ -422,34 +472,36 @@
     !-----------------------------------
     if (mpiid.eq.mpiw4) then
        open (43,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=rsize2*RECL_MULT,convert='BIG_ENDIAN')
+            & form='unformatted',access='direct',recl=rsize2*4,convert='BIG_ENDIAN')
        irec=1      
        do i=ib,ie                
-          irec = irec+1         
-          read(43,rec=irec) resu(1:nzz,1:ny,4)         
+          irec = i+1         
+          read(43,rec=irec) resu(1:nz1r,1:ny,4)         
           p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)
        enddo
   
           do dot = 0,nummpi-1 
              if(dot.ne.mpiw4) then 
                 do i= ibeg(dot),iend(dot)
-                if (mod(i,200).eq.0) write(*,*) 'UV: Read & Send up to:',i                            
-                   irec = irec+1             
+                if (mod(i,200).eq.0) write(*,*) 'UV: Read & Send up to:',i
+                   irec = i+1             
                    read(43,rec=irec) resu(1:nzz,1:ny,4)
-                   call MPI_SEND(resu(:,:,4),rsize1,tipo,dot,4,commu,ierr)                    
+                   call MPI_SEND(resu(:,:,4),rsize1,tipo,dot,4,commu,ierr)
                 enddo
              endif
           enddo
           close(43)      
        else   
           do i=ib,ie       
-             call MPI_RECV(resu(:,:,4),rsize1,tipo,0,4,commu,status,ierr)          
+             call MPI_RECV(resu(:,:,4),rsize1,tipo,0,4,commu,status,ierr)
              p(1:nzz,1:ny,i)   = resu(1:nzz,1:ny,4)                
           enddo
        endif 
        
        call MPI_BARRIER(commu,ierr)
        deallocate(resu)
+       call MPI_BCAST(v0,ny,mpi_real8,mpiw2,commu,ierr)
+
 #endif
 
 
@@ -473,177 +525,100 @@
 end subroutine getstartzy_2
 
 
-
-     ! -------------------------------------------------------------------! 
-     ! -------------------------------------------------------------------! 
-     ! -------------------------------------------------------------------! 
-     ! ------------ PARALLEL READING SUBROUTINES ------------------------! 
-     ! -------------------------------------------------------------------! 
-     ! -------------------------------------------------------------------! 
-     ! -------------------------------------------------------------------! 
 #ifdef RPARALLEL
-     subroutine blockread_2(filename,comm,localbuffer,chunksize,&
-          & nfiles,rank,sid)
 
-       !  Read a buffer localbuffer to a single file concurrently using all
-       !  the MPI processes
-       ! Input arguments:
-       !  
-       !  filename: String. Name of the file
-       !  comm: MPI communicator
-       !  localbuffer: Buffer to be read
-       !  chunksize: Amount of **bytes** read from localbuffer.  Please, do not
-       !             play weird games and use the same size of localbuffer
-       !  fsblksize: File system block size.  GPFS is 2 MB
-       !  nfiles: Put a variable that contains 1 here.  Not the literal.  Writing
-       !          files is not supported yet.
-       !  rank: Rank of the MPI process
-       !  sid: File id, different from the OS file and obtained from the parallel
-       !       opening process
-#ifndef BG
-       use mpi
+  subroutine readheader_2(filename, nx, ny, nz2)    
+    use alloc_dns_2,only: tiempo,y
+    use genmod_2,only:um,timeinit
+    
+    use h5lt
+       
+    implicit none
+    character(len = 256), intent(in):: filename
+    
+    real(kind = 8):: cfl,re,dt
+    real(kind = 8):: lx,ly,lz
+    !     integer, intent(out):: lx,ly,lz
+    integer, intent(out):: nx,ny,nz2
+    integer:: xout    
+    integer:: procs
+    integer*8:: cursor,i
+    character(len=1):: field
+    
+    integer:: h5err
+    integer(HID_T):: fid
+    integer(HSIZE_T), dimension(1):: hdims
+    real(kind=8), dimension(1):: aux
+    integer, dimension(1):: iaux
+    
+    
+    call H5Fopen_f(trim(filename)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+    
+    call H5LTread_dataset_string_f(fid,"Variable",field,h5err)
+    hdims = (/ 1 /)
+    call H5LTread_dataset_double_f_1(fid,"tiempo",aux,hdims,h5err)
+    tiempo = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"cfl",aux,hdims,h5err)
+    cfl = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"Re",aux,hdims,h5err)
+    re = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"lx",aux,hdims,h5err)
+    lx = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"ly",aux,hdims,h5err)
+    ly = aux(1)
+    
+    call H5LTread_dataset_double_f_1(fid,"lz",aux,hdims,h5err)
+    lz = aux(1)
+       
+    call H5LTread_dataset_int_f_1(fid,"nx",iaux,hdims,h5err)
+    nx = iaux(1)
+     
+    call H5LTread_dataset_int_f_1(fid,"ny",iaux,hdims,h5err)
+    ny = iaux(1)
+     
+    call H5LTread_dataset_int_f_1(fid,"nz2",iaux,hdims,h5err)
+    nz2 = iaux(1)
+       
+    call H5LTread_dataset_int_f_1(fid,"xout",iaux,hdims,h5err)
+    xout = iaux(1)
+     
+    call H5LTread_dataset_double_f_1(fid,"timeinit",aux,hdims,h5err)
+    timeinit = aux(1)
+       
+    call H5LTread_dataset_double_f_1(fid,"dt",aux,hdims,h5err)
+    dt = aux(1)
+       
+    hdims = (/ ny+2 /)
+    call H5LTread_dataset_double_f_1(fid,"y",y,hdims,h5err)
+    hdims = (/ ny+1 /)
+    call H5LTread_dataset_double_f_1(fid,"um",um,hdims,h5err)
+    
+    call H5Fclose_f(fid,h5err)
+
+
+    write(*,*) "field ", field
+    write(*,*) "tiempo", tiempo
+    write(*,*) "cfl", cfl
+    write(*,*) "re", re
+    write(*,*) "lx", lx
+    write(*,*) "ly", ly
+    write(*,*) "lz", lz
+    write(*,*) "nxr", nx
+    write(*,*) "nyr", ny
+    write(*,*) "nz2r", nz2
+    write(*,*) "xout", xout
+    write(*,*) "timeinit", timeinit
+    write(*,*) "dt", dt
+    write(*,*) "y", y(1:3), "...", y(ny:ny+2)
+    write(*,*) "um", um(1:3), "...", um(ny-1:ny+1)
+
+
+  end subroutine readheader_2
 #endif
-       implicit none
-#ifdef BG
-       include 'mpif.h'
-#endif
-       character(len=MAXCHARLEN),intent(in):: filename
-       integer,intent(in):: comm
-       integer*8,intent(in):: chunksize
-       character,dimension(chunksize),intent(in):: localbuffer
-       integer,intent(in):: nfiles
-       integer,intent(in):: rank
-       integer,intent(out):: sid
-
-       character(len=MAXCHARLEN) :: newfname = 'newfile'
-       integer:: lcomm,ierr,rankl
-
-       integer*8:: btoread,bread,feof
-       integer*8:: sumsize,bsumread,left
-       real*8:: checksum_read_fp
-       integer:: chunkcnt
-       integer:: i !remove after testing
-#ifdef TIMER
-       real*8:: barr1time,barr2time
-       real*8:: readtime,greadtime
-       real*8:: starttime,gstarttime
-       real*8:: opentime,closetime
-#endif
-#ifdef TIMER
-       starttime = MPI_Wtime();
-#endif
-
-       call fsion_paropen_mpi(trim(filename),'br',nfiles,&
-            & comm,lcomm,chunksize,2*1024*1024,rank,&
-            & newfname,sid)
-#ifdef TIMER
-       opentime = MPI_Wtime()-starttime
-#endif
-       call MPI_COMM_RANK(lcomm, rankl, ierr)
-#ifdef TIMER
-       starttime = MPI_Wtime()
-       call barrier_after_open(lcomm)
-       barr1time = MPI_Wtime()-starttime
-       starttime = MPI_Wtime()
-       gstarttime = starttime
-#endif
-
-       checksum_read_fp = 0
-       left = chunksize
-       bsumread = 0
-       chunkcnt = 0
-       call fsion_feof(sid,feof)
-       do while( (left > 0) .AND. (feof /= 1 ) )
-          btoread=chunksize
-
-          if( btoread>left ) btoread = left
-          call fsion_read(localbuffer, 1, btoread, sid, bread)
-#ifdef	CHECKSUM
-          do i=1,bread
-             checksum_read_fp = checksum_read_fp + real(IACHAR(localbuffer(i)))
-          end do
-#endif
-          left = left - bread
-          bsumread = bsumread + bread
-          chunkcnt = chunkcnt + 1        
-          call fsion_feof(sid,feof)       
-       end do
-#ifdef TIMER
-       readtime = MPI_Wtime()-starttime
-       starttime = MPI_Wtime()
-       call barrier_after_read(lcomm)
-       barr2time = MPI_Wtime()-starttime
-       greadtime = MPI_Wtime()-gstarttime
-       starttime = MPI_Wtime()
-#endif
-       call fsion_parclose_mpi(sid,ierr)
-#ifdef TIMER
-       closetime = MPI_Wtime()-starttime
-       if(readtime == 0) readtime = -1
-#endif
-
-#ifdef  CHECKSUM
-       if (abs(checksum_fp-checksum_read_fp)>1e-5) then
-          write(0,*)"ERROR in double checksum  ",checksum_fp,"!=",checksum_read_fp," diff=",(checksum_fp-checksum_read_fp)
-       end if
-#endif
-       call MPI_REDUCE(bsumread, sumsize, 1, MPI_INTEGER8, MPI_SUM, 0, comm, ierr)
-       call MPI_BARRIER(comm,ierr)
-#ifdef TIMER  
-       if (rank == 0) then       
-          write(*,'(A)') "-----------------------------------------------------------------------"
-          write(*,*) 'File read:',trim(filename)
-          write(*,'(a20,f10.4,a3)') 'File Size:',1.0*sumsize/1024/1024/1024,'Gb'
-          write(*,'(a20,f10.4)') 'T.Time Master Node:',greadtime
-          write(*,'(a20,f10.4,a7)') 'BandWidth:',1.0*sumsize/1024/1024/1024/greadtime,'Gb/sec'                       
-       endif
-#endif
-     endsubroutine blockread_2
-
-
-     subroutine readheader_2(filename)    
-       use alloc_dns_2,only: tiempo,y
-       use genmod_2,only:um,timeinit
-       implicit none
-       character(len = MAXCHARLEN), intent(in):: filename
-
-       real(kind = 8):: cfl,re,dt
-       real(kind = 8):: lx,ly,lz
-       !     integer, intent(out):: lx,ly,lz
-       integer:: nx,ny,nz2
-       integer:: xout    
-       integer:: procs
-       integer*8:: cursor,i
-       character(len=1):: field
-
-       open(unit = 121,file=trim(filename), status = "old", access="stream")
-       cursor = 2*1024*1024+1  
-       read(121,pos=cursor) field
-       read(121) tiempo    
-       read(121) cfl
-       read(121) re
-       read(121) lx
-       read(121) ly
-       read(121) lz
-       read(121) nx
-       read(121) ny
-       read(121) nz2
-       read(121) xout
-       read(121) timeinit
-       read(121) dt     
-       read(121) (y(i), i = 0,ny+1)      
-       read(121) (um(i), i = 1,ny+1)
-       read(121) procs
-       write(*,*)
-       write(*,*) '============================================================'
-       write(*,*) field,tiempo,lx,ly,lz,nx,ny,nz2,xout,timeinit,dt,procs
-       write(*,*) '============================================================'
-       write(*,*)
-       close(121)      
-     endsubroutine readheader_2
-#endif
-
-
 
 
 !============================================================

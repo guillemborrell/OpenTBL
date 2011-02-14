@@ -50,7 +50,7 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   real*8 var1,var2,var3,var4,dt,dtloc,uner(15),enerd(15)
   real*8 um,wm,poco,rkk,dt1,dt2,dt3,vmax,maxwk1,maxwk0,wmtmp
   integer i,j,k,l,istep,jv,imaxwk1,kmaxwk1,imaxwk0,kmaxwk0
-  integer kk,k2
+  integer kk,k2,nzz
   !----------------From outside
   complex*16 ,dimension(0:nz2,ny+1)::wkf,wkfo
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr !special buffer for correlations 
@@ -58,16 +58,6 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
   
   real*8, dimension(1:ny+1):: ym
-
-  interface
-     function interpout(y,u,yi,ny,nz) result(ui)
-       integer, intent(in):: ny,nz
-       real*8, intent(in):: yi
-       real*8, dimension(ny), intent(in):: y
-       complex*16, dimension(nz,ny), intent(in):: u
-       complex*16, dimension(nz):: ui
-     end function interpout
-  end interface
 
   
   ! --------------------- MPI workspaces -----------------------------!
@@ -237,13 +227,13 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 ! 	write(*,*) 'dt1  ',dt1
 ! 	write(*,*) 'dt2  ',dt2
 ! 	write(*,*) 'dt3  ',dt3
-	write(*,*) 'dtloc 				BL2',dtloc
+!	write(*,*) 'dtloc 				BL2',dtloc
 ! 	write(*,*) '******************************************'
       endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
-     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+ !    if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
         tmp20 = tmp20 + abs(tm2-tm1)
@@ -276,7 +266,6 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
  !Receive Initial Condition for the BL2 from BL1:
   if(mpiid.eq.0) then
-
      ym = 0.5d0*(y(0:ny)+y(1:ny+1))
 
      !FIXME: Find a reusable thing for buf_comm
@@ -284,26 +273,27 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      ut(:,:,ib) = 0d0
      vt(:,:,ib) = 0d0
      wt(:,:,ib) = 0d0
+     
+     nzz=min(nz2_1,nz2) !Find the minimum size of the Kz
 
      call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
           &mpiid_1(mpi_inlet),1,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        ut(0:nz2_1,:,ib) = zinterpout(ym,buf_comm,planu,&
-             & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
-        write(*,*) "Field interpolated in y"
+        ut(0:nz2,:,ib) = zinterpout(ym,buf_comm(0:nz2_1,1),planu,&
+             & nz2+1,ny+1,nz2_1+1,ny_1+1)
      else
-        ut(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+        ut(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
      end if
 
      call MPI_RECV(buf_comm,(nz2_1+1)*(ny_1+1),MPI_COMPLEX16,&
           &mpiid_1(mpi_inlet),2,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        wt(0:nz2_1,:,ib) = zinterpout(ym,buf_comm,planu,&
-             & nz2_1+1,ny+1,nz2_1+1,ny_1+1)
+        wt(0:nz2,:,ib) = zinterpout(ym,buf_comm(0:nz2_1,1),planu,&
+             & nz2+1,ny+1,nz2_1+1,ny_1+1)
      else
-        wt(0:nz2_1,1:ny+1,ib) = buf_comm(0:nz2_1,1:ny+1)
+        wt(0:nzz,1:ny+1,ib) = buf_comm(0:nzz,1:ny+1)
      end if
 
 
@@ -311,10 +301,10 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &mpiid_1(mpi_inlet),3,MPI_COMM_WORLD,istat,ierr)
 
      if (ny /= ny_1) then
-        vt(0:nz2_1,1:ny,ib) = zinterpout(y,buf_comm,planv,&
-             & nz2_1+1,ny,nz2_1+1,ny_1)
+        vt(0:nz2,1:ny,ib) = zinterpout(y,buf_comm(0:nz2_1,1),planv,&
+             & nz2+1,ny,nz2_1+1,ny_1)
      else
-        vt(0:nz2_1,1:ny,ib) = buf_comm(0:nz2_1,1:ny)
+        vt(0:nzz,1:ny,ib) = buf_comm(0:nzz,1:ny)
      end if
 
 
@@ -556,29 +546,3 @@ subroutine energies_2(ut,vt,wt,hy,ener,communicator)
 
 end subroutine energies_2
 
-function interpout(y,u,yi,ny,nz) result(ui)
-  integer, intent(in):: ny,nz
-  real*8, intent(in):: yi
-  real*8, dimension(ny), intent(in):: y
-  complex*16, dimension(nz,ny), intent(in):: u
-  complex*16, dimension(nz):: ui
-
-  integer:: i
-  real*8:: y0, y1
-
-  if (yi > y(ny)) then
-     ui(:) = u(:,ny)
-  elseif (yi < y(1)) then
-     ui(:) = u(:,1)
-  else
-     do i=1,ny
-        if (y(i) > yi) then
-           y1 = y(i)
-           y0 = y(i-1)
-           ui(:) = u(:,i-1)+(u(:,i)-u(:,i-1))/(y1-y0)*(yi-y0)
-           exit
-        end if
-     end do
-  end if
-
-end function interpout

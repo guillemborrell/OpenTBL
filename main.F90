@@ -39,11 +39,20 @@
 
 program capalimite
   use num_nodes
+
+#ifdef RPARALLEL
+  use hdf5
+#endif
+
   implicit none
   include "mpif.h"
 
   integer ierr,mpiid_global,numprocs_total,i,j,k,new_mpiid      
   integer orig_group, new_group, new_comm
+
+#ifdef RPARALLEL
+  integer h5err
+#endif
 
   !----------------------------------------------------------------------*
   !       el proceso maestro llama a las rut. de inic. del codigo
@@ -51,8 +60,14 @@ program capalimite
  
   !       /*   initializes everything    */
   call MPI_INIT(ierr)
+
+#ifdef RPARALLEL
+  call h5open_f(h5err)
+#endif
+
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid_global,ierr)
-  call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr) !Total number of cores for the 2 BLs
+  !Total number of nodes for the 2 BLs
+  call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs_total,ierr)
 
   if(numprocs_total.ne.numnodes_1+numnodes_2) then
     if(mpiid_global.eq.0) then
@@ -79,12 +94,12 @@ do i=0,size(mpiid_2)-1
 mpiid_2(i)=i+size(mpiid_1)
 enddo
 
-if(mpiid_global.eq.0) then
- write(*,*) 'Ranks: mpiid_1 and mpiid_2'
- write(*,*) 'R1:',mpiid_1
- write(*,*) 'R2:',mpiid_2
- write(*,*) '-------------------------------------------------'
-endif
+!if(mpiid_global.eq.0) then
+! write(*,*) 'Ranks: mpiid_1 and mpiid_2'
+! write(*,*) 'R1:',mpiid_1
+! write(*,*) 'R2:',mpiid_2
+! write(*,*) '-------------------------------------------------'
+!endif
 
 
    !  Extract the original group handle: This is the entire number of available cores
@@ -101,8 +116,7 @@ endif
       call MPI_COMM_CREATE(MPI_COMM_WORLD, new_group,new_comm, ierr) !New Communicator
       call MPI_GROUP_RANK(new_group, new_mpiid, ierr) !Rank Inside Group
 
-write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
-
+!write(*,*) 'I am the global node:',mpiid_global,'and local node rank:',new_mpiid
 
 !Call the 2 BLs:
 if (mpiid_global .lt. size(mpiid_1)) then
@@ -121,6 +135,10 @@ endif
      write (*,*) 'FINALIZING ALL THE PROCESSES: PROGRAM DONE'
      write (*,*) '=============================================='
   endif
+
+#ifdef RPARALLEL
+  call h5close_f(h5err)
+#endif
   
   call MPI_FINALIZE(ierr)
   stop
@@ -201,8 +219,8 @@ subroutine summary1(istep,dt,vcontrol)
   endif
 #endif
   write(*,*)
-          write(32,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
-          call flush(32)
+  write(32,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
+  call flush(32)
   tmp1  =0d0; tmp4=0d0; tmp7=0d0; tmp10=0d0; tmp13=0d0;tmp16=0d0;tmp19=0d0;tmp22=0d0;tmp25=0d0;tmp28=0d0
   tmp2  =0d0; tmp5=0d0; tmp8=0d0; tmp11=0d0; tmp14=0d0;tmp17=0d0;tmp20=0d0;tmp23=0d0;tmp26=0d0;!tmp29=0d0
   tmp3  =0d0; tmp6=0d0; tmp9=0d0; tmp12=0d0; tmp15=0d0;tmp18=0d0;tmp21=0d0;tmp24=0d0;tmp27=0d0;tmp30=0d0     
@@ -321,8 +339,8 @@ subroutine summary1_2(istep,dt,vcontrol)
   endif
 #endif
   write(*,*)
-          write(38,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
-          call flush(38)
+  write(38,'(20d22.14)') tiempo,dt,ener(1:15),tmp2,tmp1
+  call flush(38)
   tmp1  =0d0; tmp4=0d0; tmp7=0d0; tmp10=0d0; tmp13=0d0;tmp16=0d0;tmp19=0d0;tmp22=0d0;tmp25=0d0;tmp28=0d0
   tmp2  =0d0; tmp5=0d0; tmp8=0d0; tmp11=0d0; tmp14=0d0;tmp17=0d0;tmp20=0d0;tmp23=0d0;tmp26=0d0;!tmp29=0d0
   tmp3  =0d0; tmp6=0d0; tmp9=0d0; tmp12=0d0; tmp15=0d0;tmp18=0d0;tmp21=0d0;tmp24=0d0;tmp27=0d0;tmp30=0d0     
