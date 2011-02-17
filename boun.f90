@@ -139,6 +139,7 @@ vmagic(1)     =(h(2)-h(1))/(x(2)-x(1))
 vmagic(2:nx-1)=(h(3:nx)-h(1:nx-2))/(x(3:nx)-x(1:nx-2))
 vmagic(nx)    =(h(nx)-h(nx-1))/(x(nx)-x(nx-1))
 !vmagic=vmagic-(vmagic(1)-v0(ny))
+
 endsubroutine magicnumber
 
 

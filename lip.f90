@@ -76,6 +76,7 @@ subroutine difvisxx(upen_int,upencil,result,icon,iconv,dcbx,econ,econv,cofvbx,ch
      tm1 = MPI_WTIME()
   endif
 
+
   !===========Start computing the convective terms and copy it to result()
   !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,i,bb) 
   !$OMP DO SCHEDULE(STATIC)
@@ -601,6 +602,7 @@ end subroutine implzy
 
 
 
+
 !!4th order interpolator for the pressure
 !JSS January 2011
 !ACHTUNG!!! DOES NOT WORK IN PLACE
@@ -641,7 +643,6 @@ subroutine interp_pressure(f,fi,n,v)
   enddo
   !$OMP END PARALLEL
 end subroutine interp_pressure
-
 
 
 

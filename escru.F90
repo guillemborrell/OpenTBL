@@ -214,11 +214,11 @@
 
        do dot = 1,nummpi-1   !recibe la informacion de cada procesador
           do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx         
+             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
              irec = i+1     
              call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(10,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
              write(11,rec=irec) resu(:,1:ny,1)
              call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
              write(12,rec=irec) resu(:,:,1)
@@ -1030,4 +1030,5 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   call h5fclose_f(fid,h5err)
 
 end subroutine writeheader
+>>>>>>> intrepid_juan
 #endif

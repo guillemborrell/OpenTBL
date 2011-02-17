@@ -206,7 +206,7 @@
             & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
 
        do i=ib,ie
-          if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx        
+          if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
           irec = i+1
           write(40,rec=irec) real(u(:,:,i),kind=4)
           write(41,rec=irec) real(v(:,:,i),kind=4)
@@ -217,11 +217,11 @@
 
        do dot = 1,nummpi-1   !recibe la informacion de cada procesador
           do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx         
+             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
              irec = i+1     
              call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
              write(40,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
              write(41,rec=irec) resu(:,1:ny,1)
              call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
              write(42,rec=irec) resu(:,:,1)
@@ -322,8 +322,8 @@
           if(dot.ne.mpiw2) then
              do i= ibeg(dot),iend(dot)
                 if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE V'         
-                irec = i+1             
-                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
+                irec = i+1
+                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
                 write(41,rec=irec) resu(:,1:ny,1)       
                 call flush(41)
              enddo
@@ -356,7 +356,7 @@
              do i= ibeg(dot),iend(dot)
                 if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE W'         
                 irec = i+1             
-                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
+                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)
                 write(42,rec=irec) resu(:,:,1)
                 call flush(42)
              enddo
@@ -909,4 +909,3 @@ allocate(buf_cor(1:nx,8)) !8 Correlations
  enddo 
  deallocate(buf_cor)
 endsubroutine escr_corr_2
-

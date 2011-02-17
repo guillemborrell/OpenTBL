@@ -13,6 +13,7 @@ F90 =h5pfc
 #F90 =mpixlf90_r
 ##########################################################
 OPTFLAGS = -O3 -qarch=450d -qtune=450 -g
+
 MACROSF = -WF,-DTIMER,-DBG,-DNOINFOSTEP#-DNOCORR,-DNOSPECTRA,-DNOINFOSTEP
 MACROSIO= -WF,-DRPARALLEL,-DWPARALLEL,-DNEWGENFLU
  

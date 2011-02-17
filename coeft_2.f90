@@ -19,17 +19,20 @@ subroutine coef_2(mpiid)
 
   include 'mpif.h'
   
+
   integer i,j,ii,n,np,flagv,mpiid,im,n1,n2,k
 
   real*8 bcc(5),a,b,c,d,am,am1,invre,dtrex,dtrez,dtrey,fact,point0,daux
   real*8 fren(nx),aux,dxi(0:nx),xxi(0:nx),dyi(1:ny),yyi(0:ny),ayy,gamy
   real*8:: x1,x2,x3,x4,x5,xd,nm_aux,dn(5,ny+1),nm(5,ny+1),yp(1:ny+1),xl(5)
+
   real*8, dimension(0:ny_1+1):: y_1
   real*8, dimension(1:ny_1+1):: ym_1
   real*8, dimension(1:ny+1):: ym
 
   !MPI workspaces
   integer istat(MPI_STATUS_SIZE),ierr,stencil
+
   
   pi = 4d0*atan(1d0)
   np = 5
@@ -40,6 +43,7 @@ subroutine coef_2(mpiid)
 
   hy(0)  = (y(1   )-y(0 ))/2.5d0
   hy(ny) = (y(ny)-y(ny-1))/2.5d0
+
 
 
  !********* Weights for Pressure Interpolation:

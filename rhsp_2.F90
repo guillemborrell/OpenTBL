@@ -59,16 +59,6 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   
   real*8, dimension(1:ny+1):: ym
 
-  interface
-     function interpout(y,u,yi,ny,nz) result(ui)
-       integer, intent(in):: ny,nz
-       real*8, intent(in):: yi
-       real*8, dimension(ny), intent(in):: y
-       complex*16, dimension(nz,ny), intent(in):: u
-       complex*16, dimension(nz):: ui
-     end function interpout
-  end interface
-
   
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
@@ -556,29 +546,3 @@ subroutine energies_2(ut,vt,wt,hy,ener,communicator)
 
 end subroutine energies_2
 
-function interpout(y,u,yi,ny,nz) result(ui)
-  integer, intent(in):: ny,nz
-  real*8, intent(in):: yi
-  real*8, dimension(ny), intent(in):: y
-  complex*16, dimension(nz,ny), intent(in):: u
-  complex*16, dimension(nz):: ui
-
-  integer:: i
-  real*8:: y0, y1
-
-  if (yi > y(ny)) then
-     ui(:) = u(:,ny)
-  elseif (yi < y(1)) then
-     ui(:) = u(:,1)
-  else
-     do i=1,ny
-        if (y(i) > yi) then
-           y1 = y(i)
-           y0 = y(i-1)
-           ui(:) = u(:,i-1)+(u(:,i)-u(:,i-1))/(y1-y0)*(yi-y0)
-           exit
-        end if
-     end do
-  end if
-
-end function interpout

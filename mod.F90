@@ -550,16 +550,16 @@ module mod_interpout
             plan%id(cursor) = 1
             plan%c1(cursor) = 1/real((y1(2)-y1(1)),kind=8)
             plan%c0(cursor) = y1(1)/real(y1(2)-y1(1),kind=8)
-         else if (y(cursor) >= y1(ny1)) then
-            plan%id(cursor) = ny1-1;
-            plan%c1(cursor) = 1/real(y1(ny1)-y1(ny1-1),kind=8);
-            plan%c0(cursor) = y1(ny1-1)/real(y1(ny1)-y1(ny1-1),kind=8);
+         else if (y(cursor) >= y1(ny1)) then !Extrapolate by copying
+            plan%id(cursor) = ny1
+            plan%c1(cursor) = 0d0
+            plan%c0(cursor) = 0d0
          else
             do j = 1,ny1
                if (y1(j) > y(cursor)) then
-                  plan%id(cursor) = j-1;
-                  plan%c1(cursor) = 1d0/real(y1(j)-y1(j-1),kind=8);
-                  plan%c0(cursor) = y1(j-1)/real(y1(j)-y1(j-1),kind=8);
+                  plan%id(cursor) = j-1
+                  plan%c1(cursor) = 1d0/real(y1(j)-y1(j-1),kind=8)
+                  plan%c0(cursor) = y1(j-1)/real(y1(j)-y1(j-1),kind=8)
                   exit
                end if
             end do

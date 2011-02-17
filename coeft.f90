@@ -25,6 +25,7 @@ subroutine coef(mpiid)
   !MPI workspaces
   integer istat(MPI_STATUS_SIZE),ierr,stencil
   real*8:: x1,x2,x3,x4,x5,xd,nm_aux,dn(5,ny+1),nm(5,ny+1),yp(1:ny+1),xl(5)
+
   pi = 4d0*atan(1d0)
   np = 5
 
@@ -34,6 +35,7 @@ subroutine coef(mpiid)
 
   hy(0)  = (y(1   )-y(0 ))/2.5d0
   hy(ny) = (y(ny)-y(ny-1))/2.5d0
+
 
 
   !********* Weights for Pressure Interpolation:
