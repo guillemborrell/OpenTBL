@@ -23,19 +23,9 @@ CC   Re        longitud x   altitud y   width    velocity U
 CC Reynolds       x  #        y #        z #       b.layer
 CC   dat(1)     dat(2)       dat(3)    dat(4)      dat(4) 
 CC 
-CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
-CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
-CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
-CC
-CC ========================BOUNDARY LAYER Re_theta 600 ==============
-CC       3.5d+03    70D+00         3.9D+00    5.8D+00  1D0
-CC ========================BOUNDARY LAYER Re_theta 1100 ==============
-CC       3.5d+03    58.35D+00     12.61D+00    5.8D+00  1D0   
-CC       3.5d+03    58.35D+00     12.61D+00    8.7D+00  1D0   
-CC     3.5d+03    58.35D+00     12.61D+00    13D+00  1D0   
-CC     3.5d+03    58.35D+00     12.61D+00    18.54D+00  1D0  
-       3.5d+03    93.36D+00     12.61D+00    18.54D+00  1D0 
-CC================================================================================================
+CC ========================BOUNDARY LAYER Re_theta 300 ==============
+       3.5d+03    50.00D+00      9.48D+00    14.52D+00  1D0 
+CC===================================================================
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
@@ -47,11 +37,10 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-CC        10      100          10       2                0
-        3800     3800        3800      10                0
+        2001     2000        2000         10             0
 CC            
 CC First  output file  number=====================================
-048
+004
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -66,11 +55,10 @@ CC
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
-CC/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.084
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-bl1.047
+/work/pra032/pra03201/spalart-2049x315x3072/bl1-300-2049x315x3072.003
 CC ============================ OUTPUT  ========================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1
+/work/pra032/pra03201/spalart-2049x315x3072/bl1-300-2049x315x3072
 CC FILE FOR LOCAL INFO: -----------------------------------------------
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1
+/homeb/pra032/pra03201/fields/trial
 CC
 CC====================================================================

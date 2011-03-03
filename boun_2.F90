@@ -129,8 +129,13 @@ write(*,*) '------------------------------------------------------'
 endif
 
 do i=1,nx
- x(i)=dx*(i-1)
- reth=(rthin**ei1+c1**ei1*re*x(i))**e1
+   x(i)=dx*(i-1)
+   reth=(rthin**ei1+c1**ei1*re*x(i))**e1
+
+#ifdef ROUGHNESS
+   reth = 2.0d0*reth
+#endif
+
  uep= log(reth)/kap+ckap  
  h(i)=reth/((1-cprim/uep)*re)
 enddo

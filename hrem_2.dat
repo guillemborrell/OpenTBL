@@ -27,22 +27,8 @@ CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
 CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
 CC
-CC ========================BOUNDARY LAYER Re_theta 600 ==============
-CC       3.5d+03    70D+00         3.9D+00    5.8D+00  1D0
-CC ========================BOUNDARY LAYER Re_theta 1100 ==============
-CC       3.5d+03    58.35D+00     12.61D+00    5.8D+00  1D0   
-CC     3.5d+03    58.35D+00     12.61D+00    8.7D+00  1D0   
-CC     3.5d+03    93.34D+00     12.61D+00    13D+00  1D0   
-CC     3.5d+03    93.34D+00     12.61D+00    18.54D+00  1D0   
-CC================================================================================================
-CC       3.5d+03    223.08D+00     12.55D+00    14.07D+00  1D0
-         3.5d+03    209.14D+00     12.55D+00    18.54D+00  1D0
-CC         3.5d+03    167.31D+00     12.55D+00    18.54D+00  1D0
-CC
-CC       3.5d+03    111.54D+00     12.55D+00    14.07D+00  1D0  !NARROW LZ..... WRONG
-CC         3.5d+03    111.54D+00     12.55D+00    18.54D+00  1D0
-CC     3.5d+03     139.4D+00     10.34D+00    14.07D+00  1D0
-CC
+CC ========================BOUNDARY LAYER Re_theta 1300 ==============
+       3.5d+03    104.00D+00      9.48D+00    14.54D+00  1D0
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
@@ -55,10 +41,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        3800     3800        3800      10                0
-CC        10     3500        10      2                0           
+        2001     2000        2000         10             0
+CC
 CC First  output file  number=====================================
-048 
+003
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -69,16 +55,15 @@ CC   idat(8)       idat(9)   idat(10)      idat(11)  idat(12)
 CC
 CC  flaggen       utauout           rthout             dout
 CC
-       0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
+       0     0.04678313948297       2.11944998d03    1.6582838d0
 CC
-CC 2)FILE NAMES used in the code ====================================
+CC 2)FILE NAMES used in the code ===========================
 CC
 CC
-CC======================= INPUT: =======================================
-CC/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
-/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-bl2.047
-CC======================================OUTPUT============================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2
-CC====================== FILE FOR LOCAL INFO: ===================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2
-CC====================================================================
+CC======================= INPUT: ===========================
+/work/pra032/pra03201/bl2/bl2-1300-4097x545x2880.002
+CC======================= OUTPUT============================
+/work/pra032/pra03201/bl2/bl2-1300-4097x545x2880
+CC====================== FILE FOR LOCAL INFO: ==============
+/homeb/pra032/pra03201/fields/trial
+CC==========================================================

@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=2048,numnodes_2=6*1024,x_inlet=3504 !!this for Re_theta=2800.from statistics
+	integer,parameter:: numnodes_1=512,numnodes_2=4096-512,x_inlet=1800 !!this for Re_theta=2800.from statistics
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -35,8 +35,8 @@ module ctesp
 ! Parameters for genflu and getstart!
 
 !====================================================
-parameter ( nx =4097,   ny =386, nz=2880) !2880
-parameter ( xin = 1 , xout =2480) !50d99
+parameter ( nx = 2049,   ny = 315, nz = 2880)
+parameter ( xin = 1 , xout = 600) !50d99
 !====================================================
 
 
@@ -350,12 +350,12 @@ module ctesp_2
 ! Parameters for genflu and getstart!
 
 !====================================================
-parameter ( nx =6145, ny =711, nz=2880)
-parameter ( xin = 1 , xout =3410) !50d99
+parameter ( nx = 3585, ny = 545, nz = 3072)
+parameter ( xin = 1 , xout = 3410) !50d99
 !====================================================
 
 
- parameter ( ny_1 = 386 )  !Values of the other BL1!!! (It should be communicated, instead)
+ parameter ( ny_1 = 315 )  !Values of the other BL1!!! (It should be communicated, instead)
  parameter ( nz_1 = 2880 )
  parameter ( nz1_1 = 2*(nz_1/3), nz2_1=nz1_1/2-1 )
 

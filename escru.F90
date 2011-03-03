@@ -1002,7 +1002,7 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   integer(hsize_t), dimension(1):: hdims
   integer:: h5err
   
-  hdims = 1
+  hdims = (/ 1 /)
   
   call h5fopen_f(trim(fil)//".h5",H5F_ACC_RDWR_F,fid,h5err)
 
@@ -1017,18 +1017,16 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   call h5ltmake_dataset_int_f(fid,"ny",1,hdims,(/ny/),h5err)
   call h5ltmake_dataset_int_f(fid,"nz2",1,hdims,(/nz2/),h5err)
   call h5ltmake_dataset_int_f(fid,"xout",1,hdims,(/xout/),h5err)
+  call h5ltmake_dataset_int_f(fid,"procs",1,hdims,(/procs/),h5err)
   call h5ltmake_dataset_double_f(fid,"timeinit",1,hdims,(/timeinit/),h5err)
   call h5ltmake_dataset_double_f(fid,"dt",1,hdims,(/dt/),h5err)
   
-  hdims = ny+2
-  call h5ltmake_dataset_double_f(fid,"y",1,hdims,(/y/),h5err)
-  hdims = ny+1
-  call h5ltmake_dataset_double_f(fid,"um",1,hdims,(/um/),h5err)
-  
-  call h5ltmake_dataset_int_f(fid,"procs",1,hdims,(/procs/),h5err)
+  hdims = (/ ny+2 /)
+  call h5ltmake_dataset_double_f(fid,"y",1,hdims,y,h5err)
+  hdims = (/ ny+1 /)
+  call h5ltmake_dataset_double_f(fid,"um",1,hdims,um,h5err)
   
   call h5fclose_f(fid,h5err)
 
 end subroutine writeheader
->>>>>>> intrepid_juan
 #endif
