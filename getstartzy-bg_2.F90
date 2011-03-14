@@ -42,8 +42,9 @@
     real(8) jk,dt,dum(20),timer
     character text*99, uchar*1
     character(len=256):: fil1,fil2,fil3,fil4
+    real(8):: f_blend,u_aux(ny+1,2900),v_aux(ny,2900)
 
-#ifdef RPARALLEL
+ifdef RPARALLEL
     ! -------------------------- HDF5 ------------------------------------!
     integer(hid_t):: fid,pid
     integer:: h5err
@@ -179,6 +180,29 @@
        u0=u(1,1:ny+1,1)
        v0=v(1,1:ny,1)
     end if
+    
+    !COPY THE COMPOUND PROFILES FOR THE 15% EXTENSION=====================
+    if(mpiid.eq.0) then
+       open (105,file='u0-bl2-15percent.dat',status='unknown',form='unformatted')       
+       open (106,file='v0-bl2-15percent.dat',status='unknown',form='unformatted')       
+       do i=1,2900
+          read(105) u_aux(1:ny+1,i)
+          read(106) v_aux(1:ny  ,i)
+       enddo
+    endif
+
+    call MPI_BCAST(u_aux,size(u_aux),mpi_real*8,0,commu,ierr)
+    call MPI_BCAST(v_aux,size(v_aux),mpi_real*8,0,commu,ierr)
+
+    do i=ib,ie
+       if(i.ge.12500) then
+          f_blend=0.5*(1-tanh((i-13100d0)/81d0))
+          u(1,1:ny+1,i)=f_blend*u(1,1:ny+1,i)+(1-f_blend)*u_aux(1:ny+1,i-12499)
+          v(1,1:ny+1,i)=f_blend*v(1,1:ny+1,i)+(1-f_blend)*v_aux(1:ny+1,i-12499)
+       endif
+    enddo
+    !====================================================================
+
 
 !    write(*,*) mpiid, "File read successfully from ", ib, "to ", ie
 #endif

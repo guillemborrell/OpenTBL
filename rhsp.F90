@@ -55,7 +55,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   complex*16 ,dimension(0:nz2,ny+1)::wkf,wkfo
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr !special buffer for correlations 
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
-  
+  real*8 :: dt1_m,dt2_m,dt3_m,dt4_m,dt4,dt5,dt6,dt7  
   
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
@@ -214,22 +214,42 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      dt3 = minval(dymin/max(poco,vm)) 
       
      dtloc = min(dt1, dt2, dt3, dtret)
-     if(mpiid.eq.0) then
-!         write(*,*) '******************************************'
-! 	write(*,*) '**MAX um',um
-! 	write(*,*) '**MAX vm',maxval(vm)
-! 	write(*,*) '**MAX wm',wm	
-! 	write(*,*) '*************paso temporal nodo 0 *******'
-! 	write(*,*) 'dt1  ',dt1
-! 	write(*,*) 'dt2  ',dt2
-! 	write(*,*) 'dt3  ',dt3
-!	write(*,*) 'dtloc 				BL1',dtloc
-! 	write(*,*) '******************************************'
-      endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
 !     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+
+
+     dt4=dzmin/max(poco,wm)
+     dt5=re*cfl*(dxmin*sqrt(3d0)/cfl)**2/6d0
+     dt6=minval(re*cfl*(dymin*sqrt(3d0)/cfl)**2/6d0)
+     dt7=re*cfl*(dzmin*pi/cfl)**2/pi**2
+     !Info about the differents CFLs
+     call MPI_ALLREDUCE(dt1,dt1_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt2,dt2_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt3,dt3_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt4,dt4_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     dtloc=min(dt1_m,dt2_m,dt3_m,dtret)
+     if(mpiid.eq.0) then
+        write(*,*) '******************************************'
+	write(*,'(a15,3f15.8)') 'MAX um,vm,wm:',um,maxval(vm),wm	
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt1: C_u1',dt1,' CFL:',dt/dt1_m*cfl/sqrt(3d0)
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt2: C_w2',dt2,' CFL:',dt/dt2_m*cfl/sqrt(3d0)
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt3: C_v ',dt3,' CFL:',dt/dt3_m*cfl/sqrt(3d0)
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt4: C_w ',dt4,' CFL:',dt/dt4_m*cfl/pi
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0
+	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi
+	write(*,*) '******************************************'
+      endif
+
+
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
         tmp20 = tmp20 + abs(tm2-tm1)
