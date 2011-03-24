@@ -32,8 +32,8 @@ subroutine coef_2(mpiid)
 
   !MPI workspaces
   integer istat(MPI_STATUS_SIZE),ierr,stencil
+  real*8:: h(ny+1),hi(ny+1),e,f,g
 
-  
   pi = 4d0*atan(1d0)
   np = 5
 
@@ -46,17 +46,266 @@ subroutine coef_2(mpiid)
 
 
 
- !********* Weights for Pressure Interpolation:
- !For pressure: y_int=y (pressure interpolated is at wall position)
- 
-  yp=(y(0:ny)+y(1:ny+1))*0.5d0 !@half cell position, where P is located
+  !===================================================================
+  ! COMPACT FINITE DIFFERENCES SCHEMES. JSS MARCH 011
+  !
+  !! As in: "COMPACT FINITE DIFFERENCE SCHEMES ON NON-UNIFORM MESHES".
+  !! Gamet, Ducros, Nicoud, Poinsot)
+  !! (I am doing high order 6th order CFD...as costly as 4th)
+  !! Close to the wall, the order is improved using a bigger stencil
+  !! (Mark: 4 points stencils, Me: 4,5 point stencils)
+  !===================================================================
+  
+  
+  !!====================================================
+  !!       D/DY using an non-uniform mesh (in place)
+  !!====================================================
 
+  fd_dvdy=0d0
+  h(1:ny+1)=y(1:ny+1)-y(0:ny)
+
+  !BOUNDARY SCHEME FOR I=1
+  a=h(2);b=h(2)+h(3);c=h(2)+h(3)+h(4)
+  fd_dvdy(1,1) =-(a*b+a*c+2*b*c)/b/a/c
+  fd_dvdy(3,1) =-a**2*c/(-c+b)/b/(-b+a)**2
+  fd_dvdy(4,1) =a**2*b/c/(a-c)**2/(-c+b)
+  fd_dvdy(2,1) =-(fd_dvdy(1,1)+fd_dvdy(3,1)+fd_dvdy(4,1))
+  !Tridg:
+  fd_dvdy(7,1)=1d0
+  fd_dvdy(8,1) =b*c/(a-c)/(-b+a) !beta
+
+  !BOUNDARY SCHEME FOR I=2
+  fd_dvdy(1,2) =(-b+a)**2*(a-c)*(a*b+2*a*c+2*b*c)/a/b**3/c**2
+  fd_dvdy(2,2) =1/a*(-3*a*b+2*b*c+5*a**2-4*a*c)/(a-c)/(-b+a)
+  fd_dvdy(3,2) =a**2*(a-c)*(-2*a*c+3*a*b+4*b*c-5*b**2)/b**3/(-c+b)**2/(-b+a)
+  fd_dvdy(4,2) =-sum(fd_dvdy(1:3,2))
+  !Tridg:
+  fd_dvdy(6,2) =-(-b+a)**2*(a-c)/c/b**2 !alpha
+  fd_dvdy(7,2) =1d0
+  fd_dvdy(8,2) =a**2*(a-c)/(-c+b)/b**2 !beta
+
+
+  !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(i,a,b,c,d,e,f)
+  do i=3,ny-2
+     a=h(i-1); b=h(i); c=h(i+1); d=h(i+2); f=c+d; e=a+b
+
+     fd_dvdy(1,i)=-c**2*b**2*f/(f+e)/e/(c**2+2*c*e+e**2)/(e**2-2*e*b+b**2)
+
+     fd_dvdy(2,i)=f/b*e*c**2*(3*c*b*f-2*c*f*e&
+          &+4*b**2*c-3*b*e*c+5*b**2*f-4*b*e*f&
+          &+6*b**3-5*e*b**2)/(f**2+2*b*f+b**2)/&
+          &(b**3+3*b*c**2+c**3+3*b**2*c)/(e**2-2&
+          &*e*b+b**2)
+
+     fd_dvdy(3,i)=(c*b*f-b*e*c-2*b*e*f+2*c*f*e)/f/b/e/c
+
+     fd_dvdy(4,i)=-(-3*c*b*f-2*b*e*f+3*b*e*c+&
+          &4*b*c**2-5*c**2*f-4*c*f*e+6*c**3+5*&
+          &c**2*e)*b**2/c*e*f/(f**2-2*f*c+c**2)&
+          &/(3*e**2*b*c**2+6*e*b**2*c**2+6*e*b*&
+          &c**3+e**2*b**3+c**5+2*c**4*e+c**3*e*&
+          &*2+3*b**2*c**3+b**3*c**2+3*b*c**4+2*&
+          &e*b**3*c+3*e**2*b**2*c)
+
+     fd_dvdy(5,i)=-sum(fd_dvdy(1:4,i))
+
+     !Tridiagonal Coefficients:
+     fd_dvdy(6,i)=-e*c**2*f/(f+b)/(b**2+2*b*c+c**2)/(b-e)  !this is alpha
+     fd_dvdy(7,i)=1d0
+     fd_dvdy(8,i)=-e*b**2*f/(-f+c)/(b**2+2*b*c+c**2)/(c+e) !this is beta
+  enddo
+  !$OMP END PARALLEL DO
+
+  !BOUNDARY SCHEME FOR I=ny-1  ==============================
+  a=h(ny-2); b=h(ny-1); c=h(ny); f=a+b+c; e=b+c
+  fd_dvdy(1,ny-1) = c**2*(c-e)**2/f**2/(f-e)**2/(-f+c) 
+  fd_dvdy(3,ny-1) =-(5*c**2-4*f*c-3*c*e+2*f*e)/c/(-f+c)/(c-e)
+  fd_dvdy(4,ny-1) =-(c-e)**2*(-f+c)*(2*f*c+c*e+2*f*e)/c/f**2/e**3
+  fd_dvdy(2,ny-1) = -(fd_dvdy(1,ny-1)+fd_dvdy(3,ny-1)+fd_dvdy(4,ny-1))
+  !Tridg:
+  fd_dvdy(6,ny-1) =-(-f+c)*c**2/e**2/(f-e)
+  fd_dvdy(7,ny-1) =1d0
+  fd_dvdy(8,ny-1) =-(c-e)**2*(-f+c)/f/e**2
+
+  !BOUNDARY SCHEME FOR I=ny
+  fd_dvdy(1,ny) = c**2*e/(-f+c)**2/(f-e)/f
+  fd_dvdy(2,ny) = -c**2*f/e/(c-e)**2/(f-e)
+  fd_dvdy(4,ny) =(f*c+c*e+2*f*e)/c/f/e
+  fd_dvdy(3,ny) = -(fd_dvdy(1,ny)+fd_dvdy(2,ny)+fd_dvdy(4,ny))
+  !Tridg:
+  fd_dvdy(6,ny) =f*e/(-f+c)/(c-e)
+  fd_dvdy(7,ny) =1d0
+
+  !Reorganicing the coeffs to save flops in the trid-solver (LU)
+  do j=2,ny
+     fd_dvdy(6,j)=fd_dvdy(6,j)/fd_dvdy(7,j-1)
+     fd_dvdy(7,j)=fd_dvdy(7,j)-fd_dvdy(6,j)*fd_dvdy(8,j-1)
+  enddo
+  fd_dvdy(7,:)=1d0/fd_dvdy(7,:)
+
+  
+  !!====================================================
+  !!       D/DX using an uniform mesh (in place)
+  !!====================================================
+
+  fd_dx=0d0;
+  !BOUNDARY SCHEME FOR I=1       !BOUNDARY SCHEME FOR I=2  
+  fd_dx(1,1) =-37d0/12d0;        fd_dx(1,2) = -43d0/96d0;  
+  fd_dx(2,1) = 2d0/3d0;          fd_dx(2,2) = -5d0/6d0;    
+  fd_dx(3,1) = 3d0;              fd_dx(3,2) = 9d0/8d0;     
+  fd_dx(4,1) = -2d0/3d0;         fd_dx(4,2) = 1d0/6d0;     
+  fd_dx(5,1) = 1d0/12d0;         fd_dx(5,2) = -1d0/96d0;   
+  !Tridg:                        !Tridg:                   
+  fd_dx(7,1) =1d0;               fd_dx(6,2) =1d0/8d0;      
+  fd_dx(8,1) =4d0;               fd_dx(7,2) =1d0;          
+                                 fd_dx(8,2) =3d0/4d0;      
+  !$OMP WORKSHARE
+  fd_dx(1,3:nx-2)=-1d0/36d0;
+  fd_dx(2,3:nx-2)=-7d0/9d0;
+  fd_dx(3,3:nx-2)=0;
+  fd_dx(4,3:nx-2)= 7d0/9d0;
+  fd_dx(5,3:nx-2)= 1d0/36d0;
+  !Tridg:
+  fd_dx(6,3:nx-2)=1d0/3d0;
+  fd_dx(7,3:nx-2)=1d0;
+  fd_dx(8,3:nx-2)=1d0/3d0;
+  !$OMP END WORKSHARE
+
+  !BOUNDARY SCHEME FOR I=nx-1      !BOUNDARY SCHEME FOR I=nx    
+  fd_dx(1,nx-1) =1d0/96d0;            fd_dx(1,nx) =-1d0/12d0        
+  fd_dx(2,nx-1) =-1d0/6d0;            fd_dx(2,nx) =2d0/3d0          
+  fd_dx(3,nx-1) =-9d0/8d0;            fd_dx(3,nx) =-3d0             
+  fd_dx(4,nx-1) = 5d0/6d0;            fd_dx(4,nx) =-2d0/3d0         
+  fd_dx(5,nx-1) = 43d0/96d0;          fd_dx(5,nx) =37d0/12d0        
+  !Tridg:                          !Tridg:                      
+  fd_dx(6,nx-1) =3d0/4d0;             fd_dx(6,nx) =4d0              
+  fd_dx(7,nx-1) =1d0;                 fd_dx(7,nx) =1d0              
+  fd_dx(8,nx-1) =1d0/8d0;
+
+
+  point0=ax*pi/(nx+1)
+  fd_dx(1:5,:)=fd_dx(1:5,:)/point0
+
+  !Reorganicing the coeffs to save flops in the trid-solver (LU)
+  do j=2,nx
+     fd_dx(6,j)=fd_dx(6,j)/fd_dx(7,j-1)
+     fd_dx(7,j)=fd_dx(7,j)-fd_dx(6,j)*fd_dx(8,j-1)
+  enddo
+  fd_dx(7,:)=1d0/fd_dx(7,:)
+
+
+  !!====================================================
+  !!    Interp X using an uniform mesh (mid-point)
+  !!====================================================
+
+  !BOUNDARY SCHEME FOR I=1  !BOUNDARY SCHEME FOR I=nx-1
+  fd_ix(1,1) =5d0/24d0;     fd_ix(1,nx-1) =-1d0/84d0;
+  fd_ix(2,1) =15d0/8d0;     fd_ix(2,nx-1) =1d0/4d0;
+  fd_ix(3,1) =5d0/8d0;      fd_ix(3,nx-1) =5d0/4d0;
+  fd_ix(4,1) =-1d0/24d0;    fd_ix(4,nx-1) =5d0/12d0;
+  !Tridg:                   !Tridg:     
+  fd_ix(7,1) =1d0;          fd_ix(6,nx-1) =5d0/6d0;
+  fd_ix(8,1) =5d0/3d0;      fd_ix(7,nx-1) =1d0;
+  fd_ix(8,nx-1) =1d0/14d0;   
+
+  !$OMP WORKSHARE              !BOUNDARY SCHEME FOR I=nx 
+  fd_ix(1,2:nx-2)=1d0/20d0;    fd_ix(1,nx) =1d0/8d0;     
+  fd_ix(2,2:nx-2)=3d0/4d0;     fd_ix(2,nx) =-7d0/8d0;      
+  fd_ix(3,2:nx-2)=3d0/4d0;     fd_ix(3,nx) =35d0/8d0;    
+  fd_ix(4,2:nx-2)=1d0/20d0;    fd_ix(4,nx) =35d0/8d0;    
+  !Tridg:                      !Tridg:                   
+  fd_ix(6,2:nx-2)=3d0/10d0;    fd_ix(6,nx) =7d0;         
+  fd_ix(7,2:nx-2)=1d0;         fd_ix(7,nx) =1d0;         
+  fd_ix(8,2:nx-2)=3d0/10d0;
+  !$OMP END WORKSHARE
+
+
+  !Reorganicing the coeffs to save flops in the trid-solver (LU) 
+  do j=2,nx
+     fd_ix(6,j)=fd_ix(6,j)/fd_ix(7,j-1)
+     fd_ix(7,j)=fd_ix(7,j)-fd_ix(6,j)*fd_ix(8,j-1)
+  enddo
+  fd_ix(7,:)=1d0/fd_ix(7,:)
+
+  
+  
+  !!====================================================
+  !!    Interp Y using non-uniform mesh (mid-point): u,w 
+  !!           (intented for u,w & p positions only!)
+  !!====================================================
+
+  yp=(y(0:ny)+y(1:ny+1))*0.5d0    !@half cell position (u,w,p position)
+  hi(1:ny+1)=y (1:ny+1)-y (0:ny); !dh for the interpolated grid
+  h (2:ny+1)=yp(2:ny+1)-yp(1:ny); !dh for the original grid 
+ 
+  !BOUNDARY SCHEME FOR I=1 (for pressure)
+  j=1;a=hi(j+1)/2;b=a+h(j+2);c=b+h(j+3);d=c+h(j+4); 
+  fd_iy(1,1)=-c*b*d/(-d+a)/(-c+a)/(-b+a);
+  fd_iy(2,1)=c*a*d/(-d+b)/(-c+b)/(-b+a);
+  fd_iy(3,1)=-b*a*d/(-d+c)/(c**2-a*c-b*c+b*a);
+  fd_iy(4,1)=1d0-sum(fd_iy(1:3,1));
+
+  !BOUNDARY SCHEME FOR I=2
+  j=2;a=hi(j+1)/2;b=a+h(j+2);c=b+h(j+3);d=c+h(j+4);e=hi(j)/2; 
+  fd_iy(1,2)=2*c*b*a**2*d/(e+d)/(e+c)/(b+e)/(2*a**2+e**2+3*e*a);
+  fd_iy(2,2)=-2*c*b*e*d/(a-d)/(a-c)/(a-b)/(a+e);
+  fd_iy(3,2)=2*c*e*a**2*d/(-d+b)/(-c+b)/(2*a**2*e+2*a**2*b-3*a*b**2-3*a*e*b+b**3+e*b**2);
+  fd_iy(4,2)=-2*a**2*b*e*d/(-d+c)/(3*e*a*c**2-2*e*a**2*c-3*b*e*a*c-2*a**2*c**2+2*a**2*e*b+3&
+       &*a*c**3+b*c**3-e*c**3+2*b*a**2*c-3*b*a*c**2+b*e*c**2-c**4);
+  !Tridg:
+  fd_iy(7,2)=1d0;
+  fd_iy(8,2)=-c*b*e*d/(2*a+e)/(2*a-d)/(2*a-c)/(2*a-b);
+  fd_iy(5,2)=sum(fd_iy(7:8,2))-sum(fd_iy(1:4,2));   !because of consistency
+
+ !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j,a,b,c,d,e,f)
+  do j=3,ny-1
+     a=hi(j+1)/2;b=a+h(j+2);e=hi(j)/2;f=e+h(j);
+     fd_iy(1,j)=4*e**2*a**2*b/(b+f)/(2*a**2*f**2+f**4+4*e**2*a**2-6*a**2*e*f&
+          &-9*e*a*f**2+6*e**2*a*f+2*e**2*f**2+3*a*f**3-3*e*f**3);
+     fd_iy(2,j)=-4*f*a**2*b/(b+e)/(a+e)/(e-f)/(2*a+e);
+     fd_iy(3,j)=-4*f*e**2*b/(a-b)/(a+f)/(2*e**2+a**2+3*e*a);
+     !Tridg:   
+     fd_iy(6,j)=-f*b*a**2/(a+e)/(-f+2*e)/(b+2*e)/(a+2*e);
+     fd_iy(7,j)=1d0;
+     fd_iy(8,j)=-f*e**2*b/(2*a-b)/(2*a+f)/(2*a**2+e**2+3*e*a);
+     fd_iy(4,j)=sum(fd_iy(6:8,j))-sum(fd_iy(1:3,j)); !because of consistency
+  enddo
+  !$OMP END PARALLEL DO
+
+  !BOUNDARY SCHEME FOR I=ny
+  j=ny; a=hi(j+1)/2;e=hi(j)/2;f=e+h(j);g=f+h(j-1);    
+  fd_iy(1,ny) =2*(4*e**2+2*e*a-a*f-2*f*e)*e**2/(-g+e)/(f-g)/g/(g+a);
+  fd_iy(2,ny) =-2*(2*e*a+4*e**2-a*g-2*g*e)*e**2/(e-f)/f/(f**2+a*f-g*f-a*g);
+  fd_iy(3,ny) =2*(8*e**3-4*g*e**2-2*f*a*e-2*g*e*a-4*f*e**2+g*a*f+4*a*e**2+2*f*g*e)&
+       &/(e**3+a*e**2-f*e**2-g*e**2+g*a*f-g*e*a+f*g*e-f*a*e);
+  fd_iy(4,ny) =2*(-2*f*e-2*g*e+g*f+4*e**2)*e**2/(g+a)/(a+f)/(a+e)/a;
+  !Tridg:     
+  fd_iy(6,ny) =1;
+  fd_iy(7,ny) =(8*e**3-4*g*e**2-2*f*a*e-2*g*e*a-4*f*e**2+g*a*f+4*a*e**2+2*f*g*e)/g/a/f;
+  
+
+  !Reorganicing the coeffs: ACHTUNG!! Start from j=2 
+  !(j=1; for u,w=0d0; for p, taylor)
+  do j=3,ny
+     fd_iy(6,j)=fd_iy(6,j)/fd_iy(7,j-1)
+     fd_iy(7,j)=fd_iy(7,j)-fd_iy(6,j)*fd_iy(8,j-1)
+  enddo
+  fd_iy(7,2:ny)=1d0/fd_iy(7,2:ny)
+
+!=====================================================================================
+!=====================================================================================
+!=====================================================================================
+
+
+
+
+ !********* Weights for Pressure Interpolation:
+  !For pressure: y_int=y (pressure interpolated is at wall position)
 
   stencil=5
   dn=1d0;nm=1d0; !Initialize to 1
 
 !Lagrange Interpolation:
-
   !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,xd,xl,k,i)
   !$OMP DO SCHEDULE(STATIC)
   do j=1,ny+1
@@ -95,7 +344,6 @@ subroutine coef_2(mpiid)
   l_weight(5,0)=nm_aux/dn(5,1);
 
 
-
 !Weight for Second Derivative dV/dyy @th wall:
 j=1;dn=1d0 !Initialize to 1
 xl(1:stencil)=y(j:j+4)
@@ -109,8 +357,13 @@ nm(2,1)=2*(xl(5)*(xl(4)+xl(1))+xl(3)*(xl(1)+xl(5))+xl(4)*(xl(1)+xl(3)));
 nm(3,1)=2*(xl(5)*(xl(4)+xl(2))+xl(1)*(xl(2)+xl(5))+xl(4)*(xl(2)+xl(1)));
 nm(4,1)=2*(xl(5)*(xl(1)+xl(2))+xl(3)*(xl(2)+xl(5))+xl(1)*(xl(2)+xl(3)));
 nm(5,1)=2*(xl(1)*(xl(4)+xl(2))+xl(3)*(xl(2)+xl(1))+xl(4)*(xl(2)+xl(3)));
-
 ldyy(:)=nm(:,1)/dn(:,j)
+
+!=====================================================================================
+!=====================================================================================
+!=====================================================================================
+
+
 
 
   !********* DISTANCE BETWEEN NODES AND FACES *************

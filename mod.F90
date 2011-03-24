@@ -120,6 +120,12 @@ module  alloc_dns
   real*8::inxu(3,nx),inyu(3,ny),inxv(3,nx),inyv(3,ny),inbx(4,4),inby(4,4)
   real*8::cofivx(2,nx),cofiux(2,nx),cofivy(2,ny),cofiuy(2,ny)
 
+  real*8::fd_dvdy(8,ny)
+  real*8::fd_dx  (8,nx)
+  real*8::fd_ix  (8,nx)
+  real*8::fd_iy  (8,ny)
+
+
   real*8::dcxu   (3,nx)
   real*8::dcyu   (3,ny+1)
   real*8::dcxv   (3,nx)
@@ -438,6 +444,11 @@ module  alloc_dns_2
 
   real*8::inxu(3,nx),inyu(3,ny),inxv(3,nx),inyv(3,ny),inbx(4,4),inby(4,4)
   real*8::cofivx(2,nx),cofiux(2,nx),cofivy(2,ny),cofiuy(2,ny)
+
+  real*8::fd_dvdy(8,ny)
+  real*8::fd_dx  (8,nx)
+  real*8::fd_ix  (8,nx)
+  real*8::fd_iy  (8,ny)
 
   real*8::dcxu   (3,nx)
   real*8::dcyu   (3,ny+1)
