@@ -236,20 +236,20 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      dtloc=min(dt1_m,dt2_m,dt3_m,dtret)
      if(mpiid.eq.0) then
         write(*,*) '******************************************'
-	write(*,'(a15,3f15.8)') 'MAX um,vm,wm:',um,maxval(vm),wm	
+	write(*,'(a15,3f15.8,a8)') 'MAX um,vm,wm:',um,maxval(vm),wm,'    BL-2'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt1: C_u1',dt1,' CFL:',dt/dt1_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt2: C_w2',dt2,' CFL:',dt/dt2_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt3: C_v ',dt3,' CFL:',dt/dt3_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt4: C_w ',dt4,' CFL:',dt/dt4_m*cfl/pi
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt1: C_u1',dt1_m,' CFL:',dt/dt1_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt2: C_w2',dt2_m,' CFL:',dt/dt2_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt3: C_v ',dt3_m,' CFL:',dt/dt3_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt4: C_w ',dt4_m,' CFL:',dt/dt4_m*cfl/pi,'    BL-2'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0,'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt6: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0,'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt7: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2,'    BL-2'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi,'    BL-2'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi,'    BL-2'	
 	write(*,*) '******************************************'
       endif
 

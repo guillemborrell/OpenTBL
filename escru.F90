@@ -1030,5 +1030,4 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   call h5fclose_f(fid,h5err)
 
 end subroutine writeheader
->>>>>>> intrepid_juan
 #endif

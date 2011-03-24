@@ -23,7 +23,7 @@ sub-omp-256:
 sub-omp-512:
 	make -f makefile-OMP-bg ITPC
 	rename ITPC ITPC-512 ITPC	
-	qsub -n 512 -t 150 --mode smp -q prod -O out-512 ITPC-512
+	qsub -n 512 -t 10 --mode smp -q prod -O out-512 ITPC-512
 
 sub-omp-1024:
 	make -f makefile-OMP-bg ITPC
@@ -32,13 +32,8 @@ sub-omp-1024:
 
 sub-omp-2048:
 	make -f makefile-OMP-bg ITPC
-<<<<<<< HEAD
-	rename ITPC ITPC-2048 ITPC	
-	qsub -n 2048 -t 25 --mode smp -q prod -O out-2048 ITPC-2048	
-=======
 	rename ITPC ITPC-2048-2bls ITPC	
 	qsub -n 2048 -t 720 --mode smp -q prod -O out-2048-2bls ITPC-2048-2bls	
->>>>>>> intrepid
 
 sub-omp-4096:
 	make -f makefile-OMP-bg ITPC
@@ -48,7 +43,7 @@ sub-omp-4096:
 sub-omp-8192:
 	make -f makefile-OMP-bg ITPC
 	rename ITPC ITPC-8192 ITPC	
-	qsub -n 8192 -t 720 --mode smp -q prod -O out-8192-2bls-dir ITPC-8192
+	qsub -n 8192 -t 720 --mode smp --env BG_MAPPING=nodes-topology-bl.txt -q prod -O out-8192-topology ITPC-8192
 
 compilar-omp:
 	make -f makefile-OMP-bg ITPC

@@ -211,7 +211,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   if (setstep) then      !!!!!!!  reduce time step
      dt1=dxmin/max(poco,um)
      dt2=dxmin/max(poco,wm)
-     dt3 = minval(dymin/max(poco,vm)) 
+     dt3 = minval(dymin/max(poco,vm)) !so conservative.....
       
      dtloc = min(dt1, dt2, dt3, dtret)
 
@@ -230,25 +230,25 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call MPI_ALLREDUCE(dt3,dt3_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
      call MPI_ALLREDUCE(dt4,dt4_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
      dtloc=min(dt1_m,dt2_m,dt3_m,dtret)
+
      if(mpiid.eq.0) then
         write(*,*) '******************************************'
-	write(*,'(a15,3f15.8)') 'MAX um,vm,wm:',um,maxval(vm),wm	
+	write(*,'(a15,3f15.8,a8)') 'MAX um,vm,wm:',um,maxval(vm),wm,'    BL-1'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt1: C_u1',dt1,' CFL:',dt/dt1_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt2: C_w2',dt2,' CFL:',dt/dt2_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt3: C_v ',dt3,' CFL:',dt/dt3_m*cfl/sqrt(3d0)
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt4: C_w ',dt4,' CFL:',dt/dt4_m*cfl/pi
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt1_m: C_u1',dt1,' CFL:',dt/dt1_m*cfl/sqrt(3d0),'    BL-1'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt2_m: C_w2',dt2,' CFL:',dt/dt2_m*cfl/sqrt(3d0),'    BL-1'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt3_m: C_v ',dt3,' CFL:',dt/dt3_m*cfl/sqrt(3d0),'    BL-1'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt4_m: C_w ',dt4,' CFL:',dt/dt4_m*cfl/pi,'    BL-1'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0
-	write(*,'(a10,f11.8,a5,f11.8)') 'dt5: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0,'    BL-1'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt5: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0,'    BL-1'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt5: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2,'    BL-1'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi,'    BL-1'	
 	write(*,*) '------------------------------------------'
-	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi,'    BL-1'	
 	write(*,*) '******************************************'
       endif
-
 
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
