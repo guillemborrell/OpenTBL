@@ -212,7 +212,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
 !     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
 
-
+#ifdef CFLINFO 
      dt4=dzmin/max(poco,wm)
      dt5=re*cfl*(dxmin*sqrt(3d0)/cfl)**2/6d0
      dt6=minval(re*cfl*(dymin*sqrt(3d0)/cfl)**2/6d0)
@@ -242,6 +242,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi,'    BL-1'	
 	write(*,*) '******************************************'
       endif
+#endif
 
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()

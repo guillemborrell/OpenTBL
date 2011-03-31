@@ -45,6 +45,8 @@
 ! IN POSTPROCESSING USE CTE=1 OR 2 depending if it is k.eq.0 or k.ne.0
 ! For Spectra and Correlations
 
+!ALL THE STATISTICS ARE INTERPOLATED TO WALL POSITION
+!MEANINGFUL ARRAYS FROM 1:NY (NY+1 is trash)
 
 subroutine statsp(u_x,v,w,p, &
      &            dudx,dvdx,dwdx,&
