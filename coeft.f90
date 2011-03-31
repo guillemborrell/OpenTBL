@@ -37,7 +37,7 @@ subroutine coef(mpiid)
   hy(0)  = (y(1   )-y(0 ))/2.5d0
   hy(ny) = (y(ny)-y(ny-1))/2.5d0
 
-  write(*,*) '***********************   1'
+
 
   !===================================================================
   ! COMPACT FINITE DIFFERENCES SCHEMES. JSS MARCH 011
@@ -110,7 +110,7 @@ subroutine coef(mpiid)
   !$OMP END PARALLEL DO
 
 
-  write(*,*) '***********************   2'
+
 
   !BOUNDARY SCHEME FOR I=ny-1  ==============================
   a=h(ny-2); b=h(ny-1); c=h(ny); f=a+b+c; e=b+c
@@ -189,7 +189,7 @@ subroutine coef(mpiid)
   enddo
   fd_dx(7,:)=1d0/fd_dx(7,:)
 
-  write(*,*) '***********************   3'
+
 
 
   !!====================================================
@@ -225,7 +225,7 @@ subroutine coef(mpiid)
   enddo
   fd_ix(7,:)=1d0/fd_ix(7,:)
 
-  write(*,*) '***********************   4'  
+
   
   !!====================================================
   !!    Interp Y using non-uniform mesh (mid-point): u,w 
@@ -318,7 +318,7 @@ subroutine coef(mpiid)
   enddo
   fd_iy(7,2:ny)=1d0/fd_iy(7,2:ny)
 
-  write(*,*) '***********************   5'
+
 
 !=====================================================================================
 !=====================================================================================
@@ -390,7 +390,7 @@ ldyy(:)=nm(:,1)/dn(:,j)
 !=====================================================================================
 !=====================================================================================
 
-  write(*,*) '***********************   6'
+
 
 
 
@@ -1229,14 +1229,14 @@ ldyy(:)=nm(:,1)/dn(:,j)
   ! Linear interpolation to connect the two boundary layers
   !**********************************************************
 
+ if (mpiid == mpi_inlet) then
+    call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
+ end if
 
-!  if (mpiid == mpi_inlet) then
-!     call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
-!  end if
 
-
-!  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+ call MPI_BARRIER(MPI_COMM_WORLD,ierr)
   return 
+
 end subroutine coef
 
 
