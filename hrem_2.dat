@@ -60,7 +60,7 @@ CC        10      100          20       20                0
         2000     2000        2000      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
-049 
+050 
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -78,7 +78,7 @@ CC
 CC
 CC======================= INPUT: =======================================
 CC/intrepid-fs0/users/sillero/scratch/images/bl-Re2800-6200-LR-ser.083
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2-HR-Prod.048
+/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2-HR-Prod.049
 CC======================================OUTPUT============================
 /intrepid-fs0/users/sillero/scratch/2bl-image/tbl2-HR-Prod
 CC====================== FILE FOR LOCAL INFO: ===================================

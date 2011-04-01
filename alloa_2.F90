@@ -27,7 +27,7 @@ subroutine alloa_2(mpiid)
      write(*,*) '==============================================='
 
      memoryt1=8d0*(4*(nz2+1)+46*(nx+ny)+(ie-ib+1)*20*ny+ &
-          & 8*(nz2+1)*nspec*lxp+(8*ntot_corr2*lxcorr)+&
+          & 8*(nz2+1)*nspec*lxp+(10*ntot_corr2*lxcorr)+&
           & 46*(ny+1)*(ie-ib+1))/1024**2
    
      totmem=totmem+memoryt1
