@@ -751,6 +751,9 @@
 #endif
 
 #ifndef NOCORR
+
+
+!#ifndef WSERIAL
     !===================CORRELATIONS=======================    
     if (mpiid.eq.0) then
        open(51,file=corfile,status='unknown',form='unformatted',convert='Big_endian');rewind(51)
@@ -762,11 +765,19 @@
     end if 
   
     call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,coruv,mpiid,communicator)  
+    close(51) 
+!#endif
+
+
+
+
+
+
+
 
     ! Initialize everything to zero
     coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
-    close(51) 
 #endif
 
 #ifdef PLANESPECTRA

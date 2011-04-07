@@ -52,9 +52,8 @@ CC        10      100          20       20                0
          2000     2000        2000      10                0
 CC            
 CC First  output file  number=====================================
-050
+052
 CC==================================================================
-CC
 CC   x position  y position  y position   y position  y position           
 CC    to write
 CC   history 
@@ -65,11 +64,8 @@ CC  flaggen       utauout           rthout             dout
 CC
        0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
 CC
-CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
-CC/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.084
-CC/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-bl1.047
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod.049
+/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod.051
 CC ============================ OUTPUT  ========================================
 /intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod
 CC FILE FOR LOCAL INFO: -----------------------------------------------
