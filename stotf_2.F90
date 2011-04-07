@@ -95,6 +95,7 @@ subroutine statsp_2(u_x,v,w,p, &
      call diffy_inplace_2(buf2    ,buf7,fd_dvdy)  !buf7=dwdy (barrier cause, buf7=dudx)
      call diffy_inplace_2(v(0,1,i),buf8,fd_dvdy)  !buf8=dvdy (barrier cause, buf8=u_x)
 
+
      !==================================================================================
      !  At this point, everything collocated: p,v,u,w,dvdx,dwdx,dudx,dwdy,dudy,dvdy
      !  buf1=u  !buf2=w !buf3=dwdx !buf4=dudx !buf5=p !buf6=dudy !buf7=dwdy !buf8=dvdy
@@ -135,32 +136,26 @@ subroutine statsp_2(u_x,v,w,p, &
            !p*grad(u)=p*dudx+p*dudy+p*dudz --> pdudx,pdudy,pdudz (3)
            !p*div(u) =p*dudx+p*dvdy+p*dwdz -->      ,pdvdy,pdwdz (2)
            !--------------------------------------------   
-           pup  (j,i)=pup  (j,i)+cte*dreal(buf5(k,j)*dconjg(buf1(k,j)))   !p*u
-           pvp  (j,i)=pvp  (j,i)+cte*dreal(buf5(k,j)*dconjg(v(k,j,i)))    !p*v
-           pp   (j,i)= pp(j,i)  +cte*buf5(k,j)*dconjg(buf5(k,j))          !(prms+p0)^2
-
-           !------------Z Derivatives-------------------------------------:
-           buf2(k,j)=buf2(k,j)*kaz(k)	!Now: buf2=dwdz
-           buf1(k,j)=buf1(k,j)*kaz(k)	!Now: buf1=dudz
-           !buf1=dudz  !buf2=dwdz !buf3=dwdx !buf4=dudx !buf5=p !buf6=dudy !buf7=dwdy !buf8=dvdy
-
-           pdwdz(j,i)=pdwdz(j,i)+cte*dreal(buf5(k,j)*dconjg(buf2(k,j)))   !p*dwdz
+           pup  (j,i)=pup(j,i)  +cte*dreal(buf5(k,j)*dconjg(buf1(k,j)))   !p*u
+           pvp  (j,i)=pvp(j,i)  +cte*dreal(buf5(k,j)*dconjg(v(k,j,i)))    !p*v
+           pp   (j,i)=pp (j,i)  +cte*buf5(k,j)      *dconjg(buf5(k,j))    !(prms+p0)^2
+           pdwdz(j,i)=pdwdz(j,i)+cte*dreal(buf5(k,j)*dconjg(buf2(k,j)*kaz(k)))   !p*dwdz
            pdudx(j,i)=pdudx(j,i)+cte*dreal(buf5(k,j)*dconjg(buf4(k,j)))   !p*dudx
            pdvdx(j,i)=pdvdx(j,i)+cte*dreal(buf5(k,j)*dconjg(dvdx(k,j,i))) !p*dvdx
-           pdvdy(j,i)=pdvdy(j,i)+cte*dreal(buf8(k,j)*dconjg(buf8(k,j)))   !p*dvdy
-           pdudy(j,i)=pdudy(j,i)+cte*dreal(buf6(k,j)*dconjg(buf6(k,j)))   !p*dudy
+           pdvdy(j,i)=pdvdy(j,i)+cte*dreal(buf5(k,j)*dconjg(buf8(k,j)))   !p*dvdy
+           pdudy(j,i)=pdudy(j,i)+cte*dreal(buf5(k,j)*dconjg(buf6(k,j)))   !p*dudy
 
+           !buf1=u  !buf2=w !buf3=dwdx !buf4=dudx !buf5=p !buf6=dudy !buf7=dwdy !buf8=dvdy
            !================Statistics for vorticity
-           auxc1=buf7(k,j)-v(k,j,i)*kaz(k)     !auxc1=(dwdy-dvdz)      
-           vortx(j,i) = vortx(j,i)+cte*(auxc1*dconjg(auxc1))
-           vorty(j,i)=vorty(j,i)+cte*(buf1(k,j)-buf3(k,j))*dconjg(buf1(k,j)-buf3(k,j))    !o_y=(dudz-dwdx) 
-           vortz(j,i)=vortz(j,i)+cte*(dvdx(k,j,i)-buf6(k,j))*dconjg(dvdx(k,j,i)-buf6(k,j)) !o_z=(dvdx-dudy)   
+           auxc1=buf7(k,j)-v(k,j,i)*kaz(k) ; vortx(j,i)=vortx(j,i)+cte*auxc1*dconjg(auxc1) !o_x=(dwdy-dvdz)      
+           auxc1=buf1(k,j)*kaz(k)-buf3(k,j); vorty(j,i)=vorty(j,i)+cte*auxc1*dconjg(auxc1) !o_y=(dudz-dwdx)       
+           auxc1=dvdx(k,j,i)-buf6(k,j);      vortz(j,i)=vortz(j,i)+cte*auxc1*dconjg(auxc1) !o_z=(dvdx-dudy)   
 
 #ifndef NODISSIPATION
            !================Statistics for dissipation
            !Dissipation U 
            aux1=buf4(k,j)*dconjg(buf4(k,j))		 !aux1=|dudx|^2
-           aux2=buf1(k,j)*dconjg(buf1(k,j))!aux2=|dudz|^2
+           aux2=buf1(k,j)*kaz(k)*dconjg(buf1(k,j)*kaz(k))!aux2=|dudz|^2
            aux3=buf6(k,j)*dconjg(buf6(k,j))		 !aux1=|dudy|^2
            dispu(j,i)=dispu(j,i)+cte*(aux1+aux2+aux3)
            !Dissipation V 
@@ -169,24 +164,19 @@ subroutine statsp_2(u_x,v,w,p, &
            aux3=buf8(k,j)*dconjg(buf8(k,j))		 !aux3=|dvdy|^2
            dispv(j,i)=dispv(j,i)+cte*(aux1+aux2+aux3)         
            !Dissipation W 
-           aux1=buf2(k,j)*dconjg(buf2(k,j))              !aux1=|dwdz|^2           
+           aux1=buf2(k,j)*kaz(k)*dconjg(buf2(k,j)*kaz(k))!aux1=|dwdz|^2                    
            aux2=buf3(k,j)*dconjg(buf3(k,j))	         !aux2=|dwdx|^2            
            aux3=buf7(k,j)*dconjg(buf7(k,j))		 !aux3=|dwdy|^2
            dispw(j,i)=dispw(j,i)+cte*(aux1+aux2+aux3)
            !Dissipation UV 
-           aux1=dreal(buf2(k,j)*dconjg(v(k,j,i)*kaz(k))) !aux1=|dudz|*|dvdz|   
-           aux2=dreal(buf4(k,j)*dconjg(dvdx(k,j,i)))     !aux2=|dudx|*|dvdx|
-           aux3=dreal(buf6(k,j)*dconjg(buf8(k,j)))	 !aux3=|dudy|*|dvdy|           
+           aux1=dreal(buf1(k,j)*kaz(k)*dconjg(v(k,j,i)*kaz(k))) !aux1=|dudz|*|dvdz|   
+           aux2=dreal(buf4(k,j)*dconjg(dvdx(k,j,i)))            !aux2=|dudx|*|dvdx|
+           aux3=dreal(buf6(k,j)*dconjg(buf8(k,j)))	        !aux3=|dudy|*|dvdy|           
            dispuv(j,i)=dispuv(j,i)+cte*(aux1+aux2+aux3)   
 #endif
         end do
      end do
 
-     !$OMP DO SCHEDULE(STATIC)
-     do j=1,ny
-        buf1(:,j)=buf1(:,j)/kaz(:)  !dudz->u
-        buf2(:,j)=buf2(:,j)/kaz(:)  !dwdz->w
-     enddo
 
 #ifndef NOSPECTRA
      !================Spectra in z
