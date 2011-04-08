@@ -27,7 +27,7 @@ subroutine alloa(mpiid)
      write(*,*) '==============================================='
 
      memoryt1=8d0*(4*(nz2+1)+46*(nx+ny)+(ie-ib+1)*20*ny+ &
-          & 8*(nz2+1)*nspec*lxp+(8*ntot_corr2*lxcorr)+&
+          & 8*(nz2+1)*nspec*lxp+(10*ntot_corr2*lxcorr)+&
           & 46*(ny+1)*(ie-ib+1))/1024**2
    
      totmem=totmem+memoryt1
@@ -149,20 +149,25 @@ dudx0=0d0;dudy0=0d0;dudz0=0d0;
 dvdx0=0d0;dvdy0=0d0;dvdz0=0d0;
 dwdx0=0d0;dwdy0=0d0;dwdz0=0d0;
 
+#ifndef NOCORR 
 !Correlaciones ===================================
 !               1365   30     3      3   = 2.81 Mb
  allocate(coru (ntot_corr2,lxcorr))	!real8  
  allocate(corv (ntot_corr2,lxcorr))
  allocate(corw (ntot_corr2,lxcorr))
  allocate(coruv(ntot_corr2,lxcorr))
- coru=0d0;corv=0d0;corw=0d0;coruv=0d0;
+ allocate(coruw(ntot_corr2,lxcorr))
+ allocate(corvw(ntot_corr2,lxcorr))
+ coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
 
+ 
  allocate(corox(ntot_corr2,lxcorr))
  allocate(coroy(ntot_corr2,lxcorr))  
  allocate(coroz(ntot_corr2,lxcorr))
  allocate(corp (ntot_corr2,lxcorr))	!real8 
  corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;
-
+#endif
+ 
 #ifdef INFOINTER 
 !  &,v_0,u_x0,u_xy0,w_0,w_y0,dwdx_0,dudz_x0,v_y0,dudx_0
 allocate(v_0    (ny,ib:ie))

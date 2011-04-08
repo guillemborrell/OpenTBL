@@ -53,7 +53,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      
 
      do j=1,ny+1
-      fblend=0.5*(1-tanh(y(j)-y(110)))
+      fblend=0.5*(1-tanh(y(j)-y(119)))
       ut(2:,j,1)=ut(2:,j,1)*fblend
       wt(2:,j,1)=wt(2:,j,1)*fblend
      enddo

@@ -49,12 +49,11 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC        10      100          20       20                0
-         1900     1900        1900      10                0
+         2000     1000        1000      10                0
 CC            
 CC First  output file  number=====================================
-048
+053
 CC==================================================================
-CC
 CC   x position  y position  y position   y position  y position           
 CC    to write
 CC   history 
@@ -65,11 +64,8 @@ CC  flaggen       utauout           rthout             dout
 CC
        0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
 CC
-CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
-CC/intrepid-fs0/users/sillero/scratch/bl-1100/bl-R1100-3000-ser.084
-CC/intrepid-fs0/users/sillero/scratch/2bl-image/2bls-bl1.047
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR2.047
+/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod.052
 CC ============================ OUTPUT  ========================================
 /intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod
 CC FILE FOR LOCAL INFO: -----------------------------------------------

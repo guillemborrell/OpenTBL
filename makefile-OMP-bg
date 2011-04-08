@@ -14,7 +14,11 @@ F90 =h5pfc
 ##########################################################
 OPTFLAGS = -O3 -qarch=450d -qtune=450 -g
 
+<<<<<<< HEAD:makefile-OMP-bg
 MACROSF = -WF,-DTIMER,-DBG,-DNOINFOSTEP,-DNOCORR,-DNOSPECTRA,-DNOINFOSTEP,-DNODISSIPATION#,-DCHECKTIME
+=======
+MACROSF = -WF,-DTIMER,-DBG,-DNOINFOSTEP,-DNOCORR#,-DNOSPECTRA,-DNOINFOSTEP,-DNODISSIPATION#,-DCHECKTIME
+>>>>>>> 2bls-new-stat:makefile-OMP-bg
 MACROSIO= -WF,-DRPARALLEL,-DWPARALLEL,-DNEWGENFLU
  
 LIBRARYF= -L/soft/apps/UPC/lib -lhpm -I/home/morozov/soft/V1R3M0-fftw-3.1.2-double/include

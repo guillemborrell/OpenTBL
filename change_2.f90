@@ -165,7 +165,7 @@ subroutine pointers_p2p_2(rank)
   use shared_mem_2
   implicit none
   integer:: rank,i
-  write(*,*) '						NUMMPI',nummpi,'rank',rank
+!  write(*,*) '						NUMMPI',nummpi,'rank',rank
   !========Setting Structure Data Types:
   call comm_setup_2(nx,ny,nz1,rank,nummpi,nodev,domainv,1)  
   call comm_setup_2(nx,ny+1,nz1,rank,nummpi,nodeu,domainu,1)

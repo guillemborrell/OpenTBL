@@ -104,7 +104,7 @@
     timer = MPI_WTIME()
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
 
@@ -124,7 +124,7 @@
 
     !Read the rest of the variables.
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
@@ -142,7 +142,7 @@
     allocate(resu(nz1r,nyr,ie-ib+1))
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
@@ -164,7 +164,7 @@
     call MPI_BARRIER(commu,ierr)
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
@@ -181,29 +181,29 @@
        v0=v(1,1:ny,1)
     end if
     
-    !COPY THE COMPOUND PROFILES FOR THE 15% EXTENSION=====================
-    if(mpiid.eq.0) then
-       write(*,*) 'Opening the files: u0-bl2-15percent.dat & v0-bl2-15percent.dat------------------------'
-       open (105,file='u0-bl2-15percent.dat',status='unknown',form='unformatted')       
-       open (106,file='v0-bl2-15percent.dat',status='unknown',form='unformatted')       
-       do i=1,2900
-          read(105) u_aux(1:ny+1,i)
-          read(106) v_aux(1:ny  ,i)
-       enddo
-       write(*,*) 'DONE READING THE FILES'
-    endif
+!     !COPY THE COMPOUND PROFILES FOR THE 15% EXTENSION=====================
+!     if(mpiid.eq.0) then
+!        write(*,*) 'Opening the files: u0-bl2-15percent.dat & v0-bl2-15percent.dat------------------------'
+!        open (105,file='u0-bl2-15percent.dat',status='unknown',form='unformatted')       
+!        open (106,file='v0-bl2-15percent.dat',status='unknown',form='unformatted')       
+!        do i=1,2900
+!           read(105) u_aux(1:ny+1,i)
+!           read(106) v_aux(1:ny  ,i)
+!        enddo
+!        write(*,*) 'DONE READING THE FILES'
+!     endif
 
-    call MPI_BCAST(u_aux,size(u_aux),mpi_real8,0,commu,ierr)
-    call MPI_BCAST(v_aux,size(v_aux),mpi_real8,0,commu,ierr)
+!     call MPI_BCAST(u_aux,size(u_aux),mpi_real8,0,commu,ierr)
+!     call MPI_BCAST(v_aux,size(v_aux),mpi_real8,0,commu,ierr)
 
-    do i=ib,ie
-       if(i.ge.12500) then
-          f_blend=0.5*(1-tanh((i-13100d0)/81d0))
-          u(1,1:ny+1,i)=f_blend*u(1,1:ny+1,i)+(1-f_blend)*u_aux(1:ny+1,i-12499)
-          v(1,1:ny  ,i)=f_blend*v(1,1:ny  ,i)+(1-f_blend)*v_aux(1:ny  ,i-12499)
-       endif
-    enddo
-    !====================================================================
+!     do i=ib,ie
+!        if(i.ge.12500) then
+!           f_blend=0.5*(1-tanh((i-13100d0)/81d0))
+!           u(1,1:ny+1,i)=f_blend*u(1,1:ny+1,i)+(1-f_blend)*u_aux(1:ny+1,i-12499)
+!           v(1,1:ny  ,i)=f_blend*v(1,1:ny  ,i)+(1-f_blend)*v_aux(1:ny  ,i-12499)
+!        endif
+!     enddo
+!     !====================================================================
 
 
 !    write(*,*) mpiid, "File read successfully from ", ib, "to ", ie

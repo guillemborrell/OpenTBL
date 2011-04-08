@@ -109,6 +109,12 @@ subroutine coef(mpiid)
   enddo
   !$OMP END PARALLEL DO
 
+<<<<<<< HEAD:coeft.f90
+=======
+
+
+
+>>>>>>> 2bls-new-stat:coeft.f90
   !BOUNDARY SCHEME FOR I=ny-1  ==============================
   a=h(ny-2); b=h(ny-1); c=h(ny); f=a+b+c; e=b+c
   fd_dvdy(1,ny-1) = c**2*(c-e)**2/f**2/(f-e)**2/(-f+c) 
@@ -174,6 +180,7 @@ subroutine coef(mpiid)
   fd_dx(6,nx-1) =3d0/4d0;             fd_dx(6,nx) =4d0              
   fd_dx(7,nx-1) =1d0;                 fd_dx(7,nx) =1d0              
   fd_dx(8,nx-1) =1d0/8d0;
+<<<<<<< HEAD:coeft.f90
 
 
   point0=ax*pi/(nx+1)
@@ -186,6 +193,22 @@ subroutine coef(mpiid)
   enddo
   fd_dx(7,:)=1d0/fd_dx(7,:)
 
+=======
+
+
+  point0=ax*pi/(nx+1)
+  fd_dx(1:5,:)=fd_dx(1:5,:)/point0
+
+  !Reorganicing the coeffs to save flops in the trid-solver (LU)
+  do j=2,nx
+     fd_dx(6,j)=fd_dx(6,j)/fd_dx(7,j-1)
+     fd_dx(7,j)=fd_dx(7,j)-fd_dx(6,j)*fd_dx(8,j-1)
+  enddo
+  fd_dx(7,:)=1d0/fd_dx(7,:)
+
+
+
+>>>>>>> 2bls-new-stat:coeft.f90
 
   !!====================================================
   !!    Interp X using an uniform mesh (mid-point)
@@ -220,7 +243,11 @@ subroutine coef(mpiid)
   enddo
   fd_ix(7,:)=1d0/fd_ix(7,:)
 
+<<<<<<< HEAD:coeft.f90
   
+=======
+
+>>>>>>> 2bls-new-stat:coeft.f90
   
   !!====================================================
   !!    Interp Y using non-uniform mesh (mid-point): u,w 
@@ -231,14 +258,22 @@ subroutine coef(mpiid)
   hi(1:ny+1)=y (1:ny+1)-y (0:ny); !dh for the interpolated grid
   h (2:ny+1)=yp(2:ny+1)-yp(1:ny); !dh for the original grid 
  
+<<<<<<< HEAD:coeft.f90
   !BOUNDARY SCHEME FOR I=1 (for pressure)
+=======
+  !BOUNDARY SCHEME FOR j=1 (for pressure)
+>>>>>>> 2bls-new-stat:coeft.f90
   j=1;a=hi(j+1)/2;b=a+h(j+2);c=b+h(j+3);d=c+h(j+4); 
   fd_iy(1,1)=-c*b*d/(-d+a)/(-c+a)/(-b+a);
   fd_iy(2,1)=c*a*d/(-d+b)/(-c+b)/(-b+a);
   fd_iy(3,1)=-b*a*d/(-d+c)/(c**2-a*c-b*c+b*a);
   fd_iy(4,1)=1d0-sum(fd_iy(1:3,1));
 
+<<<<<<< HEAD:coeft.f90
   !BOUNDARY SCHEME FOR I=2
+=======
+  !BOUNDARY SCHEME FOR j=2
+>>>>>>> 2bls-new-stat:coeft.f90
   j=2;a=hi(j+1)/2;b=a+h(j+2);c=b+h(j+3);d=c+h(j+4);e=hi(j)/2; 
   fd_iy(1,2)=2*c*b*a**2*d/(e+d)/(e+c)/(b+e)/(2*a**2+e**2+3*e*a);
   fd_iy(2,2)=-2*c*b*e*d/(a-d)/(a-c)/(a-b)/(a+e);
@@ -265,7 +300,11 @@ subroutine coef(mpiid)
   enddo
   !$OMP END PARALLEL DO
 
+<<<<<<< HEAD:coeft.f90
   !BOUNDARY SCHEME FOR I=ny
+=======
+  !BOUNDARY SCHEME FOR j=ny
+>>>>>>> 2bls-new-stat:coeft.f90
   j=ny; a=hi(j+1)/2;e=hi(j)/2;f=e+h(j);g=f+h(j-1);    
   fd_iy(1,ny) =2*(4*e**2+2*e*a-a*f-2*f*e)*e**2/(-g+e)/(f-g)/g/(g+a);
   fd_iy(2,ny) =-2*(2*e*a+4*e**2-a*g-2*g*e)*e**2/(e-f)/f/(f**2+a*f-g*f-a*g);
@@ -275,7 +314,39 @@ subroutine coef(mpiid)
   !Tridg:     
   fd_iy(6,ny) =1;
   fd_iy(7,ny) =(8*e**3-4*g*e**2-2*f*a*e-2*g*e*a-4*f*e**2+g*a*f+4*a*e**2+2*f*g*e)/g/a/f;
+<<<<<<< HEAD:coeft.f90
   
+=======
+
+  !For pressure (it has only ny points the stencil)
+  fd_iyp=fd_iy;
+  !BOUNDARY SCHEME FOR j=ny-1
+  j=ny-1;a=hi(j+1)/2;e=hi(j)/2;f=e+h(j);
+  fd_iyp(1,ny-1) =4*e**2*a**2/(2*a+f)/(a+f)/(2*e**2+f**2-3*e*f);
+  fd_iyp(2,ny-1) =-4*f*a**2/(3*e*a+e**2+2*a**2)/(e-f);
+  fd_iyp(3,ny-1) =4*e**2*f/(a**3+2*e**2*a+3*e*a**2+2*e**2*f+f*a**2+3*f*e*a);
+  fd_iyp(6,ny-1) =-f*a**2/(a+e)/(2*e-f)/(2*e+a);
+  fd_iyp(7,ny-1) =1d0;
+  fd_iyp(8,ny-1) =e**2*f/(4*a**3+2*e**2*a+6*e*a**2+3*f*e*a+e**2*f+2*f*a**2);
+    
+  !BOUNDARY SCHEME FOR j=ny
+  j=ny; e=hi(j)/2;f=e+h(j);g=f+h(j-1);    
+  fd_iyp(1,ny) =2*e**2*(2*e-f)/(e-g)/(f-g)/g;
+  fd_iyp(2,ny) =-2*(-g+2*e)*e**2/(e-f)/f/(f-g);
+  fd_iyp(3,ny) =2*(4*e**2+g*f-2*e*f-2*g*e)/(e**2-e*f+g*f-g*e);
+  fd_iyp(6,ny) =1;
+  fd_iyp(7,ny) =(4*e**2+g*f-2*e*f-2*g*e)/g/f;
+  
+  !Reorganicing the coeffs: ACHTUNG!! Start from j=2 
+  !(j=1; for u,w=0d0; for p, taylor)
+  do j=3,ny
+     fd_iyp(6,j)=fd_iyp(6,j)/fd_iyp(7,j-1)
+     fd_iyp(7,j)=fd_iyp(7,j)-fd_iyp(6,j)*fd_iyp(8,j-1)
+  enddo
+  fd_iyp(7,2:ny)=1d0/fd_iyp(7,2:ny)
+
+
+>>>>>>> 2bls-new-stat:coeft.f90
 
   !Reorganicing the coeffs: ACHTUNG!! Start from j=2 
   !(j=1; for u,w=0d0; for p, taylor)
@@ -285,6 +356,11 @@ subroutine coef(mpiid)
   enddo
   fd_iy(7,2:ny)=1d0/fd_iy(7,2:ny)
 
+<<<<<<< HEAD:coeft.f90
+=======
+
+
+>>>>>>> 2bls-new-stat:coeft.f90
 !=====================================================================================
 !=====================================================================================
 !=====================================================================================
@@ -1194,14 +1270,23 @@ ldyy(:)=nm(:,1)/dn(:,j)
   ! Linear interpolation to connect the two boundary layers
   !**********************************************************
 
+ if (mpiid == mpi_inlet) then
+    call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
+ end if
 
+<<<<<<< HEAD:coeft.f90
 !  if (mpiid == mpi_inlet) then
 !     call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
 !  end if
 
 
 !  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+=======
+
+ call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+>>>>>>> 2bls-new-stat:coeft.f90
   return 
+
 end subroutine coef
 
 

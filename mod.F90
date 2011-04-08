@@ -124,6 +124,10 @@ module  alloc_dns
   real*8::fd_dx  (8,nx)
   real*8::fd_ix  (8,nx)
   real*8::fd_iy  (8,ny)
+<<<<<<< HEAD:mod.F90
+=======
+  real*8::fd_iyp (8,ny)
+>>>>>>> 2bls-new-stat:mod.F90
 
 
   real*8::dcxu   (3,nx)
@@ -285,7 +289,7 @@ module statistics
   real*8,dimension(:,:,:),allocatable:: ensu,ensv,ensw,ensuv
   real*8,dimension(:,:,:),allocatable:: ensomz,ensomx,ensomy,pesp
   ! Correlaciones (x-x',j,z) 
-  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv
+  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv,coruw,corvw
   real*8,dimension(:,:),allocatable::corox,coroy,coroz,corp
 #ifdef PLANESPECTRA
   real*8,dimension(:,:,:),allocatable::plane_specu,plane_specv,plane_specw
@@ -449,6 +453,11 @@ module  alloc_dns_2
   real*8::fd_dx  (8,nx)
   real*8::fd_ix  (8,nx)
   real*8::fd_iy  (8,ny)
+<<<<<<< HEAD:mod.F90
+=======
+  real*8::fd_iyp (8,ny)
+
+>>>>>>> 2bls-new-stat:mod.F90
 
   real*8::dcxu   (3,nx)
   real*8::dcyu   (3,ny+1)
@@ -702,7 +711,7 @@ module statistics_2
   real*8,dimension(:,:,:),allocatable:: ensu,ensv,ensw,ensuv
   real*8,dimension(:,:,:),allocatable:: ensomz,ensomx,ensomy,pesp
   ! Correlaciones (x-x',j,z) 
-  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv
+  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv,coruw,corvw
   real*8,dimension(:,:),allocatable::corox,coroy,coroz,corp
 #ifdef PLANESPECTRA
   real*8,dimension(:,:,:),allocatable::plane_specu,plane_specv,plane_specw
