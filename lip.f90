@@ -763,54 +763,32 @@ end subroutine interpx_new
 
 !Compute interpolation in Y direction (mid-point interpolation)
 !(does not work in place, use different buffers u_in,u_out)
-<<<<<<< HEAD:lip.f90
-=======
 !tipo=0 for ny+1 input arrays. tipo=1 for ny input tipe arrays
->>>>>>> 2bls-new-stat:lip.f90
 subroutine interpy_new(u_in,u_out,c,tipo)
   use ctesp
   use point
   implicit none
   include "mpif.h"
-<<<<<<< HEAD:lip.f90
-  real(8),intent(in):: c(8,ny)
-  real(8):: u_out(0:2*nz2+1,ny),u_in(0:2*nz2+1,ny+1)
-  integer i,j,k,l,kk,k2,tipo
-      
-=======
   integer i,j,k,l,kk,k2,tipo,ch
   real(8),intent(in):: c(8,ny)
   real(8):: u_out(0:2*nz2+1,ny),u_in(0:2*nz2+1,ny+1-tipo)
   
   ch=1;if (tipo.eq.1) ch=0;    
 
->>>>>>> 2bls-new-stat:lip.f90
   !$OMP DO SCHEDULE(STATIC)
   do kk=0,2*nz2+1,blockl
      k2=min(2*nz2+1,kk+blockl-1)
      !at the boundaries
      do k =kk,k2
         u_out(k,1) =sum(c(1:4,1)*u_in(k,2:5)) !Pressure@wall
-<<<<<<< HEAD:lip.f90
-        u_out(k,2) =sum(c(1:5,2 )*u_in(k,2:6))  
-        u_out(k,ny)=sum(c(1:4,ny)*u_in(k,ny-2:ny+1)) 
-     enddo
-     do j = 3,ny-1 
-=======
         u_out(k,2) =sum(c(1:5,2)*u_in(k,2:6))  
      enddo
 
      do j = 3,ny-2 
->>>>>>> 2bls-new-stat:lip.f90
         do k =kk,k2  
            u_out(k,j) =sum(c(1:4,j)*u_in(k,j-1:j+2))      
         enddo
      enddo
-<<<<<<< HEAD:lip.f90
-
-     if (tipo.eq.0) u_out(kk:k2,1)=0d0 !@wall position velocity =0
-
-=======
  
      if (tipo.eq.0) u_out(kk:k2,1)=0d0 !@wall position velocity =0
 
@@ -819,7 +797,6 @@ subroutine interpy_new(u_in,u_out,c,tipo)
         u_out(k,ny)   =sum(c(1:3+ch,ny)  *u_in(k,ny-2:ny+ch)) 
      enddo
   
->>>>>>> 2bls-new-stat:lip.f90
      ! resolution of tridiagonal, for u(2:ny), since u(1)=0
      do j = 3,ny
         u_out(kk:k2,j) = u_out(kk:k2,j)-c(6,j)*u_out(kk:k2,j-1)          
