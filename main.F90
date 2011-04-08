@@ -213,7 +213,7 @@ subroutine summary1(istep,dt,vcontrol)
   write(*,'(a35,2f10.4)')  'BL1: ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME
 !!!!!!!!!!!!!!! ONLY FOR 1 PLANE PER NODE !!!!!!!!!!!! CHECKING THE CORRECT TIMING
-  if(tmp1-tmp27-tmp28.gt.200) then
+  if(tmp1-tmp27-tmp28.gt.251) then
   WRITE(*,*) '======== EXCESIVE TIME ============== NOW stopping'
   vcontrol=.true.
   endif
@@ -333,7 +333,7 @@ subroutine summary1_2(istep,dt,vcontrol)
   write(*,'(a35,2f10.4)')  'BL2: ffts: fft, cos', tmp11,tmp10
 #ifdef CHECKTIME
 !!!!!!!!!!!!!!! ONLY FOR 1 PLANE PER NODE !!!!!!!!!!!! CHECKING THE CORRECT TIMING
-  if(tmp1-tmp27-tmp28.gt.200) then
+  if(tmp1-tmp27-tmp28.gt.251) then
   WRITE(*,*) '======== BL2: EXCESIVE TIME ============== NOW stopping'
   vcontrol=.true.
   endif

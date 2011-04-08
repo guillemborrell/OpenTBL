@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=512,numnodes_2=4096-512,x_inlet=1800 !!this for Re_theta=2800.from statistics
+	integer,parameter:: numnodes_1=512,numnodes_2=4096-512,x_inlet=1800
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -119,6 +119,12 @@ module  alloc_dns
 
   real*8::inxu(3,nx),inyu(3,ny),inxv(3,nx),inyv(3,ny),inbx(4,4),inby(4,4)
   real*8::cofivx(2,nx),cofiux(2,nx),cofivy(2,ny),cofiuy(2,ny)
+
+  real*8::fd_dvdy(8,ny)
+  real*8::fd_dx  (8,nx)
+  real*8::fd_ix  (8,nx)
+  real*8::fd_iy  (8,ny)
+  real*8::fd_iyp (8,ny)
 
   real*8::dcxu   (3,nx)
   real*8::dcyu   (3,ny+1)
@@ -279,7 +285,7 @@ module statistics
   real*8,dimension(:,:,:),allocatable:: ensu,ensv,ensw,ensuv
   real*8,dimension(:,:,:),allocatable:: ensomz,ensomx,ensomy,pesp
   ! Correlaciones (x-x',j,z) 
-  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv
+  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv,coruw,corvw
   real*8,dimension(:,:),allocatable::corox,coroy,coroz,corp
 #ifdef PLANESPECTRA
   real*8,dimension(:,:,:),allocatable::plane_specu,plane_specv,plane_specw
@@ -439,6 +445,11 @@ module  alloc_dns_2
   real*8::inxu(3,nx),inyu(3,ny),inxv(3,nx),inyv(3,ny),inbx(4,4),inby(4,4)
   real*8::cofivx(2,nx),cofiux(2,nx),cofivy(2,ny),cofiuy(2,ny)
 
+  real*8::fd_dvdy(8,ny)
+  real*8::fd_dx  (8,nx)
+  real*8::fd_ix  (8,nx)
+  real*8::fd_iy  (8,ny)
+  real*8::fd_iyp (8,ny)
   real*8::dcxu   (3,nx)
   real*8::dcyu   (3,ny+1)
   real*8::dcxv   (3,nx)
@@ -691,7 +702,7 @@ module statistics_2
   real*8,dimension(:,:,:),allocatable:: ensu,ensv,ensw,ensuv
   real*8,dimension(:,:,:),allocatable:: ensomz,ensomx,ensomy,pesp
   ! Correlaciones (x-x',j,z) 
-  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv
+  real*8,dimension(:,:),allocatable::coru ,corv ,corw ,coruv,coruw,corvw
   real*8,dimension(:,:),allocatable::corox,coroy,coroz,corp
 #ifdef PLANESPECTRA
   real*8,dimension(:,:,:),allocatable::plane_specu,plane_specv,plane_specw

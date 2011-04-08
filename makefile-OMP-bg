@@ -14,7 +14,8 @@ F90 =h5pfc
 ##########################################################
 OPTFLAGS = -O3 -qarch=450d -qtune=450 -g
 
-MACROSF = -WF,-DTIMER,-DBG,-DNOINFOSTEP#-DNOCORR,-DNOSPECTRA,-DNOINFOSTEP
+
+MACROSF = -WF,-DTIMER,-DBG,-DNOINFOSTEP,-DNOCORR#,-DNOSPECTRA,-DNOINFOSTEP,-DNODISSIPATION#,-DCHECKTIME
 MACROSIO= -WF,-DRPARALLEL,-DWPARALLEL,-DNEWGENFLU
  
 LIBRARYF= -L/soft/apps/UPC/lib -lhpm -I/home/morozov/soft/V1R3M0-fftw-3.1.2-double/include

@@ -766,10 +766,10 @@
        call flush(47)     
     end if 
   
-    call escr_corr_2(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid,communicator)  
+    call escr_corr_2(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid,communicator)  
 
     ! Initialize everything to zero
-    coru=0d0;corv=0d0;corw=0d0;coruv=0d0;
+    coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
     close(47) 
 #endif
@@ -837,73 +837,67 @@ tipo=MPI_DOUBLE_COMPLEX
      endif
      planesv=0d0;
 #endif  
-
-
-
-
-
-
-
-
-
   end subroutine escrst_2
 
 !-----------------------------------------------------
 !-----------------------------------------------------
 !-----------------------------------------------------
 
-
-! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid)
-subroutine escr_corr_2(c1,c2,c3,c4,c5,c6,c7,c8,rank,communicator)
+! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid)
+subroutine escr_corr_2(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,rank,communicator)
 use ctesp_2,only:nx,nz2,ncorr,lxcorr,nummpi,nxp,ny
 use point_2
 implicit none
 include 'mpif.h'
 integer,intent(in):: communicator
 real*8,allocatable,dimension(:,:)::buf_cor 
-real*8,dimension(nx,pcib2:pcie2,lxcorr)::c1,c2,c3,c4,c5,c6,c7,c8
+real*8,dimension(nx,pcib2:pcie2,lxcorr)::c1,c2,c3,c4,c5,c6,c7,c8,c9,c10
 integer:: rank,ierr,comm,status(MPI_STATUS_SIZE),i,j,dot,tipo,k,l
 
  comm = communicator
  tipo = MPI_real8
   
-allocate(buf_cor(1:nx,8)) !8 Correlations
+allocate(buf_cor(1:nx,10)) !10 Correlations
 
   do j=1,lxcorr
    if (rank.eq.0) write(*,*) 'writing correlations',j,'of',lxcorr
     if (rank.eq.0) then
        do i=pcib2,pcie2
-          buf_cor(:,1)=c1(1:nx,i,j)       
-          buf_cor(:,2)=c2(1:nx,i,j)
-          buf_cor(:,3)=c3(1:nx,i,j)
-          buf_cor(:,4)=c4(1:nx,i,j)
-          buf_cor(:,5)=c5(1:nx,i,j)               
-          buf_cor(:,6)=c6(1:nx,i,j)
-          buf_cor(:,7)=c7(1:nx,i,j)
-          buf_cor(:,8)=c8(1:nx,i,j)          
+          buf_cor(:,1) =c1 (1:nx,i,j)       
+          buf_cor(:,2) =c2 (1:nx,i,j)
+          buf_cor(:,3) =c3 (1:nx,i,j)
+          buf_cor(:,4) =c4 (1:nx,i,j)
+          buf_cor(:,5) =c5 (1:nx,i,j)               
+          buf_cor(:,6) =c6 (1:nx,i,j)
+          buf_cor(:,7) =c7 (1:nx,i,j)
+          buf_cor(:,8) =c8 (1:nx,i,j)          
+          buf_cor(:,9) =c9 (1:nx,i,j)          
+          buf_cor(:,10)=c10(1:nx,i,j)          
           buf_cor=buf_cor/(2d0*nxp(j)+1d0) !averaging         
-          write(47) ((buf_cor(k,l),k=1,nx),l=1,8)  
+          write(47) ((buf_cor(k,l),k=1,nx),l=1,10)  
        enddo
 
        do dot = 1,nummpi-1
           do i=pcibeg2(dot),pciend2(dot)          
-             call MPI_RECV(buf_cor,8*nx,tipo,dot,j,comm,status,ierr)
-             write(47) ((buf_cor(k,l),k=1,nx),l=1,8)                                 
+             call MPI_RECV(buf_cor,10*nx,tipo,dot,j,comm,status,ierr)
+             write(47) ((buf_cor(k,l),k=1,nx),l=1,10)                                 
           enddo
           call flush(47)        
        enddo          
     else   
        do i=pcib2,pcie2
-          buf_cor(:,1)=c1(1:nx,i,j)       
-          buf_cor(:,2)=c2(1:nx,i,j)
-          buf_cor(:,3)=c3(1:nx,i,j)
-          buf_cor(:,4)=c4(1:nx,i,j)
-          buf_cor(:,5)=c5(1:nx,i,j)               
-          buf_cor(:,6)=c6(1:nx,i,j)
-          buf_cor(:,7)=c7(1:nx,i,j)
-          buf_cor(:,8)=c8(1:nx,i,j)                
+          buf_cor(:,1) =c1 (1:nx,i,j)       
+          buf_cor(:,2) =c2 (1:nx,i,j)
+          buf_cor(:,3) =c3 (1:nx,i,j)
+          buf_cor(:,4) =c4 (1:nx,i,j)
+          buf_cor(:,5) =c5 (1:nx,i,j)               
+          buf_cor(:,6) =c6 (1:nx,i,j)
+          buf_cor(:,7) =c7 (1:nx,i,j)
+          buf_cor(:,8) =c8 (1:nx,i,j)          
+          buf_cor(:,9) =c9 (1:nx,i,j)          
+          buf_cor(:,10)=c10(1:nx,i,j)          
           buf_cor=buf_cor/(2d0*nxp(j)+1d0) !averaging        
-          call MPI_SEND(buf_cor,8*nx,tipo,0,j,comm,ierr)
+          call MPI_SEND(buf_cor,10*nx,tipo,0,j,comm,ierr)
        enddo    
     endif
  enddo 

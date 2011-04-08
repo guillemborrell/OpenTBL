@@ -42,7 +42,6 @@ CC
 CC First  output file  number=====================================
 001
 CC==================================================================
-CC
 CC   x position  y position  y position   y position  y position           
 CC    to write
 CC   history 
@@ -53,7 +52,6 @@ CC  flaggen       utauout           rthout             dout
 CC
        0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
 CC
-CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
 /work/pra032/pra03201/bl1ext/bl1-300-2049x315x2880.009
 CC ============================ OUTPUT  ========================================

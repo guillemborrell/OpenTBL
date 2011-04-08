@@ -58,62 +58,56 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
   
   real*8, dimension(1:ny+1):: ym
-
+  real*8 :: dt1_m,dt2_m,dt3_m,dt4_m,dt4,dt5,dt6,dt7
   
   ! --------------------- MPI workspaces -----------------------------!
   integer istat(MPI_STATUS_SIZE),ierr
-  ! ------------------------ Program ------------------------------------!
+
   ! ===============================================================
   !     interpolate the velocities in P-P-F in 'x' (Everything R*8)
   !     transpose u_>resut and uinterp-> wki  to (zy)         
   ! ===============================================================
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 0',ut(0,250,xout)	
   
   call chp2x_2(resu,ut,rhsut,mpiid,ny+1,communicator) !resu=u in pencils (keep it)
-
-  call chp2x_2(resv,vt,rhsut,mpiid,ny  ,communicator)   !resv=v in pencils (keep it)
+  call chp2x_2(resv,vt,rhsut,mpiid,ny  ,communicator) !resv=v in pencils (keep it)
   call chp2x_2(resw,wt,rhsut,mpiid,ny+1,communicator) !resw=w in pencils (keep it)
+
+!---------------------------------------------
+  if (dostat) then   
+     call interpx_new_2  (resu,wki1 ,fd_ix,mpu)  !u_x     : wki1  [PENCILS]
+     call diffx_inplace_2(wki1,wki3 ,fd_dx,mpu)  !d(u_x)dx: wki3  [PENCILS]
+     call diffx_inplace_2(resv,rhsvt,fd_dx,mpv)  !dvdx    : rhsvt [PENCILS]
+     call diffx_inplace_2(resw,rhswt,fd_dx,mpu)  !dwdx    : rhswt [PENCILS]   
+
+     call chx2p_2(wki1, wki1t,rhsut,mpiid,ny+1,communicator) !u_x  [PLANES]
+     call chx2p_2(wki3, wki3t,rhsut,mpiid,ny+1,communicator) !dudx [PLANES]
+     call chx2p_2(rhsvt,rhsvt,rhsut,mpiid,ny  ,communicator) !dvdx [PLANES]
+     call chx2p_2(rhswt,rhswt,rhsut,mpiid,ny+1,communicator) !dwdx [PLANES]  
+ 
+     ical=ical+1          
+     call statsp_2(wki1t,vt,wt,pt, &                   !u_x,v,w,p
+          &                wki3t,rhsvt,rhswt,&       !dudx,dvdx,dwdx
+          &                wkp,wkpo,wki2t,bufuphy,&  !buf1,buf2,buf3,buf4
+          &                rhsut,rhswt,wki3t,wki1t,&  !buf5,buf6,buf7,buf8
+          &                buf_corr,buf_corr,rhsut,& !buf_cor,buf_corp,buf_big
+          &                wkp,wkpo,bufuphy,&        !bphy1,bphy2,bphy3
+          &                mpiid,communicator)
+  endif
+!---------------------------------------------
+
   call interpxx_2(resu,wki1,inxu,cofiux,inbx,2,mpu,1) !wki1:contains u_x in pencils
   call interpxx_2(resv,wki2,inxv,cofivx,inbx,1,mpv,0) !wki2:contains v_x in pencils
   call interpxx_2(resw,wki3,inxv,cofivx,inbx,1,mpu,0) !wki3:contains w_x in pencils 
-!---------------------------------------------
- if (dostat) then   
-     ! Previous to statistics I must derive v and w to compute the vorticity    
-     call differxx_2(wki2,rhsvt,dcxv,dcbx,cofcxv,2,mpv)  ! d(v_x)dx: rhsvt 
-     call differxx_2(wki3,rhswt,dcxv,dcbx,cofcxv,2,mpu)  ! d(w_x)dx: rhswt     
-     call chx2p_2(rhsvt,rhsvt,rhsut,mpiid,ny,communicator) !rhsvt is dvdx z aligned upper right
-     call chx2p_2(rhswt,rhswt,rhsut,mpiid,ny+1,communicator) !rhswt is dwdx z aligned center right  
-  end if
-!---------------------------------------------
-
   ! chx2p works inplace and wki{k} = wki{k}t It contains the velocity field
   ! interpolated in x and aligned in stream normal planes.  
   call chx2p_2(wki1,wki1t,rhsut,mpiid,ny+1,communicator) !u_x in planes
   call chx2p_2(wki2,wki2t,rhsut,mpiid,ny,communicator)   !v_x in planes
   call chx2p_2(wki3,wki3t,rhsut,mpiid,ny+1,communicator) !w_x in planes
 
-!---------------------------------------------
-   if (dostat) then
-     ical=ical+1          
-         call statsp_2( wki1t,ut,vt,wt,pt, &   
-     &                rhsvt,rhswt,resu,rhsut,rhsut,&
-     &                wkp,wkpo,rhswt,bufuphy,rhsut,buf_corr,buf_corr,&
-     &                wkp,wkpo,bufuphy,mpiid,communicator)
-  endif
-!---------------------------------------------
 
-  uner= 0d0
-  um=-1e14; wm=-1e14; vm=-1e14; wmtmp=-1e14;vmtmp=-1e14
-  poco  = 1d-7
+  uner= 0d0;um=-1e14; wm=-1e14; vm=-1e14; wmtmp=-1e14;vmtmp=-1e14;  poco  = 1d-7
 
-  if (m==1) then
-     call energies_2(ut,vt,wt,hy,ener,communicator)
-     !     if (mpiid==0) write(*,'(a10,i5,12e10.2)')'rhst', m,(ener(i),i=1,12)
-  endif
-
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 1',ut(0,250,xout)	  
-
-
+  if (m==1) call energies(ut,vt,wt,hy,ener,communicator)
   ! ==========================================================
   !    do first all the rhs that need d/dx to free buffers 
   ! ==========================================================
@@ -225,22 +219,42 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      dt3 = minval(dymin/max(poco,vm)) 
       
      dtloc = min(dt1, dt2, dt3, dtret)
-     if(mpiid.eq.0) then
-!         write(*,*) '******************************************'
-! 	write(*,*) '**MAX um',um
-! 	write(*,*) '**MAX vm',maxval(vm)
-! 	write(*,*) '**MAX wm',wm	
-! 	write(*,*) '*************paso temporal nodo 0 *******'
-! 	write(*,*) 'dt1  ',dt1
-! 	write(*,*) 'dt2  ',dt2
-! 	write(*,*) 'dt3  ',dt3
-!	write(*,*) 'dtloc 				BL2',dtloc
-! 	write(*,*) '******************************************'
-      endif
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
  !    if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+
+#ifdef CFLINFO 
+     dt4=dzmin/max(poco,wm)
+     dt5=re*cfl*(dxmin*sqrt(3d0)/cfl)**2/6d0
+     dt6=minval(re*cfl*(dymin*sqrt(3d0)/cfl)**2/6d0)
+     dt7=re*cfl*(dzmin*pi/cfl)**2/pi**2
+     !Info about the differents CFLs
+     call MPI_ALLREDUCE(dt1,dt1_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt2,dt2_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt3,dt3_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     call MPI_ALLREDUCE(dt4,dt4_m,1,MPI_real8,MPI_MIN,communicator,ierr)  
+     dtloc=min(dt1_m,dt2_m,dt3_m,dtret)
+     if(mpiid.eq.0) then
+        write(*,*) '******************************************'
+	write(*,'(a15,3f15.8,a8)') 'MAX um,vm,wm:',um,maxval(vm),wm,'    BL-2'	
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt1: C_u1',dt1_m,' CFL:',dt/dt1_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt2: C_w2',dt2_m,' CFL:',dt/dt2_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt3: C_v ',dt3_m,' CFL:',dt/dt3_m*cfl/sqrt(3d0),'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt4: C_w ',dt4_m,' CFL:',dt/dt4_m*cfl/pi,'    BL-2'	
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt5: V_x ',dt5,' CFL:',dt/dt5*cfl/6d0,'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt6: V_y ',dt6,' CFL:',dt/dt6*cfl/6d0,'    BL-2'	
+	write(*,'(a10,f11.8,a5,f11.8,a8)') 'dt7: V_z ',dt7,' CFL:',dt/dt7*cfl/pi**2,'    BL-2'	
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_BL1',dtloc,' CFL_1:',dt/dtloc*cfl/sqrt(3d0),' CFL_2:',dt/dtloc*cfl/pi,'    BL-2'	
+	write(*,*) '------------------------------------------'
+	write(*,'(a10,f11.8,a7,f11.8,a7,f11.8,a8)') 'dt_global',dt,' CFL_1:',cfl/sqrt(3d0),' CFL_2:',cfl/pi,'    BL-2'	
+	write(*,*) '******************************************'
+      endif
+#endif
+
      if (mpiid2.eq.0) then
         tm2 = MPI_WTIME()
         tmp20 = tmp20 + abs(tm2-tm1)

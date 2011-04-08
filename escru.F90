@@ -70,7 +70,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
     call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -84,7 +84,7 @@
 
     resu=0.0
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
     call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -100,7 +100,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
     call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -112,7 +112,7 @@
     resu=0.0
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpio_f(pid,comm,info,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
     call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -751,6 +751,9 @@
 #endif
 
 #ifndef NOCORR
+
+
+!#ifndef WSERIAL
     !===================CORRELATIONS=======================    
     if (mpiid.eq.0) then
        open(51,file=corfile,status='unknown',form='unformatted',convert='Big_endian');rewind(51)
@@ -761,12 +764,20 @@
        call flush(51)     
     end if 
   
-    call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid,communicator)  
+    call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,coruv,mpiid,communicator)  
+    close(51) 
+!#endif
+
+
+
+
+
+
+
 
     ! Initialize everything to zero
-    coru=0d0;corv=0d0;corw=0d0;coruv=0d0;
+    coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
-    close(51) 
 #endif
 
 #ifdef PLANESPECTRA
@@ -832,73 +843,67 @@ tipo=MPI_DOUBLE_COMPLEX
      endif
      planesv=0d0;
 #endif  
-
-
-
-
-
-
-
-
-
   end subroutine escrst
 
 !-----------------------------------------------------
 !-----------------------------------------------------
 !-----------------------------------------------------
 
-
-! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,mpiid)
-subroutine escr_corr(c1,c2,c3,c4,c5,c6,c7,c8,rank,communicator)
+! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid)
+subroutine escr_corr(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,rank,communicator)
 use ctesp,only:nx,nz2,ncorr,lxcorr,nummpi,nxp,ny
 use point
 implicit none
 include 'mpif.h'
 integer,intent(in):: communicator
 real*8,allocatable,dimension(:,:)::buf_cor 
-real*8,dimension(nx,pcib2:pcie2,lxcorr)::c1,c2,c3,c4,c5,c6,c7,c8
+real*8,dimension(nx,pcib2:pcie2,lxcorr)::c1,c2,c3,c4,c5,c6,c7,c8,c9,c10
 integer:: rank,ierr,comm,status(MPI_STATUS_SIZE),i,j,dot,tipo,k,l
 
  comm = communicator
  tipo = MPI_real8
   
-allocate(buf_cor(1:nx,8)) !8 Correlations
+allocate(buf_cor(1:nx,10)) !10 Correlations
 
   do j=1,lxcorr
    if (rank.eq.0) write(*,*) 'writing correlations',j,'of',lxcorr
     if (rank.eq.0) then
        do i=pcib2,pcie2
-          buf_cor(:,1)=c1(1:nx,i,j)       
-          buf_cor(:,2)=c2(1:nx,i,j)
-          buf_cor(:,3)=c3(1:nx,i,j)
-          buf_cor(:,4)=c4(1:nx,i,j)
-          buf_cor(:,5)=c5(1:nx,i,j)               
-          buf_cor(:,6)=c6(1:nx,i,j)
-          buf_cor(:,7)=c7(1:nx,i,j)
-          buf_cor(:,8)=c8(1:nx,i,j)          
+          buf_cor(:,1) =c1 (1:nx,i,j)       
+          buf_cor(:,2) =c2 (1:nx,i,j)
+          buf_cor(:,3) =c3 (1:nx,i,j)
+          buf_cor(:,4) =c4 (1:nx,i,j)
+          buf_cor(:,5) =c5 (1:nx,i,j)               
+          buf_cor(:,6) =c6 (1:nx,i,j)
+          buf_cor(:,7) =c7 (1:nx,i,j)
+          buf_cor(:,8) =c8 (1:nx,i,j)          
+          buf_cor(:,9) =c9 (1:nx,i,j)          
+          buf_cor(:,10)=c10(1:nx,i,j)          
           buf_cor=buf_cor/(2d0*nxp(j)+1d0) !averaging         
-          write(51) ((buf_cor(k,l),k=1,nx),l=1,8)  
+          write(51) ((buf_cor(k,l),k=1,nx),l=1,10)  
        enddo
 
        do dot = 1,nummpi-1
           do i=pcibeg2(dot),pciend2(dot)          
-             call MPI_RECV(buf_cor,8*nx,tipo,dot,j,comm,status,ierr)
-             write(51) ((buf_cor(k,l),k=1,nx),l=1,8)                                 
+             call MPI_RECV(buf_cor,10*nx,tipo,dot,j,comm,status,ierr)
+             write(51) ((buf_cor(k,l),k=1,nx),l=1,10)                                 
           enddo
           call flush(51)        
        enddo          
     else   
        do i=pcib2,pcie2
-          buf_cor(:,1)=c1(1:nx,i,j)       
-          buf_cor(:,2)=c2(1:nx,i,j)
-          buf_cor(:,3)=c3(1:nx,i,j)
-          buf_cor(:,4)=c4(1:nx,i,j)
-          buf_cor(:,5)=c5(1:nx,i,j)               
-          buf_cor(:,6)=c6(1:nx,i,j)
-          buf_cor(:,7)=c7(1:nx,i,j)
-          buf_cor(:,8)=c8(1:nx,i,j)                
+          buf_cor(:,1) =c1 (1:nx,i,j)       
+          buf_cor(:,2) =c2 (1:nx,i,j)
+          buf_cor(:,3) =c3 (1:nx,i,j)
+          buf_cor(:,4) =c4 (1:nx,i,j)
+          buf_cor(:,5) =c5 (1:nx,i,j)               
+          buf_cor(:,6) =c6 (1:nx,i,j)
+          buf_cor(:,7) =c7 (1:nx,i,j)
+          buf_cor(:,8) =c8 (1:nx,i,j)          
+          buf_cor(:,9) =c9 (1:nx,i,j)          
+          buf_cor(:,10)=c10(1:nx,i,j)          
           buf_cor=buf_cor/(2d0*nxp(j)+1d0) !averaging        
-          call MPI_SEND(buf_cor,8*nx,tipo,0,j,comm,ierr)
+          call MPI_SEND(buf_cor,10*nx,tipo,0,j,comm,ierr)
        enddo    
     endif
  enddo 

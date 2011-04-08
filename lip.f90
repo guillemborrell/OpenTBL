@@ -76,7 +76,6 @@ subroutine difvisxx(upen_int,upencil,result,icon,iconv,dcbx,econ,econv,cofvbx,ch
      tm1 = MPI_WTIME()
   endif
 
-
   !===========Start computing the convective terms and copy it to result()
   !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,i,bb) 
   !$OMP DO SCHEDULE(STATIC)
@@ -600,12 +599,16 @@ end subroutine implzy
 
 
 
-
+!==================================================================
+!New subroutines to compute statistics (some of them do not shift
+!half cell)
+!JSS March 11
+!==================================================================
 
 
 !!4th order interpolator for the pressure
 !JSS January 2011
-!ACHTUNG!!! DOES NOT WORK IN PLACE
+!DOES NOT WORK IN PLACE
 !dp/dn=nu*d2V/dy2 @th wall
 subroutine interp_pressure(f,fi,n,v)
   use ctesp
@@ -622,27 +625,189 @@ subroutine interp_pressure(f,fi,n,v)
   do kk=1,nz1,blockl
      k2=min(nz1,kk+blockl-1)
      do k =kk,k2
-        dvdy2=dot_product(ldyy,v(k,1:5))/re
-        f(k,1)=(dvdy2-dot_product(l_weight(2:5,0),f(k,2:5)))/l_weight(1,0); 
+        dvdy2=sum(ldyy*v(k,1:5))/re
+        f(k,1)=(dvdy2-sum(l_weight(2:5,0)*f(k,2:5)))/l_weight(1,0); 
      enddo
      do j=1,2
 	do k=kk,k2
-           fi(k,j)=dot_product(l_weight(1:5,j),f(k,j:j+4))
+           fi(k,j)=sum(l_weight(1:5,j)*f(k,j:j+4))
 	enddo
      enddo
      do j=3,n-2
 	do k=kk,k2
-           fi(k,j)=dot_product(l_weight(1:5,j),f(k,j-2:j+2))
+           fi(k,j)=sum(l_weight(1:5,j)*f(k,j-2:j+2))
 	enddo
      enddo
      do j=n-1,n
 	do k=kk,k2
-           fi(k,j)=dot_product(l_weight(1:5,j),f(k,j-4:j))
+           fi(k,j)=sum(l_weight(1:5,j)*f(k,j-4:j))
 	enddo
      enddo
   enddo
   !$OMP END PARALLEL
 end subroutine interp_pressure
+
+
+
+
+  !===================================================================
+  ! COMPACT FINITE DIFFERENCES SCHEMES. JSS MARCH 011
+  !
+  !! As in: "COMPACT FINITE DIFFERENCE SCHEMES ON NON-UNIFORM MESHES".
+  !! Gamet, Ducros, Nicoud, Poinsot)
+  !! (I am doing high order 6th order CFD...as costly as 4th)
+  !! Close to the wall, the order is improved using a bigger stencil
+  !! (Mark: 4 points stencils, Me: 4,5 point stencils)
+  !===================================================================
+
+
+!Compute derivative in Y direction (at the same position)
+!(does not work in place, use different buffers v_in,v_out)
+subroutine diffy_inplace(v_in,v_out,c)
+  use ctesp
+  use point
+  implicit none
+  include "mpif.h"
+  real(8),intent(in):: c(8,ny)
+  real(8):: v_out(0:2*nz2+1,ny),v_in(0:2*nz2+1,ny)
+  integer i,j,k,l,kk,k2
+      
+  !$OMP DO SCHEDULE(STATIC)
+  do kk=0,2*nz2+1,blockl
+     k2=min(2*nz2+1,kk+blockl-1)
+     !at the boundaries
+     do k =kk,k2 
+        v_out(k,1)    =sum(c(1:4,1   )*v_in(k,1:4)) 
+        v_out(k,2)    =sum(c(1:4,2   )*v_in(k,1:4))  
+        v_out(k,ny-1) =sum(c(1:4,ny-1)*v_in(k,ny-3:ny)) 
+        v_out(k,ny)   =sum(c(1:4,ny)  *v_in(k,ny-3:ny)) 
+     enddo
+     do j = 3,ny-2 
+        do k =kk,k2  
+           v_out(k,j) =sum(c(1:5,j)*v_in(k,j-2:j+2))      
+        enddo
+     enddo
+     ! resolution of tridiagonal: TDMA Algorithm. LU decomposition in Coeft
+     do j = 2,ny
+        v_out(kk:k2,j) = v_out(kk:k2,j)-c(6,j)*v_out(kk:k2,j-1)          
+     enddo
+     v_out(kk:k2,ny)=v_out(kk:k2,ny)*c(7,ny)
+     do j = ny-1,1,-1
+        v_out(kk:k2,j) = (v_out(kk:k2,j)-c(8,j)*v_out(kk:k2,j+1))*c(7,j) 
+     enddo
+   enddo
+end subroutine diffy_inplace
+
+
+
+
+!Compute derivative in X direction (at the same position)
+!(does not work in place, use different buffers u_in,u_out)
+subroutine diffx_inplace(u_in,u_out,c,nlin)
+  use ctesp
+  implicit none
+  real*8 u_out(nx,nlin),u_in(nx,nlin),c(8,nx)
+  integer i,j,k,l,nlin
+
+  !$OMP PARALLEL DO SCHEDULE(STATIC) DEFAULT(SHARED) PRIVATE(j,k,i)
+  do k =1,nlin
+     u_out(1,k)    =sum(c(1:5,1   )*u_in(1:5,k))    !i=1
+     u_out(2,k)    =sum(c(1:5,2   )*u_in(1:5,k))    !i=2
+     u_out(nx-1,k) =sum(c(1:5,nx-1)*u_in(nx-4:nx,k))!i=nx-1
+     u_out(nx,k)   =sum(c(1:5,nx  )*u_in(nx-4:nx,k))!i=nx 
+
+     do i = 3,nx-2
+        u_out(i,k)=sum(c(1:5,3)*u_in(i-2:i+2,k)) !interior points
+     enddo
+     ! resolution of tridiagonal: TDMA Algorithm. LU decomposition in Coeft
+     do j = 2,nx
+        u_out(j,k) =u_out(j,k)-c(6,j)*u_out(j-1,k)          
+     enddo
+     u_out(nx,k)=u_out(nx,k)*c(7,nx)
+     do j = nx-1,1,-1
+        u_out(j,k) = (u_out(j,k)-c(8,j)*u_out(j+1,k))*c(7,j) 
+     enddo
+  enddo
+end subroutine diffx_inplace
+
+
+
+!Compute interpolation in X direction (mid-point interpolation)
+!(does not work in place, use different buffers u_in,u_out)
+subroutine interpx_new(u_in,u_out,c,nlin)
+  use ctesp
+  implicit none
+  real*8 u_out(nx,nlin),u_in(nx,nlin),c(8,nx)
+  integer i,j,k,l,nlin
+
+  !$OMP PARALLEL DO SCHEDULE(STATIC) DEFAULT(SHARED) PRIVATE(j,k,i)
+  do k =1,nlin
+     u_out(1,k)    =sum(c(1:4,1   )*u_in(1:4,k))    !i=1
+     u_out(nx-1,k) =sum(c(1:4,nx-1)*u_in(nx-3:nx,k))!i=nx-1
+     u_out(nx,k)   =sum(c(1:4,nx  )*u_in(nx-3:nx,k))!i=nx 
+
+     do i = 2,nx-2
+        u_out(i,k)=sum(c(1:4,3)*u_in(i-1:i+2,k)) !interior points
+     enddo
+     ! resolution of tridiagonal: TDMA Algorithm. LU decomposition in Coeft
+     do j = 2,nx
+        u_out(j,k) =u_out(j,k)-c(6,j)*u_out(j-1,k)          
+     enddo
+     u_out(nx,k)=u_out(nx,k)*c(7,nx)
+     do j = nx-1,1,-1
+        u_out(j,k) = (u_out(j,k)-c(8,j)*u_out(j+1,k))*c(7,j) 
+     enddo
+  enddo
+end subroutine interpx_new
+
+
+!Compute interpolation in Y direction (mid-point interpolation)
+!(does not work in place, use different buffers u_in,u_out)
+!tipo=0 for ny+1 input arrays. tipo=1 for ny input tipe arrays
+subroutine interpy_new(u_in,u_out,c,tipo)
+  use ctesp
+  use point
+  implicit none
+  include "mpif.h"
+  integer i,j,k,l,kk,k2,tipo,ch
+  real(8),intent(in):: c(8,ny)
+  real(8):: u_out(0:2*nz2+1,ny),u_in(0:2*nz2+1,ny+1-tipo)
+  
+  ch=1;if (tipo.eq.1) ch=0;    
+
+  !$OMP DO SCHEDULE(STATIC)
+  do kk=0,2*nz2+1,blockl
+     k2=min(2*nz2+1,kk+blockl-1)
+     !at the boundaries
+     do k =kk,k2
+        u_out(k,1) =sum(c(1:4,1)*u_in(k,2:5)) !Pressure@wall
+        u_out(k,2) =sum(c(1:5,2)*u_in(k,2:6))  
+     enddo
+
+     do j = 3,ny-2 
+        do k =kk,k2  
+           u_out(k,j) =sum(c(1:4,j)*u_in(k,j-1:j+2))      
+        enddo
+     enddo
+ 
+     if (tipo.eq.0) u_out(kk:k2,1)=0d0 !@wall position velocity =0
+
+     do k =kk,k2  
+        u_out(k,ny-1) =sum(c(1:3+ch,ny-1)*u_in(k,ny-2:ny+ch))      
+        u_out(k,ny)   =sum(c(1:3+ch,ny)  *u_in(k,ny-2:ny+ch)) 
+     enddo
+  
+     ! resolution of tridiagonal, for u(2:ny), since u(1)=0
+     do j = 3,ny
+        u_out(kk:k2,j) = u_out(kk:k2,j)-c(6,j)*u_out(kk:k2,j-1)          
+     enddo
+     u_out(kk:k2,ny)=u_out(kk:k2,ny)*c(7,ny)
+     do j = ny-1,2,-1
+        u_out(kk:k2,j) = (u_out(kk:k2,j)-c(8,j)*u_out(kk:k2,j+1))*c(7,j) 
+     enddo
+   enddo
+ end subroutine interpy_new
+
 
 
 
