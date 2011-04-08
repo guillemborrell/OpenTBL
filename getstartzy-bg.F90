@@ -109,7 +109,7 @@
     timer = MPI_WTIME()
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
 
@@ -129,7 +129,7 @@
 
     !Read the rest of the variables.
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
@@ -147,7 +147,7 @@
     allocate(resu(nz1r,nyr,ie-ib+1))
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)
@@ -169,7 +169,7 @@
     call MPI_BARRIER(commu,ierr)
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,commu,.false.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,commu,.true.,h5err)
     call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err,pid)
     call h5pclose_f(pid,h5err)
     call h5load_parallel(fid,"value",3,dims,mpiid,nummpi,commu,info,resu,h5err)

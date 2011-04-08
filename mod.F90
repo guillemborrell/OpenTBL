@@ -71,15 +71,15 @@ parameter ( xin = 1 , xout = 600) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-  data xpoint /1915,2935,3955/ 
-  data xcorpoint /1915,2935,3955/
-  data nxp /38,44,52/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+  xpoint = (/ 512,1024,1920 /)
+  xcorpoint = (/512,1024,1920/)
+  nxp = (/10,14,20/)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
    integer  frequency(7)
 !   data frequency /1,2,5,10,20,50,100/  !how often we sample
-   data frequency /1,2,3,4,5,6,7/  !how often we sample
+   frequency = (/1,2,3,4,5,6,7/)  !how often we sample
 #endif  
 
 #ifdef PLANESPECTRA2  
@@ -390,15 +390,15 @@ parameter ( xin = 1 , xout = 3410) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-  data xpoint /2604,3944,5324/
-  data xcorpoint /2604,3944,5324/
-  data nxp /50,58,68/    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+  xpoint = (/ 1024,2048,3512 /)
+  xcorpoint = (/ 1024,2048,3512/)
+  nxp = (/16,24,34/)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
    integer  frequency(7)
 !   data frequency /1,2,5,10,20,50,100/  !how often we sample
-   data frequency /1,2,3,4,5,6,7/  !how often we sample
+   frequency = (/1,2,3,4,5,6,7/)  !how often we sample
 #endif  
 
 #ifdef PLANESPECTRA2  

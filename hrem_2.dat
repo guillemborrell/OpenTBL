@@ -23,12 +23,8 @@ CC   Re        longitud x   altitud y   width    velocity U
 CC Reynolds       x  #        y #        z #       b.layer
 CC   dat(1)     dat(2)       dat(3)    dat(4)      dat(4) 
 CC 
-CC     3.5d+03    222.92D+00     10.34D+00    14.07D+00  1D0
-CC     3.5d+03      94.1D+00     10.34D+00    14.07D+00  1D0
-CC     3.5d+03    167.31D+00     10.34D+00    14.07D+00  1D0
-CC
 CC ========================BOUNDARY LAYER Re_theta 1300 ==============
-       3.5d+03    104.00D+00      9.48D+00    14.54D+00  1D0
+       3.5d+03    119.00D+00      9.48D+00    16.70D+00  1D0
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
@@ -41,10 +37,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        2001     2000        2000         10             0
+        6001     2000        2000         10             0
 CC
 CC First  output file  number=====================================
-003
+001
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -61,9 +57,9 @@ CC 2)FILE NAMES used in the code ===========================
 CC
 CC
 CC======================= INPUT: ===========================
-/work/pra032/pra03201/bl2/bl2-1300-4097x545x2880.002
+/work/pra032/pra03201/bl2ext/bl2-1300-4097x545x2880.009
 CC======================= OUTPUT============================
-/work/pra032/pra03201/bl2/bl2-1300-4097x545x2880
+/work/pra032/pra03201/bl2ext/bl2-1300-2cf-4097x545x2880
 CC====================== FILE FOR LOCAL INFO: ==============
 /homeb/pra032/pra03201/fields/trial
 CC==========================================================

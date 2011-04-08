@@ -24,7 +24,7 @@ CC Reynolds       x  #        y #        z #       b.layer
 CC   dat(1)     dat(2)       dat(3)    dat(4)      dat(4) 
 CC 
 CC ========================BOUNDARY LAYER Re_theta 300 ==============
-       3.5d+03    50.00D+00      9.48D+00    14.52D+00  1D0 
+       3.5d+03    50.00D+00      9.48D+00    16.70D+00  1D0 
 CC===================================================================
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
@@ -37,10 +37,10 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-        2001     2000        2000         10             0
+        6001     2000        2000         10             0
 CC            
 CC First  output file  number=====================================
-004
+001
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -55,9 +55,9 @@ CC
 CC
 CC 2)FILE NAMES used in the code ====================================
 CC ============================ INPUT ========================================
-/work/pra032/pra03201/spalart-2049x315x3072/bl1-300-2049x315x3072.003
+/work/pra032/pra03201/bl1ext/bl1-300-2049x315x2880.009
 CC ============================ OUTPUT  ========================================
-/work/pra032/pra03201/spalart-2049x315x3072/bl1-300-2049x315x3072
+/work/pra032/pra03201/bl1ext/bl1-300-2cf-2049x315x2880
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 /homeb/pra032/pra03201/fields/trial
 CC

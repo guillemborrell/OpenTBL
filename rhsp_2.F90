@@ -170,7 +170,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 !!!! GUILLEM: roughness term
 #ifdef ROUGHNESS
      do j = jbf1,jef1
-        rhsut(0,j,i) = rhsut(0,j,i) + (-tanh((y(j)-0.13602)/0.036)+1)/(2*18)*ut(0,j,i)
+        rhsut(0,j,i) = rhsut(0,j,i) + 1.2*&
+             & ((-tanh((y(j)-0.13602)/0.036)+1)/(2*18)*ut(0,j,i))
      enddo
 #endif
      !$OMP END PARALLEL
