@@ -245,18 +245,16 @@ subroutine statsp_2(u_x,v,w,p, &
      enddo
      !$OMP END PARALLEL
 #endif
-
   enddo
 
-
-
   !Big buffers are free: dwdx,dvdx,rhsut
-
+  
 #ifndef NOCORR
   !===============CORRELATIONS==================
   call compute_corr_2(coru,corv,corw,coruv,corp,corox,coroy,coroz,coruw,corvw,&
-       &            buf_cor,buf_corp,dwdx,buf_big,mpiid,communicator)
+       &            buf_cor,buf_corp,buf_big,mpiid,communicator)
 #endif
+  
 end subroutine statsp_2
 
 
@@ -264,9 +262,8 @@ end subroutine statsp_2
 !==================================================================
 !=================================================================
 
-
 subroutine compute_corr_2(cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,cor9,cor10,&
-     &buf_cor,buf_corp,buf_change,buf_cor2,mpiid,communicator)
+     &buf_cor,buf_corp,buf_change,mpiid,communicator)
 
   use ctesp_2,only: nx,ny,nz,nz2,ncorr,lxcorr,xcorpoint,nxp,xci,xco
   use point_2
@@ -278,19 +275,14 @@ subroutine compute_corr_2(cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,cor9,cor10,&
   real*8,dimension(nx,mp_corr2,lxcorr)::cor1,cor2,cor3,cor4,cor5,cor6,cor7,cor8,cor9,cor10
   !Correlations buffers:
   complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_cor  !in planes: To storage the 7 variables: u,v,w,p,omega_x,y,z
-  complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_cor2
   real*8,dimension(nx,mp_corr,7,lxcorr):: buf_corp	       !in pencils: mp_corr=total number of pencils for correlation buffers
   !Buffer for change
   complex*16, dimension(0:nz2,ny+1,ib:ie):: buf_change    
 
-  !$OMP PARALLEL WORKSHARE
-  buf_cor2=buf_cor  !change does not work in place for correlations 
-  !$OMP END PARALLEL WORKSHARE
-
-!!!!!!!!!!!CHANGING CORRELATIONS BUFFERS TO PENCILS
+  !CHANGING CORRELATIONS BUFFERS TO PENCILS
   do ii=1,lxcorr
      do j=1,7       
-        call chp2x_2(buf_corp(1,1,j,ii),buf_cor2(0,1,ib,j,ii),buf_change,mpiid,ncorr,communicator)       
+        call chp2x_2(buf_corp(1,1,j,ii),buf_cor(0,1,ib,j,ii),buf_change,mpiid,ncorr,communicator)       
      enddo
      !Computing correlations:     
      call c_corr_2(cor1 (1,1,ii),buf_corp(1,1,1,ii),buf_corp(1,1,1,ii),ii,mpiid,0)!cor_u   

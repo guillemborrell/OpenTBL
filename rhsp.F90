@@ -23,7 +23,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      &          resu,resut,resv,resvt,resw,reswt,      &
      &          rhsut,rhsvt,rhswt,      &
      &          wki1,wki1t,wki2,wki2t,wki3,wki3t,      &
-     &          wkp,wkf,wkpo,wkfo,bufuphy,buf_corr,   &  
+     &          wkp,wkf,wkpo,wkfo,bufuphy,buf_corr,buf_corr2,   &    
      &          dt,m,ical,istep,mpiid,communicator)
   use num_nodes
   use alloc_dns
@@ -53,7 +53,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   integer kk,k2
   !----------------From outside
   complex*16 ,dimension(0:nz2,ny+1)::wkf,wkfo
-  complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr !special buffer for correlations 
+  complex*16, dimension(0:nz2,ncorr,ib:ie,7,lxcorr):: buf_corr,buf_corr2 !special buffer for correlations 
   real*8,dimension(nz+2,ny+1)      ::wkp,wkpo,bufuphy,bufvphy,bufwphy
   real*8 :: dt1_m,dt2_m,dt3_m,dt4_m,dt4,dt5,dt6,dt7  
   ! --------------------- MPI workspaces -----------------------------!
@@ -86,7 +86,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &                wki3t,rhsvt,rhswt,&       !dudx,dvdx,dwdx
           &                wkp,wkpo,wki2t,bufuphy,&  !buf1,buf2,buf3,buf4
           &                rhsut,rhswt,wki3t,wki1t,&  !buf5,buf6,buf7,buf8
-          &                buf_corr,buf_corr,rhsut,& !buf_cor,buf_corp,buf_big
+          &                buf_corr,buf_corr2,rhsut,& !buf_cor,buf_corp,buf_big
           &                wkp,wkpo,bufuphy,&        !bphy1,bphy2,bphy3
           &                mpiid,communicator)
   endif
