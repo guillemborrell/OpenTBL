@@ -316,7 +316,7 @@ end module names
 module main_val
   implicit none
   real*8,dimension(:),allocatable::u,v,w,p,rhsupa,rhsvpa,rhswpa,rhsu,rhsv,&
-       &    rhsw,res,wki1,wki2,wki3,resv,resw,wkp,wkpo,bufuphy,buf_corr
+       &    rhsw,res,wki1,wki2,wki3,resv,resw,wkp,wkpo,bufuphy,buf_corr,buf_corr2
 end module main_val
 
 
@@ -733,7 +733,7 @@ end module names_2
 module main_val_2
   implicit none
   real*8,dimension(:),allocatable::u,v,w,p,rhsupa,rhsvpa,rhswpa,rhsu,rhsv,&
-       &    rhsw,res,wki1,wki2,wki3,resv,resw,wkp,wkpo,bufuphy,buf_corr
+       &    rhsw,res,wki1,wki2,wki3,resv,resw,wkp,wkpo,bufuphy,buf_corr,buf_corr2
 end module main_val_2
 
 

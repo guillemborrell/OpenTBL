@@ -262,10 +262,10 @@ subroutine alloabuff(ntotb,ntotv,ntot_corr,mpiid)
 
   if (mpiid.eq.0) then   
 
-     memoryt3=(7*ntot_corr+8d0*ntotb+4d0*ntotv+3*(nz+2)*(ny+1)+2*(nz2+1)*(ny+1))*8/1024**2
+     memoryt3=(2*lxcorr*7*ntot_corr+8d0*ntotb+4d0*ntotv+3*(nz+2)*(ny+1)+2*(nz2+1)*(ny+1))*8/1024**2
      mem_u=ntotb*8d0/1024**2
      mem_v=ntotv*8d0/1024**2
-     mem_c=7*lxcorr*ntot_corr*8d0/1024**2 !7 buffers of size ntot_corr*lxcorr
+     mem_c=2*7*lxcorr*ntot_corr*8d0/1024**2 !2*7 buffers of size ntot_corr*lxcorr
      mem_2=(nz+2)*(ny+1)*8d0/1024**2
      mem_3=2*(nz2+1)*(ny+1)*8d0/1024**2
 
@@ -294,7 +294,8 @@ subroutine alloabuff(ntotb,ntotv,ntot_corr,mpiid)
   allocate(wkp   ((nz+2)*(ny+1)))
   allocate(wkpo  ((nz+2)*(ny+1)))		  
   !CORRELATIONS:
-  allocate(buf_corr(7*lxcorr*ntot_corr))  !ntot_corr=max[(nz1*ncorr)*planes,pencils*nx ]
+  allocate(buf_corr (7*lxcorr*ntot_corr))  !ntot_corr=max[(nz1*ncorr)*planes,pencils*nx ]
+  allocate(buf_corr2(7*lxcorr*ntot_corr))  !ntot_corr=max[(nz1*ncorr)*planes,pencils*nx ]
  
 !!!!Extra buffer for triple products
   allocate(bufuphy   ((nz+2)*(ny+1)))    
@@ -302,7 +303,7 @@ subroutine alloabuff(ntotb,ntotv,ntot_corr,mpiid)
   allocate(rhsv  (ntotv))
   allocate(resv  (ntotv))
   allocate(wki2  (ntotv)) !real8
-  buf_corr=0d0
+  buf_corr=0d0;buf_corr2=0d0
 
   rhsupa  =0d0
   rhswpa  =0d0 
