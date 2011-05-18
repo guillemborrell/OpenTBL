@@ -573,7 +573,7 @@
           call MPI_SEND(wkn ,size(wkn),tipo,0,0,comm,ierr)
        enddo
     endif
-
+    call mpi_barrier(comm,ierr)
     ! Initialize everything to zero
     pp=0d0;pm=0d0;ua=0d0;va=0d0 
     us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0;uw=0d0;vw=0d0;
@@ -692,8 +692,8 @@
              write(55) buf_bud(1:ny,1:nbud),buf_bud2(1:ny+1,1:2)                           
           enddo
        enddo
-       call flush(50)
-       close(50)   
+       call flush(55)
+       close(55)   
     else
        do i=ib,ie
           !NY size Buffers            
@@ -738,7 +738,8 @@
        enddo
     endif
     ! Initialize everything to zero
-    
+    call mpi_barrier(comm,ierr)
+
     dispu=0d0;dispv=0d0;dispw=0d0;dispuv=0d0;
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
     pdvdy=0d0;pdwdz=0d0
@@ -767,7 +768,7 @@
     end if 
   
     call escr_corr_2(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid,communicator)  
-
+    call mpi_barrier(comm,ierr)
     ! Initialize everything to zero
     coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
@@ -803,6 +804,7 @@
        call MPI_SEND(plane_specw(0,1,i),(nz2+1)*7,tipo,0,2,comm,ierr)
        enddo          
      endif
+     call mpi_barrier(comm,ierr)
      plane_specu=0d0;plane_specv=0d0;plane_specw=0d0;
 #endif  
 

@@ -576,6 +576,7 @@
     vortx=0d0;vorty=0d0;vortz=0d0;vortxa= 0d0;vortya= 0d0;vortza= 0d0
 
     deallocate(wkn,wknp) 
+    call mpi_barrier(comm,ierr)
 
 #ifndef NOSPECTRA
     elements_spec=lxp*(nz2+1)*nspec
@@ -619,6 +620,7 @@
     end if
     ensu =0d0;ensv =0d0;ensw =0d0;ensuv=0d0;ensomz =0d0;ensomx =0d0;ensomy =0d0;pesp=0d0   
     deallocate(buf_spe)  
+    call mpi_barrier(comm,ierr)
 #endif
 
 #ifndef NODISSIPATION
@@ -734,6 +736,7 @@
        enddo
     endif
     ! Initialize everything to zero
+    call mpi_barrier(comm,ierr)
 
     dispu=0d0;dispv=0d0;dispw=0d0;dispuv=0d0;
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
@@ -765,6 +768,7 @@
     end if 
   
     call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,coruv,mpiid,communicator)  
+    call mpi_barrier(comm,ierr)
     close(51) 
 !#endif
 
@@ -809,6 +813,7 @@
        call MPI_SEND(plane_specw(0,1,i),(nz2+1)*7,tipo,0,2,comm,ierr)
        enddo          
      endif
+     call mpi_barrier(comm,ierr)
      plane_specu=0d0;plane_specv=0d0;plane_specw=0d0;
 #endif  
 
