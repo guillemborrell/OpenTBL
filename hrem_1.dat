@@ -52,7 +52,7 @@ CC        10      100          20       20                0
         1800     600          1800      10                0
 CC            
 CC First  output file  number=====================================
-108
+111
 CC==================================================================
 CC   x position  y position  y position   y position  y position           
 CC    to write
@@ -62,13 +62,13 @@ CC   idat(8)       idat(9)   idat(10)      idat(11)  idat(12)
 CC
 CC  flaggen       utauout           rthout             dout
 CC
-       0     0.04678313948297         2.119449988241744d03   OB 1.65828380932963d0
+       0     0.04678313948297         2.119449988241744d03   1.65828380932963d0
 CC
 CC ============================ INPUT ========================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/images-transferred/tbl1-HR-Prod.107
+/intrepid-fs0/users/sillero/scratch/2bl-image/images-transferred/tbl1-HR-Prod.110
 CC ============================ OUTPUT  ========================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod
+/intrepid-fs1/users/sillero/scratch/2bl-image/tbl1-HR-Prod
 CC FILE FOR LOCAL INFO: -----------------------------------------------
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl1-HR-Prod
+/intrepid-fs1/users/sillero/scratch/2bl-image/tbl1-HR-Prod
 CC
 CC====================================================================
