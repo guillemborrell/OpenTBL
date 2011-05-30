@@ -754,9 +754,7 @@
 #endif
 
 #ifndef NOCORR
-
-
-!#ifndef WSERIAL
+#ifdef WSERIAL
     !===================CORRELATIONS=======================    
     if (mpiid.eq.0) then
        open(51,file=corfile,status='unknown',form='unformatted',convert='Big_endian');rewind(51)
@@ -770,14 +768,13 @@
     call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,coruv,mpiid,communicator)  
     call mpi_barrier(comm,ierr)
     close(51) 
-!#endif
+#endif
 
 
-
-
-
-
-
+#ifdef WPARALLEL
+  call escr_corr(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+     & coruw,corvw,mpiid,nummpi,comm)
+#endif
 
     ! Initialize everything to zero
     coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
@@ -855,6 +852,8 @@ tipo=MPI_DOUBLE_COMPLEX
 !-----------------------------------------------------
 
 ! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid)
+
+#ifdef WSERIAL
 subroutine escr_corr(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,rank,communicator)
 use ctesp,only:nx,nz2,ncorr,lxcorr,nummpi,nxp,ny
 use point
@@ -914,6 +913,8 @@ allocate(buf_cor(1:nx,10)) !10 Correlations
  enddo 
  deallocate(buf_cor)
 endsubroutine escr_corr
+#endif
+
 
 #ifdef WPARALLEL
   ! -------------------------------------------------------------------! 
@@ -1040,4 +1041,177 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   call h5fclose_f(fid,h5err)
 
 end subroutine writeheader
+
+
+
+
+subroutine escr_corr(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+     &coruw,corvw,mpiid,nummpi,comm)
+
+use ctesp, only:nx,nz2,ncorr,lxcorr,nxp,&
+     & nx,ny,nz2,xcorpoint
+use alloc_dns, only:y,Re,ax,ay,az,tiempo,cfl
+use statistics, only:jspecy
+use point, only: pcib2,pcie2,mp_corr2
+use hdf5
+use h5lt
+
+implicit none
+
+include 'mpif.h'
+
+integer(hid_t):: fid,pid
+character(len=*), intent(in):: fname
+integer, intent(in):: mpiid,nummpi,comm,ical
+real(8), dimension(nx,pcib2:pcie2,lxcorr)::coru,corv,coruv,corw,corp
+real(8), dimension(nx,pcib2:pcie2,lxcorr)::corox,coroy,coroz,coruw,corvw
+real(8), dimension(:,:,:,:), allocatable:: buf_cor
+real(8), dimension(:,:), allocatable:: aux_buf_cor
+integer(hsize_t), dimension(1):: hdims = (/ 1 /)
+integer(hsize_t), dimension(2):: hdims2 = (/ 0, 0 /) 
+integer,dimension(nummpi):: npencils
+integer:: h5err,mpierr
+integer:: i,j,k,l,npen,id
+integer(hid_t)::dset,dspace,mspace
+real(8), parameter:: pi = 3.14159265358979
+real(8):: timer
+
+npen = pcie2-pcib2+1
+
+if(mpiid == 0) timer = MPI_WTIME()
+
+allocate(buf_cor(nx,npen,lxcorr,10))
+allocate(aux_buf_cor(lxcorr*10,npen))
+
+buf_cor(:,:,:,1)  = coru
+buf_cor(:,:,:,2)  = corv
+buf_cor(:,:,:,3)  = coruv
+buf_cor(:,:,:,4)  = corw
+buf_cor(:,:,:,5)  = corp
+buf_cor(:,:,:,6)  = corox
+buf_cor(:,:,:,7)  = coroy
+buf_cor(:,:,:,8)  = coroz
+buf_cor(:,:,:,9)  = coruw
+buf_cor(:,:,:,10) = corvw
+
+!! Scale or whatever Juan did.
+do j = 1,lxcorr
+   buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
+end do
+
+call mpi_barrier(MPI_COMM_WORLD,mpierr)
+
+call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+call h5fcreate_f(fname,H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+call h5pclose_f(pid,h5err) !! Close property access list
+
+!!Write the correlations concurrently to disk
+call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,mp_corr2,mpiid,nummpi,comm,&
+     & buf_cor,h5err)
+
+call mpi_barrier(comm,mpierr)
+if(mpiid == 0) then
+   write(*,*) "time of everything"
+   write(*,*) MPI_WTIME()-timer
+end if
+
+call h5fclose_f(fid,h5err)
+
+deallocate(buf_cor)
+deallocate(aux_buf_cor)
+
+!Write the header
+
+!Get the number of pencils written by every node
+call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
+     & npencils,1,MPI_INTEGER,0,comm,mpierr)
+
+if (mpiid == 0) then
+   
+   call h5fopen_f(trim(fname),H5F_ACC_RDWR_F,fid,h5err)
+   
+   call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
+   call h5ltmake_dataset_double_f(fid,"cfl"   ,1,hdims,(/cfl/),h5err)
+   call h5ltmake_dataset_double_f(fid,"Re"    ,1,hdims,(/re/),h5err)
+   call h5ltmake_dataset_double_f(fid,"lx"    ,1,hdims,(/ax*pi/),h5err)
+   call h5ltmake_dataset_double_f(fid,"ly"    ,1,hdims,(/ay*pi/),h5err)
+   call h5ltmake_dataset_double_f(fid,"lz"    ,1,hdims,(/2*az*pi/),h5err)
+   call h5ltmake_dataset_int_f(fid,"nx",    1,hdims,(/nx/),    h5err)
+   call h5ltmake_dataset_int_f(fid,"ny",    1,hdims,(/ny/),    h5err)
+   call h5ltmake_dataset_int_f(fid,"nz2",   1,hdims,(/nz2/),   h5err)
+   call h5ltmake_dataset_int_f(fid,"ical",  1,hdims,(/ical/),  h5err)
+   call h5ltmake_dataset_int_f(fid,"ncorr", 1,hdims,(/ncorr/), h5err)
+   call h5ltmake_dataset_int_f(fid,"lxcorr",1,hdims,(/lxcorr/),h5err)
+   call h5ltmake_dataset_int_f(fid,"mpisize",1,hdims,(/nummpi/),h5err)
+   hdims = (/ lxcorr /)
+   call h5ltmake_dataset_int_f(fid,"nxp",1,hdims,nxp,h5err)
+   call h5ltmake_dataset_int_f(fid,"xcorpoint",1,hdims,xcorpoint,h5err)
+   hdims = (/ ny+2 /)
+   call h5ltmake_dataset_double_f(fid,"y",1,hdims,y,h5err)
+   hdims = (/ nummpi /)
+   call h5ltmake_dataset_int_f(fid,"npencils",1,hdims,npencils,h5err)
+   hdims2 = (/ ncorr,lxcorr /)
+   call h5ltmake_dataset_int_f(fid,"jspecy",2,hdims2,jspecy,h5err)
+
+   call h5fclose_f(fid,h5err)
+
+   write(*,*) MPI_WTIME()-timer
+
+end if
+
+!End write the header
+
+
+end subroutine escr_corr
+
+subroutine dump_corr(fid,name,nx,lxcorr,pbeg,pend,ptot,rank,size,comm,data,h5err)
+use hdf5
+
+implicit none
+
+integer(hid_t), intent(in)::fid
+character(len=*), intent(in):: name
+integer, intent(in):: nx,lxcorr,pbeg,pend,ptot
+integer, intent(in):: rank,size,comm
+!! Be aware that I am changing the dimensions of the data completely
+!! so I can concatenate the pencil groups and write them together.
+real(kind = 8),dimension(nx,(pend-pbeg+1)*lxcorr*10), intent(in):: data
+integer(hid_t), intent(out):: h5err
+
+integer(hid_t):: dset
+integer(hid_t):: dspace,mspace
+integer(hid_t):: plist_id
+integer(hsize_t), dimension(2):: dims, totaldims, cursor
+
+totaldims = (/nx, ptot*lxcorr*10/)
+dims = (/nx, (pend-pbeg+1)*lxcorr*10/)
+cursor = (/0, 0/)
+
+! Create the global dataspace and dataset 
+call h5screate_simple_f(2,totaldims,dspace,h5err)
+call h5dcreate_f(fid,name,H5T_IEEE_F64BE,dspace,dset,h5err)
+
+!Create the local dataset
+call h5screate_simple_f(2,dims,mspace,h5err)
+call h5sselect_hyperslab_f(mspace,H5S_SELECT_SET_F,cursor,dims,h5err)
+
+!Select the hyperslab in the global dataset
+cursor = (/0, (pbeg-1)*lxcorr*10/)
+
+call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,cursor,dims,h5err)
+
+!Create the data transfer mode property list
+call h5pcreate_f(H5P_DATASET_XFER_F,plist_id,h5err)
+call h5pset_dxpl_mpio_f(plist_id,H5FD_MPIO_COLLECTIVE_F,h5err)
+
+!Commit the memspace to disk
+call h5dwrite_f(dset,H5T_NATIVE_DOUBLE,data,dims,h5err,mspace,dspace,plist_id)
+
+call h5pclose_f(plist_id,h5err)
+call h5sclose_f(mspace,h5err)
+call h5dclose_f(dset,h5err)
+call h5sclose_f(dspace,h5err)
+
+end subroutine dump_corr
 #endif

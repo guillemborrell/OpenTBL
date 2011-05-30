@@ -43,7 +43,7 @@ sub-omp-4096:
 sub-omp-8192:
 	make -f makefile-OMP-bg ITPC
 	rename ITPC ITPC-8192 ITPC	
-	qsub -n 8192 -t 720 --mode smp --kernel pvfs --env BG_MAPPING=nodes-topology-bl.txt -q prod -O out-8k-top-fs1 ITPC-8192
+	qsub -n 8192 -t 720 --kernel pvfs --mode smp --env BG_MAPPING=nodes-topology-bl.txt -q prod -O out-8k-top-fs1 ITPC-8192
 
 compilar-omp:
 	make -f makefile-OMP-bg ITPC
