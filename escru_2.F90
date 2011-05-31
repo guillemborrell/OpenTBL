@@ -475,6 +475,8 @@
        write(39) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical       
        write(39) (y(i), i=0,ny+1)
     end if
+
+    call MPI_BCAST(corfile,100,MPI_CHARACTER,0,comm,ierr)  !for the Parallel IO Writting
      ! master only things  
     allocate(wkn(ny,13),wknp(ny+1,4))
     if (mpiid.eq.0) write(39) 0d0
@@ -775,8 +777,9 @@
 #endif
 
 #ifdef WPARALLEL
-  call escr_corr_2(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
-     & coruw,corvw,mpiid,nummpi,comm)
+    if(mpiid.eq.0) write(*,*) 'Correlation file name before calling escr_corr:', corfile
+    call escr_corr_2(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+         & coruw,corvw,mpiid,nummpi,comm)
 #endif
 
 
