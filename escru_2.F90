@@ -933,7 +933,7 @@ subroutine escr_corr_2(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
      &coruw,corvw,mpiid,nummpi,comm)
 
 use ctesp_2, only:nx,nz2,ncorr,lxcorr,nxp,&
-     & nx,ny,nz2,xcorpoint
+     & nx,ny,nz2,xcorpoint,nspec
 use alloc_dns_2, only:y,Re,ax,ay,az,tiempo,cfl
 use statistics_2, only:jspecy
 use point_2, only: pcib2,pcie2,mp_corr2
@@ -982,25 +982,26 @@ do j = 1,lxcorr
    buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
 end do
 
-call mpi_barrier(MPI_COMM_WORLD,mpierr)
+call mpi_barrier(comm,mpierr)
 
 call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
-call h5fcreate_f(fname,H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
+call h5fcreate_f(trim(fname),H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
 call h5pclose_f(pid,h5err) !! Close property access list
 
 !!Write the correlations concurrently to disk
-call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,mp_corr2,mpiid,nummpi,comm,&
+call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,(nz2+1)*nspec,mpiid,nummpi,comm,&
      & buf_cor,h5err)
 
 call mpi_barrier(comm,mpierr)
+
 if(mpiid == 0) then
    write(*,*) "time of everything"
    write(*,*) MPI_WTIME()-timer
 end if
-
+if (mpiid.eq.0) write(*,*) 'closing.....'
 call h5fclose_f(fid,h5err)
-
+if (mpiid.eq.0) write(*,*) 'closed.....'
 deallocate(buf_cor)
 deallocate(aux_buf_cor)
 
@@ -1011,7 +1012,7 @@ call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
      & npencils,1,MPI_INTEGER,0,comm,mpierr)
 
 if (mpiid == 0) then
-   
+   write(*,*) 'CORRELATION FILE TO BE WRITED:', trim(fname)
    call h5fopen_f(trim(fname),H5F_ACC_RDWR_F,fid,h5err)
    
    call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
@@ -1047,4 +1048,5 @@ end if
 
 
 end subroutine escr_corr_2
+
 #endif

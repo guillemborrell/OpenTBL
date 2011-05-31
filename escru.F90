@@ -459,9 +459,10 @@
       
        stfile =trim(chfile)//'.'//ext1//'.'//ext//'.st'
        etfile =trim(chfile)//'.'//ext1//'.'//ext//'.esp'
-       corfile=trim(chfile)//'.'//ext1//'.'//ext//'.cor'
+       corfile=trim(chfile)//'.'//ext1//'.'//ext//'.cor' !needs to be broadcasted for use Parallel IO
        budfile=trim(chfile)//'.'//ext1//'.'//ext//'.budget'
        spectraplane=trim(chfile)//'.'//ext1//'.'//ext//'.extraesp'
+
 
        open(29,file=stfile,status='unknown',form='unformatted',convert='Big_endian');rewind(29)
        indst=indst!+1 !WE WRITE STATISTICS WHEN RECORD IMAGES ONLY!!
@@ -471,6 +472,9 @@
        write(29) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical       
        write(29) (y(i), i=0,ny+1)
     end if
+
+    call MPI_BCAST(corfile,100,MPI_CHARACTER,0,comm,ierr)  !for the Parallel IO Writting
+
     ! master only things  
     allocate(wkn(ny,13),wknp(ny+1,4))
     if (mpiid.eq.0) write(29) 0d0
@@ -772,7 +776,9 @@
 
 
 #ifdef WPARALLEL
-  call escr_corr(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+if(mpiid.eq.0) write(*,*) 'Correlation file name before calling escr_corr:', corfile
+!===================CORRELATIONS=======================    
+call escr_corr(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
      & coruw,corvw,mpiid,nummpi,comm)
 #endif
 
@@ -1049,7 +1055,7 @@ subroutine escr_corr(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
      &coruw,corvw,mpiid,nummpi,comm)
 
 use ctesp, only:nx,nz2,ncorr,lxcorr,nxp,&
-     & nx,ny,nz2,xcorpoint
+     & nx,ny,nz2,xcorpoint,nspec
 use alloc_dns, only:y,Re,ax,ay,az,tiempo,cfl
 use statistics, only:jspecy
 use point, only: pcib2,pcie2,mp_corr2
@@ -1057,7 +1063,6 @@ use hdf5
 use h5lt
 
 implicit none
-
 include 'mpif.h'
 
 integer(hid_t):: fid,pid
@@ -1099,25 +1104,26 @@ do j = 1,lxcorr
    buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
 end do
 
-call mpi_barrier(MPI_COMM_WORLD,mpierr)
+call mpi_barrier(comm,mpierr)
 
 call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
-call h5fcreate_f(fname,H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
+call h5fcreate_f(trim(fname),H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
 call h5pclose_f(pid,h5err) !! Close property access list
 
 !!Write the correlations concurrently to disk
-call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,mp_corr2,mpiid,nummpi,comm,&
+call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,(nz2+1)*nspec,mpiid,nummpi,comm,&
      & buf_cor,h5err)
 
 call mpi_barrier(comm,mpierr)
+
 if(mpiid == 0) then
    write(*,*) "time of everything"
    write(*,*) MPI_WTIME()-timer
 end if
-
+if (mpiid.eq.0) write(*,*) 'closing.....'
 call h5fclose_f(fid,h5err)
-
+if (mpiid.eq.0) write(*,*) 'closed.....'
 deallocate(buf_cor)
 deallocate(aux_buf_cor)
 
@@ -1128,7 +1134,7 @@ call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
      & npencils,1,MPI_INTEGER,0,comm,mpierr)
 
 if (mpiid == 0) then
-   
+   write(*,*) 'CORRELATION FILE TO BE WRITED:', trim(fname)
    call h5fopen_f(trim(fname),H5F_ACC_RDWR_F,fid,h5err)
    
    call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
@@ -1198,7 +1204,6 @@ call h5sselect_hyperslab_f(mspace,H5S_SELECT_SET_F,cursor,dims,h5err)
 
 !Select the hyperslab in the global dataset
 cursor = (/0, (pbeg-1)*lxcorr*10/)
-
 call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,cursor,dims,h5err)
 
 !Create the data transfer mode property list
