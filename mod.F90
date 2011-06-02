@@ -8,7 +8,7 @@
 
 !Number of nodes for each BL (BL1 & BL2)
 module num_nodes
-	integer,parameter:: numnodes_1=512,numnodes_2=4096-512,x_inlet=1800
+	integer,parameter:: numnodes_1=512,numnodes_2=8192-512,x_inlet=1800
 	integer:: mpiid_1(0:numnodes_1-1),mpiid_2(0:numnodes_2-1),mpi_inlet
 endmodule num_nodes
 
@@ -35,7 +35,7 @@ module ctesp
 ! Parameters for genflu and getstart!
 
 !====================================================
-parameter ( nx = 2049,   ny = 315, nz = 2880)
+parameter ( nx = 2049,   ny = 315, nz = 2048)
 parameter ( xin = 1 , xout = 600) !50d99
 !====================================================
 
@@ -356,13 +356,13 @@ module ctesp_2
 ! Parameters for genflu and getstart!
 
 !====================================================
-parameter ( nx = 3585, ny = 545, nz = 3072)
+parameter ( nx = 7681, ny = 545, nz = 4096)
 parameter ( xin = 1 , xout = 3410) !50d99
 !====================================================
 
 
  parameter ( ny_1 = 315 )  !Values of the other BL1!!! (It should be communicated, instead)
- parameter ( nz_1 = 2880 )
+ parameter ( nz_1 = 2048 )
  parameter ( nz1_1 = 2*(nz_1/3), nz2_1=nz1_1/2-1 )
 
   parameter ( nz1 = 2*(nz/3), nz2=nz1/2-1,ngz=nz/2,nx1=nx-1,ny1=ny-1 )
@@ -396,9 +396,9 @@ parameter ( xin = 1 , xout = 3410) !50d99
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
  
 
-  xpoint = (/ 1024,2048,3512 /)
-  xcorpoint = (/ 1024,2048,3512/)
-  nxp = (/16,24,34/)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+  xpoint = (/ 1519,4191,6918 /)
+  xcorpoint = (/ 1519,4191,6918/)
+  nxp = (/ 46,70,92 /)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 

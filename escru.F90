@@ -70,7 +70,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -84,7 +84,7 @@
 
     resu=0.0
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -100,7 +100,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -112,7 +112,7 @@
     resu=0.0
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
