@@ -75,7 +75,8 @@ subroutine rhsp_2(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 !---------------------------------------------
   if (dostat) then   
      call interpx_new_2  (resu,wki1 ,fd_ix,mpu)  !u_x     : wki1  [PENCILS]
-     wki1(2:nx,:)=wki1(1:nx-1,:) !!!!!!!!!!!!!
+     wki1(2:nx,:)=wki1(1:nx-1,:)                 !Collocate u_x to match with v,w,p
+
      call diffx_inplace_2(wki1,wki3 ,fd_dx,mpu)  !d(u_x)dx: wki3  [PENCILS]
      call diffx_inplace_2(resv,rhsvt,fd_dx,mpv)  !dvdx    : rhsvt [PENCILS]
      call diffx_inplace_2(resw,rhswt,fd_dx,mpu)  !dwdx    : rhswt [PENCILS]   
