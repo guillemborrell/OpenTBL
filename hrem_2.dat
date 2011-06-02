@@ -57,10 +57,10 @@ CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
 CC        10      100          20       20                0
-        1800     600          1800      10                0
+        1800     600          600      10                0
 CC        10     3500        10      2                0           
 CC First  output file  number=====================================
-111
+117
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -74,9 +74,9 @@ CC
        0     0.04678313948297         2.119449988241744d03    1.65828380932963d0
 CC
 CC======================= INPUT: =======================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/images-transferred/tbl2-HR-Prod.110
+/intrepid-fs1/users/sillero/scratch/2bl-image/images-transferred/tbl2-HR-Prod.116
 CC======================================OUTPUT============================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2-HR-Prod
+/intrepid-fs1/users/sillero/scratch/2bl-image/tbl2-HR-Prod
 CC====================== FILE FOR LOCAL INFO: ===================================
-/intrepid-fs0/users/sillero/scratch/2bl-image/tbl2-HR-Prod
+/intrepid-fs1/users/sillero/scratch/2bl-image/tbl2-HR-Prod
 CC====================================================================
