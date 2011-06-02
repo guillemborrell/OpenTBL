@@ -1195,16 +1195,23 @@ integer(hid_t), intent(out):: h5err
 
 integer(hid_t):: dset
 integer(hid_t):: dspace,mspace
-integer(hid_t):: plist_id
-integer(hsize_t), dimension(2):: dims, totaldims, cursor
+integer(hid_t):: plist_id, plist_ds
+integer(hsize_t), dimension(2):: dims, totaldims, cursor, chunkdims
 
 totaldims = (/nx, ptot*lxcorr*10/)
 dims = (/nx, (pend-pbeg+1)*lxcorr*10/)
 cursor = (/0, 0/)
 
+!1d chunking
+chunkdims = 1
+chunkdims(1) = dims(1)
+
+call h5pcreate_f(H5P_DATASET_CREATE_F,plist_ds,ierr)
+call h5pset_chunk_f(plist_ds, 2, chunkdims, ierr)
+
 ! Create the global dataspace and dataset 
 call h5screate_simple_f(2,totaldims,dspace,h5err)
-call h5dcreate_f(fid,name,H5T_IEEE_F64BE,dspace,dset,h5err)
+call h5dcreate_f(fid,name,H5T_IEEE_F64BE,dspace,dset,h5err,plist_ds)
 
 !Create the local dataset
 call h5screate_simple_f(2,dims,mspace,h5err)
@@ -1222,6 +1229,7 @@ call h5pset_dxpl_mpio_f(plist_id,H5FD_MPIO_COLLECTIVE_F,h5err)
 call h5dwrite_f(dset,H5T_NATIVE_DOUBLE,data,dims,h5err,mspace,dspace,plist_id)
 
 call h5pclose_f(plist_id,h5err)
+call h5pclose_f(plist_ds,h5err)
 call h5sclose_f(mspace,h5err)
 call h5dclose_f(dset,h5err)
 call h5sclose_f(dspace,h5err)
