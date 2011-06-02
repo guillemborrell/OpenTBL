@@ -950,8 +950,8 @@ subroutine h5dump_parallel(fid,name,ndims,dims,rank,size,comm,info,data,ierr)
 
   integer(hid_t):: dset
   integer(hid_t):: dspace,mspace
-  integer(hid_t):: plist_id
-  integer(hsize_t), dimension(ndims):: start,nooffset,totaldims
+  integer(hid_t):: plist_id, plist_ds
+  integer(hsize_t), dimension(ndims):: start,nooffset,totaldims,chunkdims
   integer, dimension(size):: lastdims
   integer:: mpierr
 
@@ -961,16 +961,24 @@ subroutine h5dump_parallel(fid,name,ndims,dims,rank,size,comm,info,data,ierr)
   nooffset = 0
   totaldims = dims
 
+  ! Use chunking along the first axis. It has the same dimensions on all
+  ! nodes.
+  chunkdims = 1
+  chunkdims(1) = dims(1)
+
   lastdim = dims(ndims) ! Don't mess with ints and longs
 
   call MPI_ALLGATHER(lastdim,1,MPI_INTEGER,lastdims,1,MPI_INTEGER,comm,mpierr)
 
   totaldims(ndims) = sum(lastdims)
 
+  call h5pcreate_f(H5P_DATASET_CREATE_F,plist_ds,ierr)
+  call h5pset_chunk_f(plist_ds, ndims, chunkdims, ierr)
+
   !Create the global dataspace
   call h5screate_simple_f(ndims,totaldims,dspace,ierr)
   !Create the global dataset
-  call h5dcreate_f(fid,name,H5T_IEEE_F32BE,dspace,dset,ierr)
+  call h5dcreate_f(fid,name,H5T_IEEE_F32BE,dspace,dset,ierr,plist_ds)
 
   !Create the local dataset
   call h5screate_simple_f(ndims,dims,mspace,ierr)
@@ -989,6 +997,7 @@ subroutine h5dump_parallel(fid,name,ndims,dims,rank,size,comm,info,data,ierr)
     
   !Close property list                                                                                                                                              
   call h5pclose_f(plist_id,ierr)
+  call h5pclose_f(plist_ds,ierr)
 
   !Close datasets and dataspaces
   call h5sclose_f(mspace,ierr)
