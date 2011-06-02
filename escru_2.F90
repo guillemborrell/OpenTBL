@@ -73,7 +73,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -87,7 +87,7 @@
 
     resu=0.0
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -103,7 +103,7 @@
     resu=0.0 !R4 buffer to convert R8 variables
     
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -115,7 +115,7 @@
     resu=0.0
 
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-    call h5pset_fapl_mpiposix_f(pid,comm,.true.,h5err)
+    call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
     call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
@@ -475,6 +475,8 @@
        write(39) tiempo,cfl,Re,ax,ay,az,nx,ny,nz2,ical       
        write(39) (y(i), i=0,ny+1)
     end if
+
+    call MPI_BCAST(corfile,100,MPI_CHARACTER,0,comm,ierr)  !for the Parallel IO Writting
      ! master only things  
     allocate(wkn(ny,13),wknp(ny+1,4))
     if (mpiid.eq.0) write(39) 0d0
@@ -573,7 +575,7 @@
           call MPI_SEND(wkn ,size(wkn),tipo,0,0,comm,ierr)
        enddo
     endif
-
+    call mpi_barrier(comm,ierr)
     ! Initialize everything to zero
     pp=0d0;pm=0d0;ua=0d0;va=0d0 
     us=0d0;ws=0d0;wa=0d0;uv=0d0;vs=0d0;uw=0d0;vw=0d0;
@@ -692,8 +694,8 @@
              write(55) buf_bud(1:ny,1:nbud),buf_bud2(1:ny+1,1:2)                           
           enddo
        enddo
-       call flush(50)
-       close(50)   
+       call flush(55)
+       close(55)   
     else
        do i=ib,ie
           !NY size Buffers            
@@ -738,7 +740,8 @@
        enddo
     endif
     ! Initialize everything to zero
-    
+    call mpi_barrier(comm,ierr)
+
     dispu=0d0;dispv=0d0;dispw=0d0;dispuv=0d0;
     pvp=0d0;pup=0d0;pdudx=0d0;pdudy=0d0;pdvdx=0d0
     pdvdy=0d0;pdwdz=0d0
@@ -756,6 +759,8 @@
 
 
 #ifndef NOCORR
+
+#ifdef WSERIAL
     !===================CORRELATIONS=======================    
     if (mpiid.eq.0) then
        open(47,file=corfile,status='unknown',form='unformatted',convert='Big_endian');rewind(47)
@@ -767,11 +772,20 @@
     end if 
   
     call escr_corr_2(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid,communicator)  
+    call mpi_barrier(comm,ierr)
+    close(47) 
+#endif
+
+#ifdef WPARALLEL
+    if(mpiid.eq.0) write(*,*) 'Correlation file name before calling escr_corr:', corfile
+    call escr_corr_2(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+         & coruw,corvw,mpiid,nummpi,comm)
+#endif
+
 
     ! Initialize everything to zero
     coru=0d0;corv=0d0;corw=0d0;coruv=0d0;coruw=0d0;corvw=0d0;
     corox=0d0;coroy=0d0;coroz=0d0;corp=0d0;    
-    close(47) 
 #endif
 
 #ifdef PLANESPECTRA
@@ -803,6 +817,7 @@
        call MPI_SEND(plane_specw(0,1,i),(nz2+1)*7,tipo,0,2,comm,ierr)
        enddo          
      endif
+     call mpi_barrier(comm,ierr)
      plane_specu=0d0;plane_specv=0d0;plane_specw=0d0;
 #endif  
 
@@ -844,6 +859,7 @@ tipo=MPI_DOUBLE_COMPLEX
 !-----------------------------------------------------
 
 ! call escr_corr(coru,corv,coruv,corw,corp,corox,coroy,coroz,coruw,corvw,mpiid)
+#ifdef WSERIAL
 subroutine escr_corr_2(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,rank,communicator)
 use ctesp_2,only:nx,nz2,ncorr,lxcorr,nummpi,nxp,ny
 use point_2
@@ -903,3 +919,137 @@ allocate(buf_cor(1:nx,10)) !10 Correlations
  enddo 
  deallocate(buf_cor)
 endsubroutine escr_corr_2
+#endif
+
+
+#ifdef WPARALLEL
+  ! -------------------------------------------------------------------! 
+  ! -------------------------------------------------------------------! 
+  ! -------------------------------------------------------------------! 
+  ! ------------ PARALLEL WRITTING SUBROUTINES ------------------------! 
+  ! -------------------------------------------------------------------! 
+  ! -------------------------------------------------------------------! 
+  ! -------------------------------------------------------------------! 
+
+
+subroutine escr_corr_2(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+     &coruw,corvw,mpiid,nummpi,comm)
+
+use ctesp_2, only:nx,nz2,ncorr,lxcorr,nxp,&
+     & nx,ny,nz2,xcorpoint,nspec
+use alloc_dns_2, only:y,Re,ax,ay,az,tiempo,cfl
+use statistics_2, only:jspecy
+use point_2, only: pcib2,pcie2,mp_corr2
+use hdf5
+use h5lt
+
+implicit none
+include 'mpif.h'
+
+integer(hid_t):: fid,pid
+character(len=*), intent(in):: fname
+integer, intent(in):: mpiid,nummpi,comm,ical
+real(8), dimension(nx,pcib2:pcie2,lxcorr)::coru,corv,coruv,corw,corp
+real(8), dimension(nx,pcib2:pcie2,lxcorr)::corox,coroy,coroz,coruw,corvw
+real(8), dimension(:,:,:,:), allocatable:: buf_cor
+real(8), dimension(:,:), allocatable:: aux_buf_cor
+integer(hsize_t), dimension(1):: hdims = (/ 1 /)
+integer(hsize_t), dimension(2):: hdims2 = (/ 0, 0 /) 
+integer,dimension(nummpi):: npencils
+integer:: h5err,mpierr
+integer:: i,j,k,l,npen,id
+integer(hid_t)::dset,dspace,mspace
+real(8), parameter:: pi = 3.14159265358979
+real(8):: timer
+
+npen = pcie2-pcib2+1
+
+if(mpiid == 0) timer = MPI_WTIME()
+
+allocate(buf_cor(nx,npen,lxcorr,10))
+allocate(aux_buf_cor(lxcorr*10,npen))
+
+buf_cor(:,:,:,1)  = coru
+buf_cor(:,:,:,2)  = corv
+buf_cor(:,:,:,3)  = coruv
+buf_cor(:,:,:,4)  = corw
+buf_cor(:,:,:,5)  = corp
+buf_cor(:,:,:,6)  = corox
+buf_cor(:,:,:,7)  = coroy
+buf_cor(:,:,:,8)  = coroz
+buf_cor(:,:,:,9)  = coruw
+buf_cor(:,:,:,10) = corvw
+
+!! Scale or whatever Juan did.
+do j = 1,lxcorr
+   buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
+end do
+
+call mpi_barrier(comm,mpierr)
+
+call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+call h5pset_fapl_mpiposix_f(pid,comm,.false.,h5err)
+call h5fcreate_f(trim(fname),H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+call h5pclose_f(pid,h5err) !! Close property access list
+
+!!Write the correlations concurrently to disk
+call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,(nz2+1)*nspec,mpiid,nummpi,comm,&
+     & buf_cor,h5err)
+
+call mpi_barrier(comm,mpierr)
+
+if(mpiid == 0) then
+   write(*,*) "time of everything"
+   write(*,*) MPI_WTIME()-timer
+end if
+if (mpiid.eq.0) write(*,*) 'closing.....'
+call h5fclose_f(fid,h5err)
+if (mpiid.eq.0) write(*,*) 'closed.....'
+deallocate(buf_cor)
+deallocate(aux_buf_cor)
+
+!Write the header
+
+!Get the number of pencils written by every node
+call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
+     & npencils,1,MPI_INTEGER,0,comm,mpierr)
+
+if (mpiid == 0) then
+   write(*,*) 'CORRELATION FILE TO BE WRITED:', trim(fname)
+   call h5fopen_f(trim(fname),H5F_ACC_RDWR_F,fid,h5err)
+   
+   call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
+   call h5ltmake_dataset_double_f(fid,"cfl"   ,1,hdims,(/cfl/),h5err)
+   call h5ltmake_dataset_double_f(fid,"Re"    ,1,hdims,(/re/),h5err)
+   call h5ltmake_dataset_double_f(fid,"lx"    ,1,hdims,(/ax*pi/),h5err)
+   call h5ltmake_dataset_double_f(fid,"ly"    ,1,hdims,(/ay*pi/),h5err)
+   call h5ltmake_dataset_double_f(fid,"lz"    ,1,hdims,(/2*az*pi/),h5err)
+   call h5ltmake_dataset_int_f(fid,"nx",    1,hdims,(/nx/),    h5err)
+   call h5ltmake_dataset_int_f(fid,"ny",    1,hdims,(/ny/),    h5err)
+   call h5ltmake_dataset_int_f(fid,"nz2",   1,hdims,(/nz2/),   h5err)
+   call h5ltmake_dataset_int_f(fid,"ical",  1,hdims,(/ical/),  h5err)
+   call h5ltmake_dataset_int_f(fid,"ncorr", 1,hdims,(/ncorr/), h5err)
+   call h5ltmake_dataset_int_f(fid,"lxcorr",1,hdims,(/lxcorr/),h5err)
+   call h5ltmake_dataset_int_f(fid,"mpisize",1,hdims,(/nummpi/),h5err)
+   hdims = (/ lxcorr /)
+   call h5ltmake_dataset_int_f(fid,"nxp",1,hdims,nxp,h5err)
+   call h5ltmake_dataset_int_f(fid,"xcorpoint",1,hdims,xcorpoint,h5err)
+   hdims = (/ ny+2 /)
+   call h5ltmake_dataset_double_f(fid,"y",1,hdims,y,h5err)
+   hdims = (/ nummpi /)
+   call h5ltmake_dataset_int_f(fid,"npencils",1,hdims,npencils,h5err)
+   hdims2 = (/ ncorr,lxcorr /)
+   call h5ltmake_dataset_int_f(fid,"jspecy",2,hdims2,jspecy,h5err)
+
+   call h5fclose_f(fid,h5err)
+
+   write(*,*) MPI_WTIME()-timer
+
+end if
+
+!End write the header
+
+
+end subroutine escr_corr_2
+
+#endif
