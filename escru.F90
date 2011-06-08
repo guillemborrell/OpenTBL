@@ -54,6 +54,7 @@
     fil4=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'p'
 
     call MPI_INFO_CREATE(info,ierr)
+    call MPI_INFO_SET(info,"IBM_largeblock_io","true",ierr)
 
 #ifdef WPARALLEL
     !PARALLEL WRITER ==================================================================
@@ -1078,7 +1079,7 @@ real(8), dimension(:,:), allocatable:: aux_buf_cor
 integer(hsize_t), dimension(1):: hdims = (/ 1 /)
 integer(hsize_t), dimension(2):: hdims2 = (/ 0, 0 /) 
 integer,dimension(nummpi):: npencils
-integer:: h5err,mpierr
+integer:: h5err,mpierr,info
 integer:: i,j,k,l,npen,id
 integer(hid_t)::dset,dspace,mspace
 real(8), parameter:: pi = 3.14159265358979
@@ -1087,6 +1088,10 @@ real(8):: timer
 npen = pcie2-pcib2+1
 
 if(mpiid == 0) timer = MPI_WTIME()
+
+call MPI_INFO_CREATE(info,mpierr)
+call MPI_INFO_SET(info,"IBM_largeblock_io","true",mpierr)
+
 
 allocate(buf_cor(nx,npen,lxcorr,10))
 allocate(aux_buf_cor(lxcorr*10,npen))
@@ -1110,7 +1115,7 @@ end do
 call mpi_barrier(comm,mpierr)
 
 call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-call h5pset_fapl_mpio_f(pid,comm,MPI_INFO_NULL,h5err)
+call h5pset_fapl_mpio_f(pid,comm,info,h5err)
 call h5pset_sieve_buf_size_f(pid, 4*1024*1024, h5err)
 call h5fcreate_f(trim(fname)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
 call h5pclose_f(pid,h5err) !! Close property access list

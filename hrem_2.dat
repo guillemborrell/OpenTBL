@@ -37,10 +37,10 @@ CC   nstep      reav         reav        avcrt             stest
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
 CC 
-        6001      400        2000         10             0
+        401      400        2000         10             0
 CC
 CC First  output file  number=====================================
-031
+032
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -57,7 +57,7 @@ CC 2)FILE NAMES used in the code ===========================
 CC
 CC
 CC======================= INPUT: ===========================
-/work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096.030
+/work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096.031
 CC======================= OUTPUT============================
 /work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096
 CC====================== FILE FOR LOCAL INFO: ==============

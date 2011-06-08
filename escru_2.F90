@@ -57,6 +57,7 @@
 
 
     call MPI_INFO_CREATE(info,ierr)
+    call MPI_INFO_SET(info,"IBM_largeblock_io", "true",ierr)
 
 #ifdef WPARALLEL
     !PARALLEL WRITER ==================================================================
