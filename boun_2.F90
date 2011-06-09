@@ -133,7 +133,7 @@ do i=1,nx
    reth=(rthin**ei1+c1**ei1*re*x(i))**e1
 
 #ifdef ROUGHNESS
-   reth = 1.9d0*reth
+   reth = 1.7d0*reth
 #endif
 
  uep= log(reth)/kap+ckap  
