@@ -781,7 +781,7 @@
 
 
 #ifdef WPARALLEL
-if(mpiid.eq.0) write(*,*) 'Correlation file name before calling escr_corr:', corfile
+if(mpiid.eq.0) write(*,*) 'Correlation file name before calling escr_corr:', trim(corfile)//".h5"
 !===================CORRELATIONS=======================    
 call escr_corr(corfile,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
      & coruw,corvw,mpiid,nummpi,comm)
@@ -1143,7 +1143,7 @@ call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
      & npencils,1,MPI_INTEGER,0,comm,mpierr)
 
 if (mpiid == 0) then
-   write(*,*) 'CORRELATION FILE TO BE WRITED:', trim(fname)
+   write(*,*) 'CORRELATION FILE TO BE WRITTEN:', trim(fname)//".h5"
    call h5fopen_f(trim(fname)//".h5",H5F_ACC_RDWR_F,fid,h5err)
    
    call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)

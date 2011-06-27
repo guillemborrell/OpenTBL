@@ -37,10 +37,10 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-       6001       600        2000         10             0
+       6001       600        6000         10             0
 CC            
 CC First  output file  number=====================================
-043
+077
 CC==================================================================
 CC   x position  y position  y position   y position  y position           
 CC    to write
@@ -53,7 +53,7 @@ CC
        0     0.04678313948297         2.119449988241744d03   1.65828380932963d0
 CC
 CC ============================ INPUT ========================================
-/work/pra032/pra03201/bl1high_r/bl1-300-2049x315x2048.042
+/work/pra032/pra03201/bl1high_r/bl1-300-2049x315x2048.076
 CC ============================ OUTPUT  ========================================
 /work/pra032/pra03201/bl1high_r/bl1-300-2049x315x2048
 CC FILE FOR LOCAL INFO: -----------------------------------------------

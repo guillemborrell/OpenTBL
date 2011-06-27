@@ -1022,7 +1022,7 @@ call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
 
 if (mpiid == 0) then
    write(*,*) 'CORRELATION FILE TO BE WRITED:', trim(fname)
-   call h5fopen_f(trim(fname),H5F_ACC_RDWR_F,fid,h5err)
+   call h5fopen_f(trim(fname)//".h5",H5F_ACC_RDWR_F,fid,h5err)
    
    call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
    call h5ltmake_dataset_double_f(fid,"cfl"   ,1,hdims,(/cfl/),h5err)
