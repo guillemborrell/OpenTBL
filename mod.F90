@@ -69,11 +69,11 @@ parameter ( xin = 1 , xout = 600) !50d99
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
- 
 
-  xpoint = (/ 512,1024,1920 /)
-  xcorpoint = (/512,1024,1920/)
-  nxp = (/10,14,20/)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+  data xpoint /512,1024,1920/
+  data xcorpoint /512,1024,1920/
+  data nxp /10,14,20/ !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 
@@ -394,11 +394,10 @@ parameter ( xin = 1 , xout = 3410) !50d99
   parameter(lxp=3,lxcorr=lxp,ncorr=nspec)
   parameter(tots=ncorr*lxcorr*4*nx)
   integer  xpoint(lxp),nxp(lxp),xcorpoint(lxcorr)
- 
 
-  xpoint = (/ 1519,4191,6918 /)
-  xcorpoint = (/ 1519,4191,6918/)
-  nxp = (/ 46,70,92 /)    !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
+  data xpoint /1519,4191,6918/ 
+  data xcorpoint /1519,4191,6918/ 
+  data nxp /46,70,92/ !delta/2 at each X. Averaged Spectra (X-d/2)<X<(X+d/2)
 
 #ifdef PLANESPECTRA 
    !for debugging purposes!! 

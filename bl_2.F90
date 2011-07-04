@@ -62,6 +62,7 @@ subroutine bl_2(mpiid,mpiid_global,comm_global,comm_local)
      tmp29 =tmp29+abs(th2-th1)
      write(*,*) 
      write(*,'(a40,f15.3,a3)') '===== FIELD 2 (u,v,w,p) read in: =======',tmp29,'Sg' 
+     write(*,*) 'DEBUG:', nxp, xcorpoint
      write(*,*)    
   endif
    

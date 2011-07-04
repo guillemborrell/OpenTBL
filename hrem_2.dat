@@ -40,7 +40,7 @@ CC
        6001      600        6000         10             0
 CC
 CC First  output file  number=====================================
-077
+087
 CC==================================================================
 CC
 CC   x position  y position  y position   y position  y position           
@@ -57,7 +57,7 @@ CC 2)FILE NAMES used in the code ===========================
 CC
 CC
 CC======================= INPUT: ===========================
-/work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096.076
+/work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096.086
 CC======================= OUTPUT============================
 /work/pra032/pra03201/bl2high_r/bl2-1300-7681x545x4096
 CC====================== FILE FOR LOCAL INFO: ==============
