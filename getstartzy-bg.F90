@@ -176,7 +176,7 @@
     call h5fclose_f(fid,h5err)
     
     call MPI_BARRIER(commu,ierr)
-    p(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
+    p(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr,1:ie-ib+1),kind=8)
     call MPI_BARRIER(commu,ierr)
 
     deallocate(resu)
