@@ -282,23 +282,15 @@ do i=1,8
 enddo
 
 if(mpiid.eq.0) then
-        do i=1,8
-           nodo=((nummpi-1)*i)/8
-           call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,communicator,istat,ierr) 
-           u_inf(i)=buffer(1);u_tau(i)=buffer(2);d_out(i)=buffer(3);r_thout(i)=buffer(4);x_plane(i)=buffer(5)                             
-        enddo                                
-        write(62,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
-        call flush(62)
-!         write(*,*) 'tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop----------------------------'
-!         write(*,*) tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,ntop
-!         write(*,*) 'u_inf...u_tau...d_out...r_thout en filas'
-!         write(*,*) x_plane
-!         write(*,*) u_inf
-!         write(*,*) u_tau
-!         write(*,*) d_out
-!         write(*,*) r_thout
-!         write(*,*) '----------------------------------------------------'
-     endif
+   do i=1,8
+      nodo=((nummpi-1)*i)/8
+      call MPI_RECV(buffer,5,MPI_REAL8,nodo,i,communicator,istat,ierr) 
+      u_inf(i)=buffer(1);u_tau(i)=buffer(2);d_out(i)=buffer(3);r_thout(i)=buffer(4);x_plane(i)=buffer(5)                             
+   enddo
+   write(62,'(49(d22.14))') tiempo,rthout,utauout,gamma(1:2),dout,jtop1*1d0,ntop(1:2)*1d0,x_plane,u_inf,u_tau,d_out,r_thout     
+   call flush(62)
+endif
+
 endsubroutine info_per_step
 
 

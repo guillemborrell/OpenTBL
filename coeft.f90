@@ -12,7 +12,6 @@ subroutine coef(mpiid)
   use point
   use statistics,only:hy
   use ctesp
-  use num_nodes
 
   implicit none      
 
@@ -1228,11 +1227,6 @@ ldyy(:)=nm(:,1)/dn(:,j)
   !**********************************************************
   ! Linear interpolation to connect the two boundary layers
   !**********************************************************
-
- if (mpiid == mpi_inlet) then
-    call MPI_SEND(y,ny+2,MPI_REAL8,mpiid_2(0),1,MPI_COMM_WORLD,istat,ierr)
- end if
-
 
  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
   return 

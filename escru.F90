@@ -53,9 +53,6 @@
     fil3=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'w'
     fil4=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'p'
 
-    call MPI_INFO_CREATE(info,ierr)
-    call MPI_INFO_SET(info,"IBM_largeblock_io","true",ierr)
-
 #ifdef WPARALLEL
     !PARALLEL WRITER ==================================================================
     !First the header and last the field
