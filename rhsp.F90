@@ -209,8 +209,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      dtloc = min(dt1, dt2, dt3, dtret)
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
-     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)  !!THIS MUST BE CALL IN BOTH PROGRAMS with MPI_WORLD
-!     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+     call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)
+     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
 
 #ifdef CFLINFO 
      dt4=dzmin/max(poco,wm)
@@ -274,10 +274,11 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-
+  write(*,*) "genflu",mpiid
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
+  write(*,*) "past genflu",mpiid
   !Sending Plane to the Big BL (Second BL)
-  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+  call MPI_BARRIER(communicator,ierr)
 
 
 #ifdef CREATEPROFILES        
@@ -292,9 +293,11 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
   enddo
 	
-
+  
 
   if (mpiid2.eq.0) tm1 = MPI_WTIME()
+
+  write(*,*) "POSSIBLE DEADLOCK",pnodes,mpiid
 
   if (mpiid.eq.pnodes-1) then
      call MPI_SEND(pt,(nz2+1)*ny,MPI_COMPLEX16,mpiid-1,0,communicator,istat,ierr)
@@ -313,7 +316,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
   endif
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
+  write(*,*) "End possible deadlock"
+  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()

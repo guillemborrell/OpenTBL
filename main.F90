@@ -39,6 +39,8 @@
 
 program capalimite
   use hdf5
+  use ctesp
+
   implicit none
   include "mpif.h"
 
@@ -54,7 +56,8 @@ program capalimite
   call h5open_f(h5err)
 
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid,ierr)
-  call MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,ierr)
+  call MPI_COMM_SIZE(MPI_COMM_WORLD,nummpi,ierr)
+  numprocs = nummpi !Single boundary layer
 
   call bl_1(mpiid)
 

@@ -165,42 +165,43 @@ subroutine pointers_p2p(rank)
   use shared_mem
   implicit none
   integer:: rank,i
-  !write(*,*) '						NUMMPI',nummpi,'rank',rank
+  !write(*,*) 'NUMMPI',nummpi,'rank',rank
   !========Setting Structure Data Types:
   call comm_setup(nx,ny,nz1,rank,nummpi,nodev,domainv,1)  
   call comm_setup(nx,ny+1,nz1,rank,nummpi,nodeu,domainu,1)
   !For the correlations: 
-  call comm_setup(nx,ncorr,nz1  ,rank,nummpi,node_corr ,domain_corr,2) !Complex*16 Plane = nz1 R8 elements (each node a even number of pencils, "2")
-  call comm_setup(nx,ncorr,nz1/2,rank,nummpi,node_corr2,domain_corr2,1) !Real*8 plane = nz1/2 R8 elements
+  ! call comm_setup(nx,ncorr,nz1  ,rank,nummpi,node_corr ,domain_corr,2) !Complex*16 Plane = nz1 R8 elements (each node a even number of pencils, "2")
+  ! call comm_setup(nx,ncorr,nz1/2,rank,nummpi,node_corr2,domain_corr2,1) !Real*8 plane = nz1/2 R8 elements
   !==========================================
   
 
   !Global List of indexes  
   ibeg = domainu%ib
   iend = domainu%ie
-  pcibeg = domain_corr%pb !List of the beginning and end of the pencils
-  pciend = domain_corr%pe
-  pcibeg2 = domain_corr2%pb
-  pciend2 = domain_corr2%pe
   !Size to allocate arrays
   ntotb = nodeu%size
   ntotv = nodev%size
-  ntot_corr =node_corr%size
-  ntot_corr2=node_corr2%size
   !Local indexes for each node
   ib = nodeu%startpl
   ie = nodeu%endpl   
-  pcib=node_corr%startpen !Pencils start and end -for correlations-
-  pcie=node_corr%endpen
-  pcib2=node_corr2%startpen !Pencils start and end -for correlations-
-  pcie2=node_corr2%endpen
   !Total number of pencils per node:
   mpu = nodeu%pencils
   mpv = nodev%pencils  
-  mp_corr =node_corr%pencils
-  mp_corr2=node_corr2%pencils !Half number of pencils (k x k*)
   !Number of planes per node
   mmx = ie-ib+1
+
+  ! pcibeg = domain_corr%pb !List of the beginning and end of the pencils
+  ! pciend = domain_corr%pe
+  ! pcibeg2 = domain_corr2%pb
+  ! pciend2 = domain_corr2%pe
+  ! ntot_corr =node_corr%size
+  ! ntot_corr2=node_corr2%size
+  ! pcib=node_corr%startpen !Pencils start and end -for correlations-
+  ! pcie=node_corr%endpen
+  ! pcib2=node_corr2%startpen !Pencils start and end -for correlations-
+  ! pcie2=node_corr2%endpen
+  ! mp_corr =node_corr%pencils
+  ! mp_corr2=node_corr2%pencils !Half number of pencils (k x k*)
 
 	  
   if(rank.eq.0) then
@@ -248,8 +249,8 @@ subroutine chp2x(pen,plan,buf,rank,jee,communicator)
      call chp2xv(pen,plan,buf,nummpi,communicator) !here does not matter the value of control
   elseif (jee == domainu%NY) then
      call chp2xu(pen,plan,buf,nummpi,communicator)
-  elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
-     call chp2xc(pen,plan,buf,nummpi,communicator)    
+  ! elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
+  !    call chp2xc(pen,plan,buf,nummpi,communicator)    
   end if
 end subroutine chp2x
 
@@ -267,8 +268,8 @@ subroutine chx2p(pen,plan,buf,rank,jee,communicator)
      call chx2pv(pen,plan,buf,nummpi,communicator)
   elseif (jee == domainu%NY) then
      call chx2pu(pen,plan,buf,nummpi,communicator)
-  elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
-     call chx2pc(pen,plan,buf,nummpi,communicator) 
+  ! elseif (jee == domain_corr%NY) then  !Complex*16 Plane = nz1 R8 elements
+  !    call chx2pc(pen,plan,buf,nummpi,communicator) 
   end if
 
 end subroutine chx2p

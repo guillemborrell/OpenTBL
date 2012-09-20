@@ -59,7 +59,8 @@ subroutine bl_1(mpiid)
 
 #ifdef CREATEPROFILES
   paso=-1 !Substeps counter
-  if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',status='unknown',convert='BIG_ENDIAN') !File with the generated composited profiles
+  if(mpiid.eq.0) open(17,file='extraprofiles',form='unformatted',&
+       & status='unknown',convert='BIG_ENDIAN') !File with the generated composited profiles
   call create_profiles(u,v,w,rthin,mpiid,MPI_COMM_WORLD)
   call impose_profiles(u,v,w,mpiid,MPI_COMM_WORLD) 
   close(17)  
@@ -79,66 +80,67 @@ subroutine bl_1(mpiid)
      open(32,file=trim(chfile)//'.'//ext//'.dat',form='formatted',status='unknown')
   endif
   
+  call mpi_barrier(MPI_COMM_WORLD,ierr)
 
   do istep = 1,nsteps
      if(mpiid.eq.0) then
         tc1 = MPI_WTIME()
-        !         write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
+        write(*,'(a60,i6)') 'FIRST BL............................................istep1=',istep
      endif
      
      if (.TRUE.) setstep=.TRUE.
      if (mod(istep,avcrt)==0.and.istep>stest) dostat=.TRUE.    
      
-     ! do isubstp = 1,3
-     !    if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
-     !    call mpi_barrier(MPI_COMM_WORLD,ierr)
-     !    !         IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',MPI_COMM_WORLD,'substep',isubstp
-     !    call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
-     !         &    res,res,resv,resv,resw,resw,        & 
-     !         &    rhsu,rhsv,rhsw,                     &
-     !         &    wki1,wki1,wki2,wki2,wki3,wki3,      &
-     !         &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr,buf_corr2, & 
-     !         &    dt,isubstp,ical,istep,mpiid,MPI_COMM_WORLD)
+     do isubstp = 1,3
+        if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
+        call mpi_barrier(MPI_COMM_WORLD,ierr)
+        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',MPI_COMM_WORLD,'substep',isubstp
+        call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
+             &    res,res,resv,resv,resw,resw,        & 
+             &    rhsu,rhsv,rhsw,                     &
+             &    wki1,wki1,wki2,wki2,wki3,wki3,      &
+             &    wkp,wkp,wkpo,wkpo,bufuphy,buf_corr,buf_corr2, & 
+             &    dt,isubstp,ical,istep,mpiid,MPI_COMM_WORLD)
         
-     !    call mpi_barrier(MPI_COMM_WORLD,ierr)    
-     !    if (mpiid2 .eq. 0) then  
-     !       th2 = MPI_WTIME()      
-     !       tmp13 =tmp13+abs(th2-th1)
-     !    endif
-     !    !         IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
-     !    call outflow_correction(u,v,rhsupa,MPI_COMM_WORLD)        
-     !    if (mpiid2 .eq. 0) then  
-     !       th1 = MPI_WTIME()      
-     !       tmp18 =tmp18+abs(th2-th1)
-     !    endif
-     !    call mpi_barrier(MPI_COMM_WORLD,ierr)   
-     !    vardt = 5d-1/dt/rkdv(isubstp)     
-     !    call pois(u,v,w,p,res,res,resw,vardt,mpiid,MPI_COMM_WORLD)
+        call mpi_barrier(MPI_COMM_WORLD,ierr)    
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp13 =tmp13+abs(th2-th1)
+        endif
+        !         IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
+        call outflow_correction(u,v,rhsupa,MPI_COMM_WORLD)        
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp18 =tmp18+abs(th2-th1)
+        endif
+        call mpi_barrier(MPI_COMM_WORLD,ierr)   
+        vardt = 5d-1/dt/rkdv(isubstp)     
+        call pois(u,v,w,p,res,res,resw,vardt,mpiid,MPI_COMM_WORLD)
         
-     !    if (mpiid2 .eq. 0) then  
-     !       th2 = MPI_WTIME()      
-     !       tmp14 =tmp14+abs(th2-th1)
-     !    endif
-     ! enddo
-     ! !.............................................
-     ! call mpi_barrier(MPI_COMM_WORLD,ierr)
-     ! tiempo = tiempo+dt
-     ! if (times .ge. tvcrt) then
-     !    times=times-tvcrt
-     ! endif
-     ! times=times+dt
+        if (mpiid2 .eq. 0) then  
+           th2 = MPI_WTIME()      
+           tmp14 =tmp14+abs(th2-th1)
+        endif
+     enddo
+     !.............................................
+     call mpi_barrier(MPI_COMM_WORLD,ierr)
+     tiempo = tiempo+dt
+     if (times .ge. tvcrt) then
+        times=times-tvcrt
+     endif
+     times=times+dt
      
-     ! ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
-     ! ! I/O Operations --------------------------------
-     ! if (mod(istep,stats).eq.0) then
-     !    if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
-     !    call escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical,MPI_COMM_WORLD)
-     !    ical=0
-     !    if (mpiid2 .eq. 0) then  
-     !       th1 = MPI_WTIME()      
-     !       tmp27 =tmp27+abs(th2-th1)
-     !    endif
-     ! endif
+     ! I/O Operations --------------------------------ONLY WRITE THE FIELD     
+     ! I/O Operations --------------------------------
+     if (mod(istep,stats).eq.0) then
+        if (mpiid2.eq.0) th2 = MPI_WTIME()                                                     
+        call escrst(ax,ay,az,cfl,tiempo,re,x,y,mpiid,ical,MPI_COMM_WORLD)
+        ical=0
+        if (mpiid2 .eq. 0) then  
+           th1 = MPI_WTIME()      
+           tmp27 =tmp27+abs(th2-th1)
+        endif
+     endif
      
      if (mod(istep,reav).eq.0) then
         if (mpiid2.eq.0) th2 = MPI_WTIME() 
@@ -266,17 +268,21 @@ subroutine iniciap_1(mpiid,communicator)
   tvcrt  = 2d0*pi/(16d0*160d0)
   totalcal=0
 
+  if (mpiid == 0) write(*,*) "Pointer initialization"
+
   !----------------------------------------------------------------------!
   !           inicializa los punteros
   !----------------------------------------------------------------------!
   allocate(ibeg   (0:nummpi-1),iend   (0:nummpi-1))
   allocate(pcibeg (0:nummpi-1),pciend (0:nummpi-1))
   allocate(pcibeg2(0:nummpi-1),pciend2(0:nummpi-1))
-
+  if (mpiid == 0) write(*,*) "Pointer p2p"
   call pointers_p2p(mpiid)   !! pointers et al. for changep2p & total sizes
+  if (mpiid == 0) write(*,*) "Pointer fft"
   call pointersfft(mpiid) !pointers for thread_private indexes (used in FFTw)
 
   ib0 = max(2,ib)  ! -- i=1 is inflow, not integrated
+  if (mpiid == 0) write(*,*) "Pointer alloa"
   call alloa(mpiid)
 
 ! --  found out where is the reference plane: 
