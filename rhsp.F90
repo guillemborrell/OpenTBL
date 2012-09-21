@@ -210,7 +210,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
      if (mpiid2.eq.0) tm1 = MPI_WTIME()
      call MPI_ALLREDUCE(dtloc,dt,1,MPI_real8,MPI_MIN,MPI_COMM_WORLD,ierr)
-     if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
+     ! if (mpiid2.eq.0) write(*,*) '=====================================dtloc after reduction',dt
 
 #ifdef CFLINFO 
      dt4=dzmin/max(poco,wm)
@@ -274,17 +274,9 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   reswt=wt 
   !$OMP END PARALLEL WORKSHARE
 
-  write(*,*) "genflu",mpiid
   call genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
-  write(*,*) "past genflu",mpiid
   !Sending Plane to the Big BL (Second BL)
   call MPI_BARRIER(communicator,ierr)
-
-
-#ifdef CREATEPROFILES        
-  if(mpiid.eq.0) write(*,*) 'Imposing Profiles after Genflu from i=1 to i=',num_planes        
-  call impose_profiles(ut,vt,wt,mpiid,communicator)
-#endif 
   
   do i=ib0,ie-1
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
@@ -292,12 +284,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
         ut(:,j,i)=ut(:,j,i)-var1*idxx*(pt(:,j,i+1)-pt(:,j,i))         
      enddo
   enddo
-	
-  
 
-  if (mpiid2.eq.0) tm1 = MPI_WTIME()
-
-  write(*,*) "POSSIBLE DEADLOCK",pnodes,mpiid
+  ! if (mpiid2.eq.0) tm1 = MPI_WTIME()
 
   if (mpiid.eq.pnodes-1) then
      call MPI_SEND(pt,(nz2+1)*ny,MPI_COMPLEX16,mpiid-1,0,communicator,istat,ierr)
@@ -316,8 +304,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      enddo
   endif
 
-  write(*,*) "End possible deadlock"
-  if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
+  ! if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 3',ut(0,250,xout)
 
   if (mpiid2.eq.0) then
      tm2 = MPI_WTIME()
@@ -349,6 +336,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 !!!!!!!!! SI HACEMOS J=2:NY ENTONCES HAY QUE IMPONER BC PARA LOS RHS
 !!!!!!!!! SI HACEMOS J=1:NY ENTONCES "NO" HAY QUE IMPONER BC PARA LOS RHS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
   do i = ib0,ie  
     if(i.ne.nx) then !this is correct... rhsu(NX)=U_inf*dudx; rhsv(Nx)=U_inf*dvdx (this is done when in pencils)
@@ -421,6 +409,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
   ! ======  ACHTUNG!!! impose & preserve viscous boundary conditions  ========
 
   call boun(ut,vt,wt)
+
   !$OMP PARALLEL WORKSHARE
   rhsut(:,:,ib:ib0-1) = 0d0 
   rhsvt(:,:,ib:ib0-1) = 0d0 
@@ -484,7 +473,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call implzy(wt(0,1,i),wki3t(0,1,i),vyui,cofvyu,ny+1,rkk)
   enddo
 
-!   if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
+  ! if (mpiid==mpiout) write(*,*) '**ut(0,250,xout)** 4',ut(0,250,xout)
   ener(13:15)=0
   dostat  = .FALSE.  
 end subroutine rhsp

@@ -102,7 +102,6 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
   rest(0,:,ib:ie)=real(rest(0,:,ib:ie),kind=8) !Ensuring the 0th mode is Real
 
 
-
   ! --------  solve poisson in (zy) planes  (using equiv. wavenumbers)
   do i = ib0,ie 
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(k,aypr) SCHEDULE(STATIC)        
@@ -126,7 +125,6 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
 !      endif
   enddo
 
- 
 
   !  ----  go to lines, back-transform, and go back to planes ----
   call chp2x(res,rest,rt,mpiid,ny,comm)
@@ -143,7 +141,6 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
   endif
   call chx2p(res,rest,rt,mpiid,ny,comm)
 
-  
   do i =ib0,ie
      !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(j) SCHEDULE(STATIC)
      do j = 2,ny
@@ -187,33 +184,6 @@ subroutine pois(ut,vt,wt,pt,res,rest,rt,varstep,mpiid,communicator)
      tm2 = MPI_WTIME()
      tmp23 = tmp23 + abs(tm2-tm1)-(tp2-tp1)
   endif
-
-! 
-!  if(paso.eq.1) then
-!       if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON'
-!       do i=ib,ie   
-!          pdiv(1:ny,i)=real(ut(0,1:ny,i),kind=8) !Each node copy a piece of the array
-!       enddo
-!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)
-!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
-!       pdiv=0d0
-! 
-!       do i=ib,ie   
-!          pdiv(1:ny,i)=real(vt(0,1:ny,i),kind=8) !Each node copy a piece of the array
-!       enddo
-!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)
-!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx)
-!       pdiv=0d0
-! 
-!       do i=ib,ie   
-!          pdiv(1:ny,i)=real(wt(0,1:ny,i),kind=8) !Each node copy a piece of the array
-!       enddo
-!       call MPI_ALLREDUCE(MPI_IN_PLACE,pdiv,ny*nx,MPI_real8,MPI_SUM,comm,ierr)      
-!       if(mpiid.eq.0) write(28) pdiv(1:ny,1:nx) 
-!       pdiv=0d0
-! 
-!       if(mpiid.eq.0) write(*,*) 'WRITING THE K=0 XY PLANE TO A FILE FOR U,V & W IN POISON.............DONE'
-!  endif
 
 
 end subroutine pois

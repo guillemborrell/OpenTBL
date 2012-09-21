@@ -58,6 +58,7 @@ program capalimite
   call MPI_COMM_RANK(MPI_COMM_WORLD,mpiid,ierr)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,nummpi,ierr)
   numprocs = nummpi !Single boundary layer
+  pnodes = nummpi
 
   call bl_1(mpiid)
 

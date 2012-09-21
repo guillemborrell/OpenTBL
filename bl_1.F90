@@ -94,7 +94,7 @@ subroutine bl_1(mpiid)
      do isubstp = 1,3
         if (mpiid2 .eq. 0) th1 = MPI_WTIME()               
         call mpi_barrier(MPI_COMM_WORLD,ierr)
-        IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',MPI_COMM_WORLD,'substep',isubstp
+        !IF(MPIID.EQ.0) WRITE(*,*) 'COMUNICADOR LOCAL============================',MPI_COMM_WORLD,'substep',isubstp
         call rhsp(u,v,w,p,rhsupa,rhsvpa,rhswpa,       &
              &    res,res,resv,resv,resw,resw,        & 
              &    rhsu,rhsv,rhsw,                     &
@@ -107,16 +107,17 @@ subroutine bl_1(mpiid)
            th2 = MPI_WTIME()      
            tmp13 =tmp13+abs(th2-th1)
         endif
-        !         IF(MPIID.EQ.0) WRITE(*,*) 'Calling outflow......' 
+
         call outflow_correction(u,v,rhsupa,MPI_COMM_WORLD)        
         if (mpiid2 .eq. 0) then  
            th1 = MPI_WTIME()      
            tmp18 =tmp18+abs(th2-th1)
         endif
         call mpi_barrier(MPI_COMM_WORLD,ierr)   
-        vardt = 5d-1/dt/rkdv(isubstp)     
+        vardt = 5d-1/dt/rkdv(isubstp)
+
         call pois(u,v,w,p,res,res,resw,vardt,mpiid,MPI_COMM_WORLD)
-        
+
         if (mpiid2 .eq. 0) then  
            th2 = MPI_WTIME()      
            tmp14 =tmp14+abs(th2-th1)
@@ -276,13 +277,10 @@ subroutine iniciap_1(mpiid,communicator)
   allocate(ibeg   (0:nummpi-1),iend   (0:nummpi-1))
   allocate(pcibeg (0:nummpi-1),pciend (0:nummpi-1))
   allocate(pcibeg2(0:nummpi-1),pciend2(0:nummpi-1))
-  if (mpiid == 0) write(*,*) "Pointer p2p"
   call pointers_p2p(mpiid)   !! pointers et al. for changep2p & total sizes
-  if (mpiid == 0) write(*,*) "Pointer fft"
   call pointersfft(mpiid) !pointers for thread_private indexes (used in FFTw)
 
   ib0 = max(2,ib)  ! -- i=1 is inflow, not integrated
-  if (mpiid == 0) write(*,*) "Pointer alloa"
   call alloa(mpiid)
 
 ! --  found out where is the reference plane: 
