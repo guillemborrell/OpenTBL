@@ -217,9 +217,9 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
 
   if (mpiid == 0) write(*,*) 'Leyendo el campo'
 
-  call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+  if (mpiid == 0) call h5fopen_f(trim(fil1)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
-  call h5fclose_f(fid,h5err)
+  if (mpiid == 0) call h5fclose_f(fid,h5err)
 
   if(mpiid == 0) then
      write(*,*) "File dimensons", nz1r, nyr, nxr
@@ -239,9 +239,9 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
   call mpi_barrier(commu,h5err)
 
   !Read the rest of the variables.
-  call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+  if (mpiid == 0) call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
-  call h5fclose_f(fid,h5err)
+  if (mpiid == 0) call h5fclose_f(fid,h5err)
 
   call MPI_BARRIER(commu,ierr)
   w(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
@@ -262,9 +262,9 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
   endif
   call mpi_barrier(commu,h5err)
 
-  call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+  if (mpiid == 0) call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
-  call h5fclose_f(fid,h5err)
+  if (mpiid == 0) call h5fclose_f(fid,h5err)
 
   call MPI_BARRIER(commu,ierr)
   v(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr,1:ie-ib+1),kind=8)
@@ -278,9 +278,9 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
   endif
   call mpi_barrier(commu,h5err)
 
-  call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
+  if (mpiid == 0)call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
-  call h5fclose_f(fid,h5err)
+  if (mpiid == 0)call h5fclose_f(fid,h5err)
 
   call MPI_BARRIER(commu,ierr)
   p(1:nzz,1:nyr,ib:ie) = real(resu(1:nzz,1:nyr,1:ie-ib+1),kind=8)
@@ -468,15 +468,15 @@ subroutine h5load_serial(fid,name,dims,offset,size,comm,data,ierr)
         
         !Select the hyperslab in the global dataset
         start(3) = sum(lastdims(1:i+1))-lastdims(i+1)
-        write(*,*) "***"
-        write(*,'(i3,a7,3i5)') i,"start",offset+start
-        write(*,'(i3,a7,3i5)') i,"count",cdims
-        write(*,*) "***"
+        ! write(*,*) "***"
+        ! write(*,'(i3,a7,3i5)') i,"start",offset+start
+        ! write(*,'(i3,a7,3i5)') i,"count",cdims
+        ! write(*,*) "***"
         
         !Commit the memspace to the disk
         call h5dread_f(dset,H5T_NATIVE_REAL,data,cdims,ierr,mspace,dspace,H5P_DEFAULT_F)
         
-        write(*,'(a,i3,i12)') "Sending data to process #:", i, product(cdims)
+        ! write(*,'(a,i3,i12)') "Sending data to process #:", i, product(cdims)
         call mpi_send(data,product(cdims),MPI_REAL,i,0,comm,ierr)
         
         call h5sclose_f(mspace,ierr)

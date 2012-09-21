@@ -37,7 +37,7 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-       101       100        100          10             1000
+       101       10        100          10             1000
 CC            
 CC First  output file  number=====================================
 001

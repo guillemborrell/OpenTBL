@@ -82,6 +82,8 @@ subroutine statsp(u_x,v,w,p, &
   complex*16:: auxc1,auxc2,auxc3
   integer:: i,j,k,jj,i3,ii
 
+  real(kind = 8),dimension(nz+2):: rdudx,rdvdx,rdwdx,rdudy,rdvdy,rdwdy,rdudz,rdvdz,rdwdz
+  complex*16,dimension(0:nz2):: cdudx,cdvdx,cdwdx,cdudy,cdvdy,cdwdy,cdudz,cdvdz,cdwdz
 
   do i=ib,ie             
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,jj,k,cte,aux1,aux2,aux3,auxc1)
@@ -118,6 +120,25 @@ subroutine statsp(u_x,v,w,p, &
         vortya(j,i)=vortya(j,i)-buf3(0,j)                       !omega[y]=(dudz-dwdx) (dudz=0 for k=0)
         vortxa(j,i)=vortxa(j,i)+dreal(buf7(0,j))                !omega[x]=(dwdy-dvdz)    
         vortza(j,i)=vortza(j,i)+dreal((dvdx(0,j,i)-buf6(0,j)))	!omega[z]=(dvdx-dudy)
+
+
+        !buf1=u  buf2=w buf3=dwdx buf4=dudx buf6=dudy buf7=dwdy buf8=dvdy 
+        !U stuff:
+        cdudx=buf4(:,j);       call fourxz(cdudx(0),rdudx(1),1,1,1,1);!Real dudx 
+        cdudy=buf6(:,j);       call fourxz(cdudy(0),rdudy(1),1,1,1,1);!Real dudy 
+        cdudz=buf1(:,j)*kaz;   call fourxz(cdudz(0),rdudz(1),1,1,1,1);!Real dudz 
+        !V stuff:
+        cdvdx=dvdx(:,j,i);     call fourxz(cdvdx(0),rdvdx(1),1,1,1,1); !Real dvdx
+        cdvdy=buf8(:,j);       call fourxz(cdvdy(0),rdvdy(1),1,1,1,1); !Real dvdy
+        cdvdz=v(:,j,i)*kaz;    call fourxz(cdvdz(0),rdvdz(1),1,1,1,1); !Real dvdz
+        !W Stuff:
+        cdwdx=buf3(:,j);       call fourxz(cdwdx(0),rdwdx(1),1,1,1,1); !Real dwdx
+        cdwdy=buf7(:,j);       call fourxz(cdwdy(0),rdwdy(1),1,1,1,1); !Real dwdy
+        cdwdz=buf2(:,j)*kaz;   call fourxz(cdwdz(0),rdwdz(1),1,1,1,1); !Real dwdz
+
+        ens(:,j,i)=sqrt((rdwdy-rdvdz)**2+ &
+             & (rdudz-rdwdx)**2+ &
+             & (rdvdx-rdudy)**2)
 
         do k = 0,nz2
            if(k.eq.0)then;cte=1d0;else;cte=2d0

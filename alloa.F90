@@ -149,6 +149,9 @@ dudx0=0d0;dudy0=0d0;dudz0=0d0;
 dvdx0=0d0;dvdy0=0d0;dvdz0=0d0;
 dwdx0=0d0;dwdy0=0d0;dwdz0=0d0;
 
+!Enstrophy
+allocate(ens(nz,ny,ib:ie))
+
 #ifndef NOCORR 
 !Correlaciones ===================================
 !               1365   30     3      3   = 2.81 Mb

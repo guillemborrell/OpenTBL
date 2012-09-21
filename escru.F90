@@ -15,10 +15,8 @@
     use genmod
     use alloc_dns
     use ctesp
-
-#ifdef WPARALLEL
     use hdf5
-#endif
+    use statistics, only: ens
 
     implicit none
     include 'mpif.h'
@@ -28,19 +26,18 @@
     real*4,dimension(:,:,:),allocatable::resu
     integer i,j,k,l,irec
     integer status(MPI_STATUS_SIZE),ierr,t_size,t_size1,t_size2,dot,mpiid,lim1,lim2
-    character(len=256):: fil1,fil2,fil3,fil4
+    character(len=256):: fil1,fil2,fil3,fil4,filens
     character:: ext1*3,uchar*1
     real*8    dt,dum(20),jk,t0
     integer:: nxr3,nyr3,nzr3,comm,tipo,nfile,mpiw1,mpiw2,mpiw3,mpiw4
 
-#ifdef WPARALLEL
     ! ------------------------- HDF5 -------------------------------
     
     integer:: info
     integer(hid_t):: fid,pid
     integer:: h5err
     integer(hsize_t),dimension(3)::dims
-#endif
+
     ! ------------------------- Program ----------------------------  
     pi=4d0*atan(1d0)
     dum=0d0
@@ -52,9 +49,10 @@
     fil2=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'v'
     fil3=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'w'
     fil4=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'p'
+    filens=chfile(1:index(chfile,' ')-1)//'.'//ext1//'.'//'enstro'
 
 #ifdef WPARALLEL
-    !PARALLEL WRITER ==================================================================
+    !PARALLEL WRITER =================================================
     !First the header and last the field
     if (mpiid.eq.0) then 
        write(*,*) 'Escribiendo el fichero'
@@ -70,7 +68,8 @@
     call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
     call h5pset_fapl_mpio_f(pid,comm,info,h5err)
     call h5pset_sieve_buf_size_f(pid, 4*1024*1024, h5err)
-    call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+    call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err,&
+         & H5P_DEFAULT_F,pid)
     call h5pclose_f(pid,h5err)
 
     !Dump the data to the allocated array and save to the disk
@@ -157,264 +156,106 @@
 #endif
 
 
-
 #ifdef WSERIAL
-    !SERIAL WRITTER ==================================================================
-    allocate (resu(nz1,ny+1,1))
-    t_size  = nz1*(ny+1)*4
-    t_size1 = nz1*(ny+1)
-    t_size2 = nz1*(ny  )
+    !Serial WRITER =================================================
+    !First the header and last the field
+    if (mpiid.eq.0) then 
+       write(*,*) 'Escribiendo el fichero'
+       write(*,*) fil1   
+       t0=MPI_Wtime()  
+    end if
 
-    if (mpiid.eq.0) then
-       write(*,*) 'before starting to write'
-       write(*,*) '              x                   y                  um'
-       write(*,*) '--------------------------------------------------------------------'      
-       do i=1,10
-          write(*,'(3f20.6)') x(nx-i),y(ny+1-i),um(ny+1-i)
-       enddo
+    !Enstrophy
+    dims =(/ nz1, ny+1, ie-ib+1 /)
+    allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
+    resu=0.0 !R4 buffer to convert R8 variables
+    
+    if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       write(*,*) "File for Enstrophy successfully closed"
+    end if
 
-       open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')     
-       open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')    
-       open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')    
-       open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')
+        
+    ! !U and w
+    ! dims =(/ nz1, ny+1, ie-ib+1 /)
+    ! allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
+    ! resu=0.0 !R4 buffer to convert R8 variables
+    
+    ! if (mpiid == 0) call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    ! resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
+    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    ! call MPI_BARRIER(comm,ierr)
+    ! if (mpiid == 0) then
+    !    call writeheader(fid,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+    !         & xout,timeinit,dt,y,um,nummpi)
+    !    call h5fclose_f(fid,h5err)
+    !    write(*,*) "File for U successfully closed"
+    ! end if
 
-       write(*,*) '----- files OPEN ------'
-       write(*,*) fil1
-       write(*,*) fil2
-       write(*,*) fil3
-       write(*,*) fil4       
-       write(*,*) '..... writing the headers: ...................'
+    ! resu=0.0
+    ! if (mpiid == 0) call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    ! resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
+    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    ! call MPI_BARRIER(comm,ierr)
+    ! if (mpiid == 0) then
+    !    call writeheader(fid,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+    !         & xout,timeinit,dt,y,um,nummpi)
+    !    call h5fclose_f(fid,h5err)
+    !    if (mpiid == 0) write(*,*) "File for W successfully closed"
+    ! end if
+    
+    ! deallocate(resu)
 
-       irec=1
-       write(*,*) 'u'
-       write(*,'(8f12.4)') tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,timeinit,dt
-       write(*,'(5i10)') nx,ny,nz2,xout,nummpi
-       write(*,*) '------------------------------------------------------------------'
+    ! !Now the v and p
+    ! dims =(/ nz1, ny, ie-ib+1 /)
+    ! allocate(resu(nz1,ny,ie-ib+1),stat=ierr)
+    ! resu=0.0 !R4 buffer to convert R8 variables
+    
+    ! if (mpiid == 0) call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    ! resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
+    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    ! call MPI_BARRIER(comm,ierr)
+    ! if (mpiid == 0) then
+    !    call writeheader(fid,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+    !         & xout,timeinit,dt,y,um,nummpi)
+    !    call h5fclose_f(fid,h5err)
+    !    write(*,*) "File for V successfully closed"
+    ! end if
+    
+    ! resu=0.0
 
-       write(10,rec=irec) 'u',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       write(11,rec=irec) 'v',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       write(12,rec=irec) 'w',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       write(13,rec=irec)  'p',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
+    ! if (mpiid == 0) call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    ! resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
+    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    ! call MPI_BARRIER(comm,ierr)
+    ! if (mpiid == 0) then
+    !    call writeheader(fid,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+    !         & xout,timeinit,dt,y,um,nummpi)
+    !    call h5fclose_f(fid,h5err)
+    !    write(*,*) "File for P successfully closed"
+    ! end if
 
-       do i=ib,ie
-          if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx        
-          irec = i+1
-          write(10,rec=irec) real(u(:,:,i),kind=4)
-          write(11,rec=irec) real(v(:,:,i),kind=4)
-          write(12,rec=irec) real(w(:,:,i),kind=4)
-          write(13,rec=irec) real(p(:,:,i),kind=4)
-          call flush(10,11,12,13)
-       enddo
+    ! deallocate(resu)
+  
+    ifile=ifile+1        
 
-       do dot = 1,nummpi-1   !recibe la informacion de cada procesador
-          do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx
-             irec = i+1     
-             call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
-             write(10,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)
-             write(11,rec=irec) resu(:,1:ny,1)
-             call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
-             write(12,rec=irec) resu(:,:,1)
-             call MPI_RECV(resu,t_size2,tipo,dot,4,comm,status,ierr)  
-             write(13,rec=irec) resu(:,1:ny,1)
-             call flush(10,11,12,13)
-          enddo
-       enddo
-       close(10);close(11);close(12);close(13)
-       ifile=ifile+1
-    else
-       !operaciones para el resto de los nodos ********************
-       do i=ib,ie     
-          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,0,1,comm,ierr)
-          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,0,2,comm,ierr)
-          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,0,3,comm,ierr)
-          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,0,4,comm,ierr)
-       enddo
-    endif
-    deallocate (resu)  
-    !END SERIAL WRITTER ===============================================================
-#endif
-
-
-#ifdef WSERIAL4
-    !SERIAL WRITTER WITH 4 NODES==========================================================
-    !MPI Writers nodes:
-    mpiw1=0
-    mpiw2=nummpi/4
-    mpiw3=nummpi/2
-    mpiw4=3*nummpi/4
-    if (mpiid.eq.mpiw1) t0=MPI_Wtime()
-    allocate (resu(nz1,ny+1,1))
-    t_size=nz1*(ny+1)*4
-    t_size1=nz1*(ny+1)
-    t_size2=nz1*(ny  )
-
-    if (mpiid.eq.mpiw1) then
-
-       write(*,*) 'before starting to write'
-       write(*,*) '              x                   y                  um'
-       write(*,*) '--------------------------------------------------------------------'      
-       do i=1,10
-          write(*,'(3f20.6)') x(nx-i),y(ny+1-i),um(ny+1-i)
-       enddo
-
-       open (10,file=fil1,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian') 
-       write(*,*) '----- files OPEN ------'
-       write(*,*) fil1
-       irec=1
-       write(*,*) 'u'
-       write(*,'(8f12.4)') tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,timeinit,dt
-       write(*,'(5i10)') nx,ny,nz2,xout,nummpi
-       write(*,*) '------------------------------------------------------------------'
-
-       write(10,rec=irec) 'u',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-
-       do i=ib,ie             
-          irec = i+1
-          write(10,rec=irec) real(u(:,:,i),kind=4)      
-         call flush(10)
-       enddo
-
-       do dot = 1,nummpi-1   !recibe la informacion de cada procesador
-          do i= ibeg(dot),iend(dot)
-             if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE U'         
-             irec = i+1     
-             call MPI_RECV(resu,t_size1,tipo,dot,1,comm,status,ierr)
-             write(10,rec=irec) resu(:,:,1)         
-             call flush(10)
-          enddo
-       enddo
-       close(10)
-       ifile=ifile+1
-    else
-       !operaciones para el resto de los nodos ********************
-       do i=ib,ie     
-          call MPI_SEND(real(u(:,:,i),kind=4),t_size1,tipo,mpiw1,1,comm,ierr)      
-       enddo
-    endif
-
-    !-----------------------------------------------
-    if (mpiid.eq.mpiw2) then
-       open (11,file=fil2,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')    
-       write(*,*) fil2
-       irec=1
-       write(11,rec=irec) 'v',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       do i=ib,ie               
-          irec = i+1      
-          write(11,rec=irec) real(v(:,:,i),kind=4)      
-          call flush(11)
-       enddo
-       do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-          if(dot.ne.mpiw2) then
-             do i= ibeg(dot),iend(dot)
-                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE V'         
-                irec = i+1             
-                call MPI_RECV(resu,t_size2,tipo,dot,2,comm,status,ierr)            
-                write(11,rec=irec) resu(:,1:ny,1)       
-                call flush(11)
-             enddo
-          endif
-       enddo
-       close(11)
-       ifile=ifile+1
-    else
-       !operaciones para el resto de los nodos ********************
-       do i=ib,ie        
-          call MPI_SEND(real(v(:,:,i),kind=4),t_size2,tipo,mpiw2,2,comm,ierr)      
-       enddo
-    endif
-
-    !-----------------------------------------------
-    if (mpiid.eq.mpiw3) then
-       open (12,file=fil3,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size1*4,convert='Big_endian')  
-       write(*,*) fil3  
-       irec=1
-       write(12,rec=irec) 'w',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       do i=ib,ie
-          irec = i+1       
-          write(12,rec=irec) real(w(:,:,i),kind=4)       
-          call flush(12)
-       enddo
-       do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-          if(dot.ne.mpiw3) then
-             do i= ibeg(dot),iend(dot)
-                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE W'         
-                irec = i+1             
-                call MPI_RECV(resu,t_size1,tipo,dot,3,comm,status,ierr)         
-                write(12,rec=irec) resu(:,:,1)
-                call flush(12)
-             enddo
-          endif
-       enddo
-       close(12)
-       ifile=ifile+1
-    else
-       !operaciones para el resto de los nodos ********************
-       do i=ib,ie            
-          call MPI_SEND(real(w(:,:,i),kind=4),t_size1,tipo,mpiw3,3,comm,ierr)       
-       enddo
-    endif
-
-    !-----------------------------------------------
-    if (mpiid.eq.mpiw4) then
-       open (13,file=fil4,status='unknown', &
-            & form='unformatted',access='direct',recl=t_size2*4,convert='Big_endian')
-       write(*,*) fil4      
-       irec=1
-       write(13,rec=irec)  'p',tiempo,cfl,Re,ax*pi,ay*pi,2*pi*az,nx,ny,nz2,xout,timeinit,dt, &
-            & (y(i), i=0,ny+1), (um(i), i=1,ny+1),nummpi
-       do i=ib,ie
-          irec = i+1      
-          write(13,rec=irec) real(p(:,:,i),kind=4)
-          call flush(13)
-       enddo
-       do dot = 0,nummpi-1   !recibe la informacion de cada procesador
-          if(dot.ne.mpiw4) then
-             do i= ibeg(dot),iend(dot)
-                if(mod(i,500).eq.0) write (*,*) 'Writting plane #',i,' of ', nx, '....FILE P'         
-                irec = i+1            
-                call MPI_RECV(resu,t_size2,tipo,dot,4,comm,status,ierr)  
-                write(13,rec=irec) resu(:,1:ny,1)
-                call flush(13)
-             enddo
-          endif
-       enddo
-       close(13)
-       ifile=ifile+1
-    else
-       !operaciones para el resto de los nodos ********************
-       do i=ib,ie           
-          call MPI_SEND(real(p(:,:,i),kind=4),t_size2,tipo,mpiw4,4,comm,ierr)
-       enddo
-    endif
-
-    !-----------------------------------------------
-    call MPI_BARRIER(comm,ierr) 
-    if (mpiid.eq.mpiw1) then 
+    call MPI_BARRIER(comm,ierr)
+ 
+    if (mpiid.eq.0) then 
        t0=MPI_Wtime()-t0
        write(*,*)
-       write(*,*) '=========================================================================='
-       write(*,*) 'Done writing', chfile(1:index(chfile,' ')-1)//'.'//ext1,' fields'
-       write(*,*) '=========================================================================='
+       write(*,*) '===================================================================='
+       write(*,*) 'Done writting fields'
+       write(*,*) '===================================================================='    
        write(*,'(a20,f10.3,a3)') 'TIME SPENT IN WRITING:',t0,'sc'
-       write(*,*)   '--------------------------------------------------------------------------'
+       write(*,*)   '------------------------------------------------------------------'
     endif
-    deallocate (resu)  
 #endif
   end subroutine escribezy
 
@@ -920,15 +761,15 @@ allocate(buf_cor(1:nx,10)) !10 Correlations
     endif
  enddo 
  deallocate(buf_cor)
-endsubroutine escr_corr
+end subroutine escr_corr
 #endif
 
 
-#ifdef WPARALLEL
+
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
-  ! ------------ PARALLEL WRITTING SUBROUTINES ------------------------! 
+  ! ---------------------- WRITING SUBROUTINES ------------------------! 
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
   ! -------------------------------------------------------------------! 
@@ -999,15 +840,130 @@ subroutine h5dump_parallel(fid,name,ndims,dims,rank,size,comm,info,data,ierr)
 
 end subroutine h5dump_parallel
 
+  subroutine h5dump_serial(fid,name,dims,size,comm,data,ierr)
+    ! Routine to write hdf5 datasets with real data in serial filesystems
+    ! Only the master node writes and then it gathers the data from the
+    ! rest of worker nodes.
 
-subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
+    ! It sums the dimensions of all the callers and reads from the offset,
+    ! concatenating the data in the last given dimension (the one further
+    ! from the aligned)
+
+    ! ACHTUNG!!!
+    ! The input array is overwritten!!!
+
+    use hdf5
+
+    implicit none
+
+    include "mpif.h"
+
+    integer(hid_t), intent(in):: fid
+    character(len=*), intent(in):: name
+    integer(hsize_t), dimension(3), intent(in):: dims
+    integer, intent(in):: size
+    integer, intent(in):: comm
+    real(kind = 4), dimension(dims(1),dims(2),dims(3)), intent(inout):: data
+    integer(hid_t), intent(out):: ierr
+
+    integer(hid_t):: dset
+    integer(hid_t):: dspace,mspace
+    integer(hid_t):: plist_id
+    integer(hsize_t), dimension(3):: start,totaldims,filedims,filemaxdims
+    integer(hsize_t), dimension(3):: nooffset,cdims
+    integer, dimension(size):: lastdims
+    integer:: mpierr
+
+    integer:: i,rank,lastdim
+    integer, dimension(MPI_STATUS_SIZE):: status
+
+    start = 0
+    nooffset = 0
+    totaldims = dims
+    cdims = dims
+
+    lastdim = dims(3) ! Don't mess with ints and longs
+
+    call MPI_ALLGATHER(lastdim,1,MPI_INTEGER,lastdims,1,MPI_INTEGER,comm,mpierr)
+
+    totaldims(3) = sum(lastdims)
+
+    call mpi_comm_rank(comm,rank,mpierr)
+
+    if (rank == 0) then
+       !Create the global dataset and dataspace
+       call h5screate_simple_f(3,totaldims,dspace,ierr)
+       call h5dcreate_f(fid,name,H5T_IEEE_F32BE,dspace,dset,ierr)
+
+       ! write(*,*) "INFO: Loading file using the serial interface"
+       ! write(*,'(a20,3i5)') "file dimensions:", filedims
+
+       ! write(*,*) "My own rank, do not send data"
+       ! Read the first part for the master
+       call h5screate_simple_f(3,dims,mspace,ierr)
+       call h5sselect_hyperslab_f(mspace,H5S_SELECT_SET_F,nooffset,dims,ierr)
+       start(3) = 0
+       call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,nooffset+start,dims,ierr)
+       
+       call h5dwrite_f(dset,H5T_NATIVE_REAL,data,dims,ierr,mspace,dspace,H5P_DEFAULT_F)
+       call h5sclose_f(mspace,ierr)
+    end if
+
+
+    do i=1,size-1
+       cdims(3) = lastdims(i+1)
+       if (rank == 0) then
+          !Create the local dataset
+          call h5screate_simple_f(3,cdims,mspace,ierr)
+          call h5sselect_hyperslab_f(mspace,H5S_SELECT_SET_F,nooffset,&
+               & cdims,ierr)
+          
+          !Select the hyperslab in the global dataset
+          start(3) = sum(lastdims(1:i+1))-lastdims(i+1)
+          ! write(*,*) "***"
+          ! write(*,'(i3,a7,3i5)') i,"start",start
+          ! write(*,'(i3,a7,3i5)') i,"count",cdims
+          ! write(*,*) "***"
+          
+          call h5sselect_hyperslab_f(dspace,H5S_SELECT_SET_F,nooffset+start,&
+               & cdims,ierr)
+          
+          ! write(*,'(a,i3,i12)') "Receiving data from process #:", i
+          call mpi_recv(data,product(cdims),MPI_REAL,i,0,comm,status,ierr)
+
+          !Commit the memspace to the disk
+          call h5dwrite_f(dset,H5T_NATIVE_REAL,data,cdims,ierr,&
+               & mspace,dspace,H5P_DEFAULT_F)
+          call h5fflush_f(fid,H5F_SCOPE_LOCAL_F,ierr)
+          call h5sclose_f(mspace,ierr)
+          
+       end if
+       !Send portion to its belonging node
+       if (rank == i) then
+          call mpi_send(data,product(cdims),MPI_REAL,0,0,comm,ierr)
+       end if
+       
+       call mpi_barrier(MPI_COMM_WORLD,ierr)
+    end do
+
+    if (rank == 0) then
+       !Close datasets and global dataspace
+       call h5dclose_f(dset,ierr)   
+       call h5sclose_f(dspace,ierr)
+    end if
+
+  end subroutine h5dump_serial
+
+
+
+subroutine writeheader(fid,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
      & xout,timeinit,dt,y,um,procs)
   use h5lt
   
   implicit none
   
-  integer(hid_t):: fid
-  character(len=256), intent(in):: fil
+  integer(hid_t),intent(in):: fid
+  !character(len=256), intent(in):: fil
   character(len=*),intent(in):: field
   real(kind = 8), intent(in):: tiempo,cfl,re  !after 8k nods..make it R8 
   real(kind = 8), intent(in):: lx,ly,lz  
@@ -1023,7 +979,7 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   
   hdims = (/ 1 /)
   
-  call h5fopen_f(trim(fil)//".h5",H5F_ACC_RDWR_F,fid,h5err)
+  !call h5fopen_f(trim(fil)//".h5",H5F_ACC_RDWR_F,fid,h5err)
 
   call h5ltmake_dataset_string_f(fid,"Variable",field,h5err)
   call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
@@ -1045,137 +1001,137 @@ subroutine writeheader(fil,field,tiempo,cfl,re,lx,ly,lz,nx,ny,nz2,&
   hdims = (/ ny+1 /)
   call h5ltmake_dataset_double_f(fid,"um",1,hdims,um,h5err)
   
-  call h5fclose_f(fid,h5err)
+  !call h5fclose_f(fid,h5err)
 
 end subroutine writeheader
 
 
 
 
-subroutine escr_corr(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
-     &coruw,corvw,mpiid,nummpi,comm)
+! subroutine escr_corr(fname,ical,coru,corv,coruv,corw,corp,corox,coroy,coroz,&
+!      &coruw,corvw,mpiid,nummpi,comm)
 
-use ctesp, only:nx,nz2,ncorr,lxcorr,nxp,&
-     & nx,ny,nz2,xcorpoint,nspec
-use alloc_dns, only:y,Re,ax,ay,az,tiempo,cfl
-use statistics, only:jspecy
-use point, only: pcib2,pcie2,mp_corr2
-use hdf5
-use h5lt
+! use ctesp, only:nx,nz2,ncorr,lxcorr,nxp,&
+!      & nx,ny,nz2,xcorpoint,nspec
+! use alloc_dns, only:y,Re,ax,ay,az,tiempo,cfl
+! use statistics, only:jspecy
+! use point, only: pcib2,pcie2,mp_corr2
+! use hdf5
+! use h5lt
 
-implicit none
-include 'mpif.h'
+! implicit none
+! include 'mpif.h'
 
-integer(hid_t):: fid,pid
-character(len=*), intent(in):: fname
-integer, intent(in):: mpiid,nummpi,comm,ical
-real(8), dimension(nx,pcib2:pcie2,lxcorr)::coru,corv,coruv,corw,corp
-real(8), dimension(nx,pcib2:pcie2,lxcorr)::corox,coroy,coroz,coruw,corvw
-real(8), dimension(:,:,:,:), allocatable:: buf_cor
-real(8), dimension(:,:), allocatable:: aux_buf_cor
-integer(hsize_t), dimension(1):: hdims = (/ 1 /)
-integer(hsize_t), dimension(2):: hdims2 = (/ 0, 0 /) 
-integer,dimension(nummpi):: npencils
-integer:: h5err,mpierr,info
-integer:: i,j,k,l,npen,id
-integer(hid_t)::dset,dspace,mspace
-real(8), parameter:: pi = 3.14159265358979
-real(8):: timer
+! integer(hid_t):: fid,pid
+! character(len=*), intent(in):: fname
+! integer, intent(in):: mpiid,nummpi,comm,ical
+! real(8), dimension(nx,pcib2:pcie2,lxcorr)::coru,corv,coruv,corw,corp
+! real(8), dimension(nx,pcib2:pcie2,lxcorr)::corox,coroy,coroz,coruw,corvw
+! real(8), dimension(:,:,:,:), allocatable:: buf_cor
+! real(8), dimension(:,:), allocatable:: aux_buf_cor
+! integer(hsize_t), dimension(1):: hdims = (/ 1 /)
+! integer(hsize_t), dimension(2):: hdims2 = (/ 0, 0 /) 
+! integer,dimension(nummpi):: npencils
+! integer:: h5err,mpierr,info
+! integer:: i,j,k,l,npen,id
+! integer(hid_t)::dset,dspace,mspace
+! real(8), parameter:: pi = 3.14159265358979
+! real(8):: timer
 
-npen = pcie2-pcib2+1
+! npen = pcie2-pcib2+1
 
-if(mpiid == 0) timer = MPI_WTIME()
+! if(mpiid == 0) timer = MPI_WTIME()
 
-call MPI_INFO_CREATE(info,mpierr)
-call MPI_INFO_SET(info,"IBM_largeblock_io","true",mpierr)
+! call MPI_INFO_CREATE(info,mpierr)
+! call MPI_INFO_SET(info,"IBM_largeblock_io","true",mpierr)
 
 
-allocate(buf_cor(nx,npen,lxcorr,10))
-allocate(aux_buf_cor(lxcorr*10,npen))
+! allocate(buf_cor(nx,npen,lxcorr,10))
+! allocate(aux_buf_cor(lxcorr*10,npen))
 
-buf_cor(:,:,:,1)  = coru
-buf_cor(:,:,:,2)  = corv
-buf_cor(:,:,:,3)  = coruv
-buf_cor(:,:,:,4)  = corw
-buf_cor(:,:,:,5)  = corp
-buf_cor(:,:,:,6)  = corox
-buf_cor(:,:,:,7)  = coroy
-buf_cor(:,:,:,8)  = coroz
-buf_cor(:,:,:,9)  = coruw
-buf_cor(:,:,:,10) = corvw
+! buf_cor(:,:,:,1)  = coru
+! buf_cor(:,:,:,2)  = corv
+! buf_cor(:,:,:,3)  = coruv
+! buf_cor(:,:,:,4)  = corw
+! buf_cor(:,:,:,5)  = corp
+! buf_cor(:,:,:,6)  = corox
+! buf_cor(:,:,:,7)  = coroy
+! buf_cor(:,:,:,8)  = coroz
+! buf_cor(:,:,:,9)  = coruw
+! buf_cor(:,:,:,10) = corvw
 
-!! Scale or whatever Juan did.
-do j = 1,lxcorr
-   buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
-end do
+! !! Scale or whatever Juan did.
+! do j = 1,lxcorr
+!    buf_cor(:,:,j,:) = buf_cor(:,:,j,:)/(2d0*nxp(j)+1d0)
+! end do
 
-call mpi_barrier(comm,mpierr)
+! call mpi_barrier(comm,mpierr)
 
-call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
-call h5pset_fapl_mpio_f(pid,comm,info,h5err)
-call h5pset_sieve_buf_size_f(pid, 4*1024*1024, h5err)
-call h5fcreate_f(trim(fname)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
-call h5pclose_f(pid,h5err) !! Close property access list
+! call h5pcreate_f(H5P_FILE_ACCESS_F,pid,h5err)
+! call h5pset_fapl_mpio_f(pid,comm,info,h5err)
+! call h5pset_sieve_buf_size_f(pid, 4*1024*1024, h5err)
+! call h5fcreate_f(trim(fname)//".h5",H5F_ACC_TRUNC_F,fid,h5err,H5P_DEFAULT_F,pid)
+! call h5pclose_f(pid,h5err) !! Close property access list
 
-!!Write the correlations concurrently to disk
-call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,(nz2+1)*nspec,mpiid,nummpi,comm,&
-     & buf_cor,h5err)
+! !!Write the correlations concurrently to disk
+! call dump_corr(fid,"corr",nx,lxcorr,pcib2,pcie2,(nz2+1)*nspec,mpiid,nummpi,comm,&
+!      & buf_cor,h5err)
 
-call mpi_barrier(comm,mpierr)
+! call mpi_barrier(comm,mpierr)
 
-if(mpiid == 0) then
-   write(*,*) "time of everything"
-   write(*,*) MPI_WTIME()-timer
-end if
-if (mpiid.eq.0) write(*,*) 'closing.....'
-call h5fclose_f(fid,h5err)
-if (mpiid.eq.0) write(*,*) 'closed.....'
-deallocate(buf_cor)
-deallocate(aux_buf_cor)
+! if(mpiid == 0) then
+!    write(*,*) "time of everything"
+!    write(*,*) MPI_WTIME()-timer
+! end if
+! if (mpiid.eq.0) write(*,*) 'closing.....'
+! call h5fclose_f(fid,h5err)
+! if (mpiid.eq.0) write(*,*) 'closed.....'
+! deallocate(buf_cor)
+! deallocate(aux_buf_cor)
 
-!Write the header
+! !Write the header
 
-!Get the number of pencils written by every node
-call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
-     & npencils,1,MPI_INTEGER,0,comm,mpierr)
+! !Get the number of pencils written by every node
+! call MPI_GATHER(pcie2-pcib2+1,1,MPI_INTEGER,&
+!      & npencils,1,MPI_INTEGER,0,comm,mpierr)
 
-if (mpiid == 0) then
-   write(*,*) 'CORRELATION FILE TO BE WRITTEN:', trim(fname)//".h5"
-   call h5fopen_f(trim(fname)//".h5",H5F_ACC_RDWR_F,fid,h5err)
+! if (mpiid == 0) then
+!    write(*,*) 'CORRELATION FILE TO BE WRITTEN:', trim(fname)//".h5"
+!    call h5fopen_f(trim(fname)//".h5",H5F_ACC_RDWR_F,fid,h5err)
    
-   call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
-   call h5ltmake_dataset_double_f(fid,"cfl"   ,1,hdims,(/cfl/),h5err)
-   call h5ltmake_dataset_double_f(fid,"Re"    ,1,hdims,(/re/),h5err)
-   call h5ltmake_dataset_double_f(fid,"lx"    ,1,hdims,(/ax*pi/),h5err)
-   call h5ltmake_dataset_double_f(fid,"ly"    ,1,hdims,(/ay*pi/),h5err)
-   call h5ltmake_dataset_double_f(fid,"lz"    ,1,hdims,(/2*az*pi/),h5err)
-   call h5ltmake_dataset_int_f(fid,"nx",    1,hdims,(/nx/),    h5err)
-   call h5ltmake_dataset_int_f(fid,"ny",    1,hdims,(/ny/),    h5err)
-   call h5ltmake_dataset_int_f(fid,"nz2",   1,hdims,(/nz2/),   h5err)
-   call h5ltmake_dataset_int_f(fid,"ical",  1,hdims,(/ical/),  h5err)
-   call h5ltmake_dataset_int_f(fid,"ncorr", 1,hdims,(/ncorr/), h5err)
-   call h5ltmake_dataset_int_f(fid,"lxcorr",1,hdims,(/lxcorr/),h5err)
-   call h5ltmake_dataset_int_f(fid,"mpisize",1,hdims,(/nummpi/),h5err)
-   hdims = (/ lxcorr /)
-   call h5ltmake_dataset_int_f(fid,"nxp",1,hdims,nxp,h5err)
-   call h5ltmake_dataset_int_f(fid,"xcorpoint",1,hdims,xcorpoint,h5err)
-   hdims = (/ ny+2 /)
-   call h5ltmake_dataset_double_f(fid,"y",1,hdims,y,h5err)
-   hdims = (/ nummpi /)
-   call h5ltmake_dataset_int_f(fid,"npencils",1,hdims,npencils,h5err)
-   hdims2 = (/ ncorr,lxcorr /)
-   call h5ltmake_dataset_int_f(fid,"jspecy",2,hdims2,jspecy,h5err)
+!    call h5ltmake_dataset_double_f(fid,"tiempo",1,hdims,(/tiempo/),h5err)
+!    call h5ltmake_dataset_double_f(fid,"cfl"   ,1,hdims,(/cfl/),h5err)
+!    call h5ltmake_dataset_double_f(fid,"Re"    ,1,hdims,(/re/),h5err)
+!    call h5ltmake_dataset_double_f(fid,"lx"    ,1,hdims,(/ax*pi/),h5err)
+!    call h5ltmake_dataset_double_f(fid,"ly"    ,1,hdims,(/ay*pi/),h5err)
+!    call h5ltmake_dataset_double_f(fid,"lz"    ,1,hdims,(/2*az*pi/),h5err)
+!    call h5ltmake_dataset_int_f(fid,"nx",    1,hdims,(/nx/),    h5err)
+!    call h5ltmake_dataset_int_f(fid,"ny",    1,hdims,(/ny/),    h5err)
+!    call h5ltmake_dataset_int_f(fid,"nz2",   1,hdims,(/nz2/),   h5err)
+!    call h5ltmake_dataset_int_f(fid,"ical",  1,hdims,(/ical/),  h5err)
+!    call h5ltmake_dataset_int_f(fid,"ncorr", 1,hdims,(/ncorr/), h5err)
+!    call h5ltmake_dataset_int_f(fid,"lxcorr",1,hdims,(/lxcorr/),h5err)
+!    call h5ltmake_dataset_int_f(fid,"mpisize",1,hdims,(/nummpi/),h5err)
+!    hdims = (/ lxcorr /)
+!    call h5ltmake_dataset_int_f(fid,"nxp",1,hdims,nxp,h5err)
+!    call h5ltmake_dataset_int_f(fid,"xcorpoint",1,hdims,xcorpoint,h5err)
+!    hdims = (/ ny+2 /)
+!    call h5ltmake_dataset_double_f(fid,"y",1,hdims,y,h5err)
+!    hdims = (/ nummpi /)
+!    call h5ltmake_dataset_int_f(fid,"npencils",1,hdims,npencils,h5err)
+!    hdims2 = (/ ncorr,lxcorr /)
+!    call h5ltmake_dataset_int_f(fid,"jspecy",2,hdims2,jspecy,h5err)
 
-   call h5fclose_f(fid,h5err)
+!    call h5fclose_f(fid,h5err)
 
-   write(*,*) MPI_WTIME()-timer
+!    write(*,*) MPI_WTIME()-timer
 
-end if
+! end if
 
-!End write the header
+! !End write the header
 
 
-end subroutine escr_corr
+! end subroutine escr_corr
 
 subroutine dump_corr(fid,name,nx,lxcorr,pbeg,pend,ptot,rank,size,comm,data,h5err)
 use hdf5
@@ -1225,4 +1181,4 @@ call h5dclose_f(dset,h5err)
 call h5sclose_f(dspace,h5err)
 
 end subroutine dump_corr
-#endif
+

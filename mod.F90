@@ -282,6 +282,8 @@ module statistics
   complex*16,dimension(:,:,:),allocatable::planesv 
 #endif
 
+  real*4,dimension(:,:,:), allocatable:: ens
+
 end module statistics
 ! ---------------------------------------------------------------!
 
