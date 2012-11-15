@@ -70,8 +70,16 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
 
 !---------------------------------------------
   if (dostat) then   
-     call interpx_new  (resu,wki1 ,fd_ix,mpu)  !u_x     : wki1  [PENCILS]
-     wki1(2:nx,:)=wki1(1:nx-1,:)               !Collocate u_x to match with v,w,p
+     call interpx_new  (resu,wki1 ,fd_ix,mpu)  !u_x : wki1 [PENCILS]
+     ! Written this way, it crashes. You have to reverse this loop and
+     ! sometimes, runtimes are not that good
+     ! wki1(2:nx,:)=wki1(1:nx-1,:) !Collocate u_x to match with v,w,p
+     do i=nx-1,1,-1
+        do j=1,mpu
+           wki1(i+1,j) = wki1(i,j)
+        end do
+     end do
+
      call diffx_inplace(wki1,wki3 ,fd_dx,mpu)  !d(u_x)dx: wki3  [PENCILS]
      call diffx_inplace(resv,rhsvt,fd_dx,mpv)  !dvdx    : rhsvt [PENCILS]
      call diffx_inplace(resw,rhswt,fd_dx,mpu)  !dwdx    : rhswt [PENCILS]   
@@ -81,7 +89,8 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
      call chx2p(rhsvt,rhsvt,rhsut,mpiid,ny  ,communicator) !dvdx [PLANES]
      call chx2p(rhswt,rhswt,rhsut,mpiid,ny+1,communicator) !dwdx [PLANES]  
  
-     ical=ical+1          
+     ical=ical+1
+     if (mpiid == 0) write(*,*) "COMPUTE STATISTICS"     
      call statsp(wki1t,vt,wt,pt, &                   !u_x,v,w,p
           &                wki3t,rhsvt,rhswt,&       !dudx,dvdx,dwdx
           &                wkp,wkpo,wki2t,bufuphy,&  !buf1,buf2,buf3,buf4
@@ -89,6 +98,7 @@ subroutine rhsp(ut,vt,wt,pt,rhsupat,rhsvpat,rhswpat, &
           &                buf_corr,buf_corr2,rhsut,& !buf_cor,buf_corp,buf_big
           &                wkp,wkpo,bufuphy,&        !bphy1,bphy2,bphy3
           &                mpiid,communicator)
+     if (mpiid == 0) write(*,*) "FINISHED WITH STATISTICS"
   endif
 !---------------------------------------------
 

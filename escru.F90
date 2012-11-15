@@ -158,21 +158,12 @@
 
 #ifdef WSERIAL
     !Serial WRITER =================================================
-    !First the header and last the field
-    if (mpiid.eq.0) then 
-       write(*,*) 'Escribiendo el fichero'
-       write(*,*) fil1   
-       t0=MPI_Wtime()  
-    end if
+    if (mpiid == 0) t0=MPI_Wtime()
 
     !Enstrophy
-    dims =(/ nz1, ny+1, ie-ib+1 /)
-    allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
-    resu=0.0 !R4 buffer to convert R8 variables
-    
+    dims =(/ nz, ny, ie-ib+1 /)    
     if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
-    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,ens,h5err)
     call MPI_BARRIER(comm,ierr)
     if (mpiid == 0) then
        call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
@@ -182,7 +173,7 @@
     end if
 
         
-    ! !U and w
+    !U and w
     ! dims =(/ nz1, ny+1, ie-ib+1 /)
     ! allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
     ! resu=0.0 !R4 buffer to convert R8 variables

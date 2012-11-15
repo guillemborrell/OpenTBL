@@ -24,23 +24,23 @@ CC Reynolds       x  #        y #        z #       b.layer
 CC   dat(1)     dat(2)       dat(3)    dat(4)      dat(4) 
 CC 
 CC ========================BOUNDARY LAYER Re_theta 300 ==============
-       3.5d+03    50.00D+00      9.48D+00    16.70D+00  1D0 
+       3.5d+03    100.00D+00      3.88D+00    8.00D+00  1D0 
 CC===================================================================
 CC              Start par: 0 generate start; 1 restart
 CC   CFL        istart
 CC   dat(5)     idat(5)
 CC
-     1.2d0        1
+     1.0d0        1
 CC
 CC  #steps      #steps       #steps     #steps            time to   
 CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-       101       10        100          10             1000
+       10001       10        1000        10             0
 CC            
 CC First  output file  number=====================================
-001
+000
 CC==================================================================
 CC   x position  y position  y position   y position  y position           
 CC    to write
@@ -50,12 +50,12 @@ CC   idat(8)       idat(9)   idat(10)      idat(11)  idat(12)
 CC
 CC  flaggen       utauout           rthout             dout
 CC
-       0     0.04678313948297         2.119449988241744d03   1.65828380932963d0
+       0     0.04678313948297         7.119449988241744d02   1.65828380932963d0
 CC
 CC ============================ INPUT ========================================
-/wamba12/guillem/bl1-300-2049x315x2048.167
+/data0/guillem/bl1-300-4097x315x1024.004
 CC ============================ OUTPUT  ========================================
-/data0/guillem/bl1-300-2049x315x2048
+/data0/guillem/tblmovie
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 /home/guillem/trial
 CC

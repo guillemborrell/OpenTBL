@@ -151,6 +151,7 @@ dwdx0=0d0;dwdy0=0d0;dwdz0=0d0;
 
 !Enstrophy
 allocate(ens(nz,ny,ib:ie))
+ens=0.0
 
 #ifndef NOCORR 
 !Correlaciones ===================================

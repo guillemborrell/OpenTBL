@@ -85,6 +85,8 @@ subroutine statsp(u_x,v,w,p, &
   real(kind = 8),dimension(nz+2):: rdudx,rdvdx,rdwdx,rdudy,rdvdy,rdwdy,rdudz,rdvdz,rdwdz
   complex*16,dimension(0:nz2):: cdudx,cdvdx,cdwdx,cdudy,cdvdy,cdwdy,cdudz,cdvdz,cdwdz
 
+  if (mpiid == 0) write(*,*) "COMPUTE STATISTICS"     
+
   do i=ib,ie             
      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,jj,k,cte,aux1,aux2,aux3,auxc1)
      call interpy_new(u_x(0,1,i) ,buf1,fd_iy ,0)   !buf1=(u_x)_y          
@@ -124,17 +126,26 @@ subroutine statsp(u_x,v,w,p, &
 
         !buf1=u  buf2=w buf3=dwdx buf4=dudx buf6=dudy buf7=dwdy buf8=dvdy 
         !U stuff:
-        cdudx=buf4(:,j);       call fourxz(cdudx(0),rdudx(1),1,1,1,1);!Real dudx 
-        cdudy=buf6(:,j);       call fourxz(cdudy(0),rdudy(1),1,1,1,1);!Real dudy 
-        cdudz=buf1(:,j)*kaz;   call fourxz(cdudz(0),rdudz(1),1,1,1,1);!Real dudz 
+        cdudx=buf4(:,j)
+        call fourxz(cdudx(0),rdudx(1),1,1,1,1);!Real dudx 
+        cdudy=buf6(:,j)
+        call fourxz(cdudy(0),rdudy(1),1,1,1,1);!Real dudy 
+        cdudz=buf1(:,j)*kaz
+        call fourxz(cdudz(0),rdudz(1),1,1,1,1);!Real dudz 
         !V stuff:
-        cdvdx=dvdx(:,j,i);     call fourxz(cdvdx(0),rdvdx(1),1,1,1,1); !Real dvdx
-        cdvdy=buf8(:,j);       call fourxz(cdvdy(0),rdvdy(1),1,1,1,1); !Real dvdy
-        cdvdz=v(:,j,i)*kaz;    call fourxz(cdvdz(0),rdvdz(1),1,1,1,1); !Real dvdz
+        cdvdx=dvdx(:,j,i)
+        call fourxz(cdvdx(0),rdvdx(1),1,1,1,1); !Real dvdx
+        cdvdy=buf8(:,j)
+        call fourxz(cdvdy(0),rdvdy(1),1,1,1,1); !Real dvdy
+        cdvdz=v(:,j,i)*kaz
+        call fourxz(cdvdz(0),rdvdz(1),1,1,1,1); !Real dvdz
         !W Stuff:
-        cdwdx=buf3(:,j);       call fourxz(cdwdx(0),rdwdx(1),1,1,1,1); !Real dwdx
-        cdwdy=buf7(:,j);       call fourxz(cdwdy(0),rdwdy(1),1,1,1,1); !Real dwdy
-        cdwdz=buf2(:,j)*kaz;   call fourxz(cdwdz(0),rdwdz(1),1,1,1,1); !Real dwdz
+        cdwdx=buf3(:,j)
+        call fourxz(cdwdx(0),rdwdx(1),1,1,1,1); !Real dwdx
+        cdwdy=buf7(:,j)
+        call fourxz(cdwdy(0),rdwdy(1),1,1,1,1); !Real dwdy
+        cdwdz=buf2(:,j)*kaz
+        call fourxz(cdwdz(0),rdwdz(1),1,1,1,1); !Real dwdz
 
         ens(:,j,i)=sqrt((rdwdy-rdvdz)**2+ &
              & (rdudz-rdwdx)**2+ &

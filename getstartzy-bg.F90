@@ -231,12 +231,6 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
   u(1:nzz,1:nyr+1,ib:ie) = real(resu(1:nzz,1:nyr+1,1:ie-ib+1),kind=8)
   call MPI_BARRIER(commu,ierr)
 
-  if (mpiid.eq.0) then
-     write(*,*) 'Leyendo del fichero'
-     write(*,*) fil3//'.h5'
-     call readheader(fil3,nxr,nyr,nzr)
-  endif
-  call mpi_barrier(commu,h5err)
 
   !Read the rest of the variables.
   if (mpiid == 0) call h5fopen_f(trim(fil3)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
@@ -255,12 +249,6 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
   allocate(resu(nz1r,nyr,ie-ib+1))
   resu = 0.0
 
-  if (mpiid.eq.0) then
-     write(*,*) 'Leyendo del fichero'
-     write(*,*) fil2//'.h5'
-     call readheader(fil2,nxr,nyr,nzr)
-  endif
-  call mpi_barrier(commu,h5err)
 
   if (mpiid == 0) call h5fopen_f(trim(fil2)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
@@ -271,12 +259,6 @@ subroutine getstartzy(u,v,w,p,dt,mpiid,communicator)
 
   call MPI_BARRIER(commu,ierr)
 
-  if (mpiid.eq.0) then
-     write(*,*) 'Leyendo del fichero'
-     write(*,*) fil4//'.h5'
-     call readheader(fil4,nxr,nyr,nzr)
-  endif
-  call mpi_barrier(commu,h5err)
 
   if (mpiid == 0)call h5fopen_f(trim(fil4)//".h5",H5F_ACC_RDONLY_F,fid,h5err)
   call h5load_serial(fid,"value",dims,offset,nummpi,commu,resu,h5err)
