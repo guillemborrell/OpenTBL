@@ -37,7 +37,7 @@ CC             Write field  Write stat  compute stat      start
 CC   nstep      reav         reav        avcrt             stest    
 CC   idat(1)a   idat(13)     idat(13)     idat(14)          idat(15)
 CC
-       10001       10        1000        10             0
+       20001       1000        1000        10             0
 CC            
 CC First  output file  number=====================================
 000
@@ -53,9 +53,9 @@ CC
        0     0.04678313948297         7.119449988241744d02   1.65828380932963d0
 CC
 CC ============================ INPUT ========================================
-/data0/guillem/bl1-300-4097x315x1024.004
+/data2/guillem/enstro_movie/bl1-300-4097x315x1024.004
 CC ============================ OUTPUT  ========================================
-/data0/guillem/tblmovie
+/data2/guillem/smooth_low/smooth_coarse_transient
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 /home/guillem/trial
 CC

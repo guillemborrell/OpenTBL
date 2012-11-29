@@ -161,78 +161,78 @@
     if (mpiid == 0) t0=MPI_Wtime()
 
     !Enstrophy
-    dims =(/ nz, ny, ie-ib+1 /)    
-    if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    call h5dump_serial(fid,"value",dims,nummpi,comm,ens,h5err)
-    call MPI_BARRIER(comm,ierr)
-    if (mpiid == 0) then
-       call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-            & xout,timeinit,dt,y,um,nummpi)
-       call h5fclose_f(fid,h5err)
-       write(*,*) "File for Enstrophy successfully closed"
-    end if
+    ! dims =(/ nz, ny, ie-ib+1 /)    
+    ! if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    ! call h5dump_serial(fid,"value",dims,nummpi,comm,ens,h5err)
+    ! call MPI_BARRIER(comm,ierr)
+    ! if (mpiid == 0) then
+    !    call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+    !         & xout,timeinit,dt,y,um,nummpi)
+    !    call h5fclose_f(fid,h5err)
+    !    write(*,*) "File for Enstrophy successfully closed"
+    ! end if
 
         
     !U and w
-    ! dims =(/ nz1, ny+1, ie-ib+1 /)
-    ! allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
-    ! resu=0.0 !R4 buffer to convert R8 variables
+    dims =(/ nz1, ny+1, ie-ib+1 /)
+    allocate(resu(nz1,ny+1,ie-ib+1),stat=ierr)
+    resu=0.0 !R4 buffer to convert R8 variables
     
-    ! if (mpiid == 0) call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    ! resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
-    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
-    ! call MPI_BARRIER(comm,ierr)
-    ! if (mpiid == 0) then
-    !    call writeheader(fid,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-    !         & xout,timeinit,dt,y,um,nummpi)
-    !    call h5fclose_f(fid,h5err)
-    !    write(*,*) "File for U successfully closed"
-    ! end if
+    if (mpiid == 0) call h5fcreate_f(trim(fil1)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    resu=real(u(1:nz1,1:ny+1,ib:ie),kind=4)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'u',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       write(*,*) "File for U successfully closed"
+    end if
 
-    ! resu=0.0
-    ! if (mpiid == 0) call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    ! resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
-    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
-    ! call MPI_BARRIER(comm,ierr)
-    ! if (mpiid == 0) then
-    !    call writeheader(fid,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-    !         & xout,timeinit,dt,y,um,nummpi)
-    !    call h5fclose_f(fid,h5err)
-    !    if (mpiid == 0) write(*,*) "File for W successfully closed"
-    ! end if
+    resu=0.0
+    if (mpiid == 0) call h5fcreate_f(trim(fil3)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    resu=real(w(1:nz1,1:ny+1,ib:ie),kind=4)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'w',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       if (mpiid == 0) write(*,*) "File for W successfully closed"
+    end if
     
-    ! deallocate(resu)
+    deallocate(resu)
 
-    ! !Now the v and p
-    ! dims =(/ nz1, ny, ie-ib+1 /)
-    ! allocate(resu(nz1,ny,ie-ib+1),stat=ierr)
-    ! resu=0.0 !R4 buffer to convert R8 variables
+    !Now the v and p
+    dims =(/ nz1, ny, ie-ib+1 /)
+    allocate(resu(nz1,ny,ie-ib+1),stat=ierr)
+    resu=0.0 !R4 buffer to convert R8 variables
     
-    ! if (mpiid == 0) call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    ! resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
-    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
-    ! call MPI_BARRIER(comm,ierr)
-    ! if (mpiid == 0) then
-    !    call writeheader(fid,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-    !         & xout,timeinit,dt,y,um,nummpi)
-    !    call h5fclose_f(fid,h5err)
-    !    write(*,*) "File for V successfully closed"
-    ! end if
+    if (mpiid == 0) call h5fcreate_f(trim(fil2)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    resu=real(v(1:nz1,1:ny,ib:ie),kind=4)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'v',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       write(*,*) "File for V successfully closed"
+    end if
     
-    ! resu=0.0
+    resu=0.0
 
-    ! if (mpiid == 0) call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    ! resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
-    ! call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
-    ! call MPI_BARRIER(comm,ierr)
-    ! if (mpiid == 0) then
-    !    call writeheader(fid,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-    !         & xout,timeinit,dt,y,um,nummpi)
-    !    call h5fclose_f(fid,h5err)
-    !    write(*,*) "File for P successfully closed"
-    ! end if
+    if (mpiid == 0) call h5fcreate_f(trim(fil4)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    resu = real(p(1:nz1,1:ny,ib:ie),kind=4)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,resu,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'p',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       write(*,*) "File for P successfully closed"
+    end if
 
-    ! deallocate(resu)
+    deallocate(resu)
   
     ifile=ifile+1        
 
