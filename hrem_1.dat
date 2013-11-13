@@ -40,7 +40,7 @@ CC
        20001       1000        1000        10             0
 CC            
 CC First  output file  number=====================================
-000
+005
 CC==================================================================
 CC   x position  y position  y position   y position  y position           
 CC    to write
@@ -55,7 +55,7 @@ CC
 CC ============================ INPUT ========================================
 /data2/guillem/enstro_movie/bl1-300-4097x315x1024.004
 CC ============================ OUTPUT  ========================================
-/data2/guillem/smooth_low/smooth_coarse_transient
+/data2/guillem/enstro_movie/bl-300-4097x315x1024
 CC FILE FOR LOCAL INFO: -----------------------------------------------
 /home/guillem/trial
 CC
