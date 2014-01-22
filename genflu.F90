@@ -93,7 +93,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
      gamma(1)  = gamma(2)**(0.125)
      
 !      if(mpiid.eq.0) then
-! 	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+! 	write(*,*) '$$$$$$'
 ! 	write(*,*) 'dt',dt
 ! 	write(*,*) 'timec',timec
 ! 	write(*,*) 'ut(0,250,1)',ut(0,250,1)	
@@ -103,7 +103,7 @@ subroutine genflu(ut,vt,wt,y,re,dt,tiempo,mpiid,m,communicator)
 ! 	write(*,*) 'dout',dout
 ! 	write(*,*) 'rthout',rthout
 ! 	write(*,*) 'gamma',gamma
-! 	write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+! 	write(*,*) '$$$$$$'
 !      endif
 
      ! --------- new grids for rescaling

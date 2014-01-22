@@ -161,16 +161,16 @@
     if (mpiid == 0) t0=MPI_Wtime()
 
     !Enstrophy
-    ! dims =(/ nz, ny, ie-ib+1 /)    
-    ! if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
-    ! call h5dump_serial(fid,"value",dims,nummpi,comm,ens,h5err)
-    ! call MPI_BARRIER(comm,ierr)
-    ! if (mpiid == 0) then
-    !    call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
-    !         & xout,timeinit,dt,y,um,nummpi)
-    !    call h5fclose_f(fid,h5err)
-    !    write(*,*) "File for Enstrophy successfully closed"
-    ! end if
+    dims =(/ nz, ny, ie-ib+1 /)    
+    if (mpiid == 0) call h5fcreate_f(trim(filens)//".h5",H5F_ACC_TRUNC_F,fid,h5err)
+    call h5dump_serial(fid,"value",dims,nummpi,comm,ens,h5err)
+    call MPI_BARRIER(comm,ierr)
+    if (mpiid == 0) then
+       call writeheader(fid,'enstrophy',tiempo,cfl,re,ax*pi,ay*pi,az*2*pi,nx,ny,nz2,&
+            & xout,timeinit,dt,y,um,nummpi)
+       call h5fclose_f(fid,h5err)
+       write(*,*) "File for Enstrophy successfully closed"
+    end if
 
         
     !U and w
